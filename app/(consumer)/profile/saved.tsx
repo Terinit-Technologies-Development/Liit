@@ -66,7 +66,7 @@ export default function SavedEventsScreen() {
                   style={styles.price}
                 >
                   {formatDate(evt.occurrence.startTime)} •{" "}
-                  {formatCurrency(evt.startingPriceMinor / 100, evt.currency)}
+                  {formatCurrency(evt.startingPriceMinor, evt.currency)}
                 </AppText>
               </SurfaceCard>
             ))}

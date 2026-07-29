@@ -11,7 +11,7 @@ export default function IndexRoute() {
     activeMode,
     hasHydrated: appHydrated,
   } = useAppStore();
-  const { hasHydrated: sessionHydrated } = useSessionStore();
+  const { status, hasHydrated: sessionHydrated } = useSessionStore();
 
   const isHydrated = appHydrated && sessionHydrated;
 
@@ -23,7 +23,8 @@ export default function IndexRoute() {
     );
   }
 
-  if (!hasCompletedOnboarding) {
+  // Durable Sign-Out Check: Signed out users must route to Welcome regardless of prior onboarding flag
+  if (status === "unauthenticated" || !hasCompletedOnboarding) {
     return <Redirect href="/(public)/welcome" />;
   }
 

@@ -1,56 +1,67 @@
 appId: com.liit.app
 ---
-# 1. Incomplete onboarding routing validation
+# 1. Clean first launch & Welcome onboarding
 - launchApp:
     clearState: true
-- assertVisible: "LIIT Onboarding"
-- tapOn: "Enter LIIT Prototype Shell"
+- assertVisible: "PROTOTYPE SIMULATION"
+- assertVisible: "Pulse of Nightlife & Culture"
+- tapOn: "Next"
+- tapOn: "Next"
+- tapOn: "Get Started"
 
-# 2. Completed onboarding routing -> Consumer shell
+# 2. Permission-denied Location path & Manual Johannesburg selection
+- assertVisible: "Where are you discovering events?"
+- tapOn: "Simulate Denied Permission"
+- assertVisible: "Location Access Denied"
+- tapOn: "Johannesburg"
+- tapOn: "Continue"
+
+# 3. Interests category selection
+- assertVisible: "What experiences move you?"
+- tapOn: "Music & Live DJs"
+- tapOn: "Nightlife & Clubs"
+- tapOn: "Art & Exhibitions"
+- tapOn: "Continue (3 Selected)"
+
+# 4. Simulated Sign-In entry & Consumer Feed
+- assertVisible: "Sign in to LIIT"
+- tapOn: "Simulate Sign In"
 - assertVisible: "Feed"
+
+# 5. Consumer Profile & Edit Profile response
+- tapOn: "Profile"
+- assertVisible: "Thabo Mbeki"
+- assertVisible: "CONSUMER"
+- tapOn: "Edit Profile"
+- assertVisible: "Profile editing is simulated in prototype mode."
+
+# 6. Settings Location Edit & Return context
+- tapOn: "Settings & Preferences"
+- assertVisible: "Preferences"
+- tapOn: "Location Services"
+- assertVisible: "Where are you discovering events?"
+- tapOn: "Cape Town"
+- tapOn: "Save & Return to Settings"
+- assertVisible: "Preferences"
+- assertVisible: "Active Location: Cape Town"
+
+# 7. Non-mutating Mode-Switch Cancellation
+- tapOn: "Open Prototype Controls"
+- tapOn: "Creator Mode"
+- tapOn: "Cancel (Keep Current Mode)"
 - assertVisible: "Consumer Feed"
 
-# 3. Consumer shell navigation
-- tapOn: "Explore"
-- assertVisible: "Explore & Search"
-- tapOn: "Map"
-- assertVisible: "Interactive Event Map"
-- tapOn: "Tickets"
-- assertVisible: "Owned Tickets Wallet"
+# 8. Sign Out & Cold Relaunch persistence
 - tapOn: "Profile"
-- assertVisible: "Consumer Profile & Settings"
+- tapOn: "Settings & Preferences"
+- tapOn: "Sign Out"
+- assertVisible: "Pulse of Nightlife & Culture"
+- stopApp
+- launchApp
+- assertVisible: "Pulse of Nightlife & Culture"
 
-# 4. Opening Prototype Controls
-- tapOn: "Open Prototype Controls"
-- assertVisible: "Prototype Controls"
-
-# 5. Scenario selection
-- tapOn: "Offline State"
-- assertVisible: "Deterministic Scenario Overrides"
-
-# 6. Switching to Creator mode
-- tapOn: "Creator Mode"
-- tapOn: "Close controls"
-
-# 7. Creator shell navigation
-- assertVisible: "Dashboard"
-- assertVisible: "Creator Dashboard"
-- tapOn: "Create"
-- assertVisible: "Event Creation Builder"
-- tapOn: "Events"
-- assertVisible: "Hosted Events & Drafts"
-- tapOn: "Tools"
-- assertVisible: "Host & Venue Tools"
-- tapOn: "Profile"
-- assertVisible: "Creator Brand Profile"
-
-# 8. Prototype reset
+# 9. Complete Prototype Reset
 - tapOn: "Open Prototype Controls"
 - tapOn: "Reset All Prototype State"
 - tapOn: "Close controls"
-- assertVisible: "Consumer Feed"
-
-# 9. State persistence after application restart
-- stopApp
-- launchApp
-- assertVisible: "Consumer Feed"
+- assertVisible: "Pulse of Nightlife & Culture"

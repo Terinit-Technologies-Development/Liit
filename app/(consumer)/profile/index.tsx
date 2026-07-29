@@ -13,6 +13,7 @@ import { EmptyState } from "../../../src/components/feedback/EmptyState";
 import { Icon } from "../../../src/design-system/icons/Icon";
 import { useSessionStore } from "../../../src/state/useSessionStore";
 import { useAppStore } from "../../../src/state/useAppStore";
+import { useToast } from "../../../src/hooks/useToast";
 import {
   mockProfileStats,
   mockIdentityUser,
@@ -27,7 +28,8 @@ type SegmentTab = "attended" | "saved" | "activity";
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, status } = useSessionStore();
-  const { activeMode, setMode } = useAppStore();
+  const { activeMode } = useAppStore();
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<SegmentTab>("saved");
 
   const currentUser = user || mockIdentityUser;
@@ -56,8 +58,16 @@ export default function ProfileScreen() {
   ];
 
   const handleBecomeCreator = () => {
-    setMode("creator");
+    // Navigates to mode switch modal without mutating activeMode
     router.push(ROUTES.modals.modeSwitch);
+  };
+
+  const handleEditProfile = () => {
+    showToast(
+      "Edit Profile",
+      "Profile editing is simulated in prototype mode.",
+      "info",
+    );
   };
 
   return (
@@ -150,10 +160,18 @@ export default function ProfileScreen() {
           {/* Action Row */}
           <View style={styles.headerActionRow}>
             <SecondaryButton
+              label="Edit Profile"
+              onPress={handleEditProfile}
+              leftIcon="profile"
+              fullWidth
+              accessibilityLabel="Edit Profile"
+            />
+            <SecondaryButton
               label="Settings & Preferences"
               onPress={() => router.push(ROUTES.consumer.settings)}
               leftIcon="settings"
               fullWidth
+              accessibilityLabel="Settings and Preferences"
             />
             <Pressable
               onPress={handleBecomeCreator}
@@ -215,10 +233,7 @@ export default function ProfileScreen() {
                       style={styles.eventTime}
                     >
                       {formatDate(evt.occurrence.startTime)} •{" "}
-                      {formatCurrency(
-                        evt.startingPriceMinor / 100,
-                        evt.currency,
-                      )}
+                      {formatCurrency(evt.startingPriceMinor, evt.currency)}
                     </AppText>
                   </View>
                 </View>
