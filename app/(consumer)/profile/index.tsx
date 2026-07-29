@@ -18,6 +18,7 @@ import {
   mockIdentityUser,
 } from "../../../src/fixtures/identity";
 import { mockEvents } from "../../../src/fixtures";
+import { formatCurrency, formatDate } from "../../../src/utils/format";
 import { ROUTES } from "../../../src/navigation/routes";
 import { theme } from "../../../src/design-system/theme";
 
@@ -32,7 +33,7 @@ export default function ProfileScreen() {
   const currentUser = user || mockIdentityUser;
   const isGuest = status === "guest";
 
-  const savedEvents = mockEvents.slice(0, 2);
+  const savedEvents = mockEvents.filter((evt) => evt.isSaved);
   const recentActivities = [
     {
       id: "act_1",
@@ -213,11 +214,11 @@ export default function ProfileScreen() {
                       color={theme.colors.accentStart}
                       style={styles.eventTime}
                     >
-                      {new Date(evt.occurrence.startTime).toLocaleDateString(
-                        "en-ZA",
-                        { month: "short", day: "numeric" },
-                      )}{" "}
-                      • R{evt.startingPriceMinor / 100} ZAR
+                      {formatDate(evt.occurrence.startTime)} •{" "}
+                      {formatCurrency(
+                        evt.startingPriceMinor / 100,
+                        evt.currency,
+                      )}
                     </AppText>
                   </View>
                 </View>
@@ -331,9 +332,9 @@ const styles = StyleSheet.create({
     gap: theme.spacing.xs,
     paddingVertical: theme.spacing.sm,
     borderRadius: theme.radii.full,
-    backgroundColor: "rgba(193, 128, 255, 0.12)",
+    backgroundColor: theme.colors.purpleBadgeBg,
     borderWidth: 1,
-    borderColor: "rgba(193, 128, 255, 0.3)",
+    borderColor: theme.colors.purpleBadgeBorder,
   },
   segmentedRow: {
     flexDirection: "row",

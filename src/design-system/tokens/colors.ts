@@ -73,6 +73,16 @@ export const semanticColors = {
   skeletonBase: "rgba(33, 30, 42, 0.8)",
   skeletonHighlight: "rgba(39, 36, 49, 0.9)",
 
+  // Semantic Badge & Glow Tokens
+  purpleBadgeBg: "rgba(193, 128, 255, 0.12)",
+  purpleBadgeBorder: "rgba(193, 128, 255, 0.30)",
+  pinkBadgeBg: "rgba(255, 77, 125, 0.15)",
+  violetBadgeBg: "rgba(149, 145, 255, 0.15)",
+  emeraldBadgeBg: "rgba(52, 211, 153, 0.15)",
+  amberBadgeBg: "rgba(251, 191, 36, 0.15)",
+  amberBadgeBorder: "rgba(251, 191, 36, 0.30)",
+  heroGlowBg: "rgba(149, 145, 255, 0.15)",
+
   // Direct Primitive Exits
   purple400: colorPrimitives.purple400,
   amber400: colorPrimitives.amber400,

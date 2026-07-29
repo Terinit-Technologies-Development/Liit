@@ -105,7 +105,7 @@ export default function SettingsScreen() {
       showToast("Signed Out", "Returned to guest session state.", "info");
       router.replace(ROUTES.public.welcome);
     } else if (row.id === "location") {
-      router.push(ROUTES.public.location);
+      router.push(`${ROUTES.public.location}?returnTo=settings` as any);
     } else {
       showToast(
         row.label,

@@ -1,23 +1,27 @@
-import React from 'react';
-import { View, StyleSheet, Pressable, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Screen } from '../../src/components/ui/Screen';
-import { AppText } from '../../src/components/ui/AppText';
-import { AppHeader } from '../../src/components/navigation/AppHeader';
-import { GradientButton } from '../../src/components/ui/GradientButton';
-import { Icon, SemanticIconName } from '../../src/design-system/icons/Icon';
-import { useSessionStore } from '../../src/state/useSessionStore';
-import { ROUTES } from '../../src/navigation/routes';
-import { theme } from '../../src/design-system/theme';
+import React from "react";
+import { View, StyleSheet, Pressable, ScrollView } from "react-native";
+import { useRouter } from "expo-router";
+import { Screen } from "../../src/components/ui/Screen";
+import { AppText } from "../../src/components/ui/AppText";
+import { AppHeader } from "../../src/components/navigation/AppHeader";
+import { GradientButton } from "../../src/components/ui/GradientButton";
+import { Icon, SemanticIconName } from "../../src/design-system/icons/Icon";
+import { useSessionStore } from "../../src/state/useSessionStore";
+import { ROUTES } from "../../src/navigation/routes";
+import { theme } from "../../src/design-system/theme";
 
-const INTEREST_CATEGORIES: { id: string; label: string; icon: SemanticIconName }[] = [
-  { id: 'Music', label: 'Music & Live DJs', icon: 'music' },
-  { id: 'Nightlife', label: 'Nightlife & Clubs', icon: 'sparkles' },
-  { id: 'Art', label: 'Art & Exhibitions', icon: 'heart' },
-  { id: 'Food', label: 'Food & Pop-ups', icon: 'heart' },
-  { id: 'Sport', label: 'Sport & Fitness', icon: 'calendar' },
-  { id: 'Networking', label: 'Networking & Tech', icon: 'profile' },
-  { id: 'Pop-ups', label: 'Rooftops & Secret Gigs', icon: 'location' },
+const INTEREST_CATEGORIES: {
+  id: string;
+  label: string;
+  icon: SemanticIconName;
+}[] = [
+  { id: "Music", label: "Music & Live DJs", icon: "music" },
+  { id: "Nightlife", label: "Nightlife & Clubs", icon: "sparkles" },
+  { id: "Art", label: "Art & Exhibitions", icon: "heart" },
+  { id: "Food", label: "Food & Pop-ups", icon: "heart" },
+  { id: "Sport", label: "Sport & Fitness", icon: "calendar" },
+  { id: "Networking", label: "Networking & Tech", icon: "profile" },
+  { id: "Pop-ups", label: "Rooftops & Secret Gigs", icon: "location" },
 ];
 
 export default function InterestsScreen() {
@@ -29,15 +33,27 @@ export default function InterestsScreen() {
   };
 
   return (
-    <Screen safeAreaEdges={['top', 'bottom']} style={styles.container}>
-      <AppHeader title="Personalise Feed" showBack onBack={() => router.back()} />
+    <Screen safeAreaEdges={["top", "bottom"]} style={styles.container}>
+      <AppHeader
+        title="Personalise Feed"
+        showBack
+        onBack={() => router.back()}
+      />
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <AppText variant="display" style={styles.title}>
           What experiences move you?
         </AppText>
-        <AppText variant="body" color={theme.colors.textSecondary} style={styles.subtitle}>
-          Select your interest tags to tailor event recommendations and host invitations.
+        <AppText
+          variant="body"
+          color={theme.colors.textSecondary}
+          style={styles.subtitle}
+        >
+          Select your interest tags to tailor event recommendations and host
+          invitations.
         </AppText>
 
         <View style={styles.chipGrid}>
@@ -60,11 +76,19 @@ export default function InterestsScreen() {
                 <Icon
                   name={cat.icon}
                   size="sm"
-                  color={isSelected ? theme.colors.textInverse : theme.colors.accentStart}
+                  color={
+                    isSelected
+                      ? theme.colors.textInverse
+                      : theme.colors.accentStart
+                  }
                 />
                 <AppText
                   variant="button"
-                  color={isSelected ? theme.colors.textInverse : theme.colors.textPrimary}
+                  color={
+                    isSelected
+                      ? theme.colors.textInverse
+                      : theme.colors.textPrimary
+                  }
                 >
                   {cat.label}
                 </AppText>
@@ -102,13 +126,13 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   chipGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: theme.spacing.md,
   },
   interestChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: theme.spacing.sm,
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.md,

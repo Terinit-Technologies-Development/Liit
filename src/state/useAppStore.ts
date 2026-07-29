@@ -11,6 +11,7 @@ export interface AppState {
   scenario: PrototypeScenario;
   hasCompletedOnboarding: boolean;
   permissions: PermissionState;
+  hasHydrated: boolean;
 
   // Actions
   setActiveMode: (mode: ProductMode) => void;
@@ -22,6 +23,7 @@ export interface AppState {
     key: keyof PermissionState,
     value: "granted" | "denied" | "prompt",
   ) => void;
+  setHasHydrated: (hydrated: boolean) => void;
   resetPrototype: () => void;
 }
 
@@ -34,6 +36,7 @@ const initialAppState = {
     notifications: "prompt" as const,
     camera: "prompt" as const,
   },
+  hasHydrated: false,
 };
 
 export const useAppStore = create<AppState>()(
@@ -51,11 +54,15 @@ export const useAppStore = create<AppState>()(
         set((state) => ({
           permissions: { ...state.permissions, [key]: value },
         })),
-      resetPrototype: () => set({ ...initialAppState }),
+      setHasHydrated: (hydrated: boolean) => set({ hasHydrated: hydrated }),
+      resetPrototype: () => set({ ...initialAppState, hasHydrated: true }),
     }),
     {
       name: "liit-prototype-state-v1",
       storage: createJSONStorage(() => AsyncStorage),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     },
   ),
 );

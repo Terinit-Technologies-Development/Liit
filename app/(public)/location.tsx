@@ -1,55 +1,64 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Screen } from '../../src/components/ui/Screen';
-import { AppText } from '../../src/components/ui/AppText';
-import { AppHeader } from '../../src/components/navigation/AppHeader';
-import { GradientButton } from '../../src/components/ui/GradientButton';
-import { SecondaryButton } from '../../src/components/ui/SecondaryButton';
-import { SurfaceCard } from '../../src/components/ui/Card';
-import { Icon } from '../../src/design-system/icons/Icon';
-import { useSessionStore } from '../../src/state/useSessionStore';
-import { ROUTES } from '../../src/navigation/routes';
-import { theme } from '../../src/design-system/theme';
+import React, { useState } from "react";
+import { View, StyleSheet, Pressable } from "react-native";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { Screen } from "../../src/components/ui/Screen";
+import { AppText } from "../../src/components/ui/AppText";
+import { AppHeader } from "../../src/components/navigation/AppHeader";
+import { GradientButton } from "../../src/components/ui/GradientButton";
+import { SecondaryButton } from "../../src/components/ui/SecondaryButton";
+import { SurfaceCard } from "../../src/components/ui/Card";
+import { Icon } from "../../src/design-system/icons/Icon";
+import { useSessionStore } from "../../src/state/useSessionStore";
+import { ROUTES } from "../../src/navigation/routes";
+import { theme } from "../../src/design-system/theme";
 
-const CITIES = [
-  'Johannesburg',
-  'Cape Town',
-  'Durban',
-  'Pretoria',
-];
+const CITIES = ["Johannesburg", "Cape Town", "Durban", "Pretoria"];
 
 export default function LocationScreen() {
   const router = useRouter();
-  const { selectedCity, setSelectedCity, setLocationGranted } = useSessionStore();
-  const [permissionState, setPermissionState] = useState<'prompt' | 'granted' | 'denied'>('prompt');
+  const params = useLocalSearchParams<{ returnTo?: string }>();
+  const isEditingFromSettings = params.returnTo === "settings";
+
+  const { selectedCity, setSelectedCity, setLocationGranted } =
+    useSessionStore();
+  const [permissionState, setPermissionState] = useState<
+    "prompt" | "granted" | "denied"
+  >("prompt");
 
   const handleRequestLocation = () => {
-    // Simulate permission request
-    setPermissionState('granted');
+    setPermissionState("granted");
     setLocationGranted(true);
-    setSelectedCity('Johannesburg');
+    setSelectedCity("Johannesburg");
   };
 
   const handleSimulateDenied = () => {
-    setPermissionState('denied');
+    setPermissionState("denied");
     setLocationGranted(false);
   };
 
   const handleContinue = () => {
-    router.push(ROUTES.public.interests);
+    if (isEditingFromSettings) {
+      router.replace(ROUTES.consumer.settings);
+    } else {
+      router.push(ROUTES.public.interests);
+    }
   };
 
   return (
-    <Screen safeAreaEdges={['top', 'bottom']} style={styles.container}>
+    <Screen safeAreaEdges={["top", "bottom"]} style={styles.container}>
       <AppHeader title="Location Setup" showBack onBack={() => router.back()} />
 
       <View style={styles.content}>
         <AppText variant="display" style={styles.title}>
           Where are you discovering events?
         </AppText>
-        <AppText variant="body" color={theme.colors.textSecondary} style={styles.subtitle}>
-          LIIT matches nightlife, underground gigs, and social gatherings near your location.
+        <AppText
+          variant="body"
+          color={theme.colors.textSecondary}
+          style={styles.subtitle}
+        >
+          LIIT matches nightlife, underground gigs, and social gatherings near
+          your location.
         </AppText>
 
         {/* Permission status card */}
@@ -57,30 +66,34 @@ export default function LocationScreen() {
           <View style={styles.permissionRow}>
             <View style={styles.iconCircle}>
               <Icon
-                name={permissionState === 'denied' ? 'alert' : 'location'}
+                name={permissionState === "denied" ? "alert" : "location"}
                 size="md"
-                color={permissionState === 'denied' ? theme.colors.statusDanger : theme.colors.accentStart}
+                color={
+                  permissionState === "denied"
+                    ? theme.colors.statusDanger
+                    : theme.colors.accentStart
+                }
               />
             </View>
             <View style={styles.permissionText}>
               <AppText variant="bodyStrong">
-                {permissionState === 'granted'
-                  ? 'Location Access Enabled'
-                  : permissionState === 'denied'
-                  ? 'Location Access Denied'
-                  : 'Device Location Services'}
+                {permissionState === "granted"
+                  ? "Location Access Enabled"
+                  : permissionState === "denied"
+                    ? "Location Access Denied"
+                    : "Device Location Services"}
               </AppText>
               <AppText variant="caption" color={theme.colors.textSecondary}>
-                {permissionState === 'granted'
-                  ? 'Automatically syncing nearby Johannesburg venues'
-                  : permissionState === 'denied'
-                  ? 'Permission restricted. Please select your city manually below.'
-                  : 'Grant location permission for distance & map filtering'}
+                {permissionState === "granted"
+                  ? "Automatically syncing nearby Johannesburg venues"
+                  : permissionState === "denied"
+                    ? "Permission restricted. Please select your city manually below."
+                    : "Grant location permission for distance & map filtering"}
               </AppText>
             </View>
           </View>
 
-          {permissionState === 'prompt' ? (
+          {permissionState === "prompt" ? (
             <View style={styles.actionButtonsRow}>
               <GradientButton
                 label="Use My Location"
@@ -120,13 +133,21 @@ export default function LocationScreen() {
                   ]}
                 >
                   <Icon
-                    name={city === 'Johannesburg' ? 'sparkles' : 'location'}
+                    name={city === "Johannesburg" ? "sparkles" : "location"}
                     size="sm"
-                    color={isSelected ? theme.colors.textInverse : theme.colors.textSecondary}
+                    color={
+                      isSelected
+                        ? theme.colors.textInverse
+                        : theme.colors.textSecondary
+                    }
                   />
                   <AppText
                     variant="button"
-                    color={isSelected ? theme.colors.textInverse : theme.colors.textPrimary}
+                    color={
+                      isSelected
+                        ? theme.colors.textInverse
+                        : theme.colors.textPrimary
+                    }
                   >
                     {city}
                   </AppText>
@@ -138,7 +159,13 @@ export default function LocationScreen() {
       </View>
 
       <View style={styles.footer}>
-        <GradientButton label="Continue" onPress={handleContinue} fullWidth />
+        <GradientButton
+          label={
+            isEditingFromSettings ? "Save & Return to Settings" : "Continue"
+          }
+          onPress={handleContinue}
+          fullWidth
+        />
       </View>
     </Screen>
   );
@@ -163,8 +190,8 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.xl,
   },
   permissionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: theme.spacing.md,
   },
   iconCircle: {
@@ -172,8 +199,8 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: theme.radii.full,
     backgroundColor: theme.colors.surfaceElevated,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   permissionText: {
     flex: 1,
@@ -192,13 +219,13 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.md,
   },
   cityGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: theme.spacing.sm,
   },
   cityChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: theme.spacing.xs,
     paddingHorizontal: theme.spacing.lg,
     paddingVertical: theme.spacing.sm,

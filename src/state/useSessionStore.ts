@@ -12,6 +12,7 @@ export interface SessionState {
   selectedInterests: string[];
   isLocationGranted: boolean;
   user: User | null;
+  hasHydrated: boolean;
 
   // Actions
   setGuestMode: () => void;
@@ -21,6 +22,8 @@ export interface SessionState {
   setLocationGranted: (granted: boolean) => void;
   updateProfile: (partial: Partial<Profile>) => void;
   signOut: () => void;
+  setHasHydrated: (hydrated: boolean) => void;
+  resetSession: () => void;
 }
 
 const initialSessionState = {
@@ -29,6 +32,7 @@ const initialSessionState = {
   selectedInterests: ["Music", "Nightlife", "Art"],
   isLocationGranted: false,
   user: mockUser,
+  hasHydrated: false,
 };
 
 export const useSessionStore = create<SessionState>()(
@@ -64,11 +68,16 @@ export const useSessionStore = create<SessionState>()(
             },
           };
         }),
-      signOut: () => set({ ...initialSessionState, status: "unauthenticated" }),
+      signOut: () => set({ status: "unauthenticated", user: null }),
+      setHasHydrated: (hydrated: boolean) => set({ hasHydrated: hydrated }),
+      resetSession: () => set({ ...initialSessionState, hasHydrated: true }),
     }),
     {
       name: "liit-session-v1",
       storage: createJSONStorage(() => AsyncStorage),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     },
   ),
 );

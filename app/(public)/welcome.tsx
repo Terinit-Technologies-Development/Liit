@@ -159,8 +159,7 @@ const styles = StyleSheet.create({
     width: 220,
     height: 220,
     borderRadius: 110,
-    backgroundColor: "rgba(149, 145, 255, 0.15)",
-    filter: "blur(40px)" as any,
+    backgroundColor: theme.colors.heroGlowBg,
   },
   centerContent: {
     flex: 1,

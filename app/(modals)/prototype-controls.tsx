@@ -11,6 +11,7 @@ import { Row } from "../../src/components/ui/Row";
 import { Divider } from "../../src/components/ui/Divider";
 import { IconButton } from "../../src/components/ui/IconButton";
 import { useAppStore, PrototypeScenario } from "../../src/state/useAppStore";
+import { useSessionStore } from "../../src/state/useSessionStore";
 import { envConfig } from "../../src/config/env";
 import { mockUser } from "../../src/fixtures";
 import { theme } from "../../src/design-system/theme";
@@ -27,6 +28,8 @@ export default function PrototypeControlsScreen() {
     resetPrototype,
   } = useAppStore();
 
+  const resetSession = useSessionStore((s) => s.resetSession);
+
   const handleModeSwitch = (mode: "consumer" | "creator") => {
     setActiveMode(mode);
     if (mode === "creator") {
@@ -34,6 +37,11 @@ export default function PrototypeControlsScreen() {
     } else {
       router.replace("/(consumer)/feed");
     }
+  };
+
+  const handleResetAll = () => {
+    resetPrototype();
+    resetSession();
   };
 
   const scenarios: { key: PrototypeScenario; label: string }[] = [
@@ -166,7 +174,7 @@ export default function PrototypeControlsScreen() {
         {/* Reset Prototype */}
         <AppButton
           label="Reset All Prototype State"
-          onPress={resetPrototype}
+          onPress={handleResetAll}
           variant="danger"
           fullWidth
         />

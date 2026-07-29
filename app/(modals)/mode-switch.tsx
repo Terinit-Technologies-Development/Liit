@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, StyleSheet, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { Screen } from "../../src/components/ui/Screen";
@@ -10,6 +10,7 @@ import { StatusPill } from "../../src/components/ui/StatusPill";
 import { Icon } from "../../src/design-system/icons/Icon";
 import { useAppStore } from "../../src/state/useAppStore";
 import { useToast } from "../../src/hooks/useToast";
+import { ProductMode } from "../../src/domain/identity";
 import { ROUTES } from "../../src/navigation/routes";
 import { theme } from "../../src/design-system/theme";
 
@@ -18,24 +19,31 @@ export default function ModeSwitchModal() {
   const { activeMode, setMode } = useAppStore();
   const { showToast } = useToast();
 
-  const handleSelectConsumer = () => {
-    setMode("consumer");
-    showToast(
-      "Switched to Consumer Mode",
-      "Navigating to event discovery feed.",
-      "info",
-    );
-    router.replace(ROUTES.consumer.feed);
+  // Local selection state - does NOT mutate global store until explicit confirmation
+  const [selectedMode, setSelectedMode] = useState<ProductMode>(activeMode);
+
+  const handleConfirmSwitch = () => {
+    setMode(selectedMode);
+    if (selectedMode === "consumer") {
+      showToast(
+        "Switched to Consumer Mode",
+        "Navigating to event discovery feed.",
+        "info",
+      );
+      router.replace(ROUTES.consumer.feed);
+    } else {
+      showToast(
+        "Switched to Creator Mode",
+        "Navigating to host dashboard.",
+        "info",
+      );
+      router.replace(ROUTES.creator.dashboard);
+    }
   };
 
-  const handleSelectCreator = () => {
-    setMode("creator");
-    showToast(
-      "Switched to Creator Mode",
-      "Navigating to host dashboard.",
-      "info",
-    );
-    router.replace(ROUTES.creator.dashboard);
+  const handleCancel = () => {
+    // Preserve original activeMode without mutating
+    router.back();
   };
 
   return (
@@ -43,7 +51,7 @@ export default function ModeSwitchModal() {
       <View style={styles.header}>
         <AppText variant="title">Operating Mode Switcher</AppText>
         <Pressable
-          onPress={() => router.back()}
+          onPress={handleCancel}
           accessibilityLabel="Close mode switcher modal"
           hitSlop={8}
         >
@@ -60,16 +68,16 @@ export default function ModeSwitchModal() {
           color={theme.colors.textSecondary}
           style={styles.subtitle}
         >
-          LIIT seamlessly transitions between event attendee discovery and event
-          creator publishing under your single identity.
+          Select a mode below and tap confirm. Closing this modal preserves your
+          active mode.
         </AppText>
 
         {/* Consumer Card */}
-        <Pressable onPress={handleSelectConsumer}>
+        <Pressable onPress={() => setSelectedMode("consumer")}>
           <SurfaceCard
             style={[
               styles.modeCard,
-              activeMode === "consumer" && styles.modeCardActive,
+              selectedMode === "consumer" && styles.modeCardSelected,
             ]}
           >
             <View style={styles.cardHeaderRow}>
@@ -84,8 +92,11 @@ export default function ModeSwitchModal() {
                   Discovery, social coordination, tickets & wallet
                 </AppText>
               </View>
-              {activeMode === "consumer" ? (
-                <StatusPill label="ACTIVE" type="live" />
+              {selectedMode === "consumer" ? (
+                <StatusPill
+                  label={activeMode === "consumer" ? "ACTIVE" : "SELECTED"}
+                  type="live"
+                />
               ) : null}
             </View>
 
@@ -104,11 +115,11 @@ export default function ModeSwitchModal() {
         </Pressable>
 
         {/* Creator Card */}
-        <Pressable onPress={handleSelectCreator}>
+        <Pressable onPress={() => setSelectedMode("creator")}>
           <SurfaceCard
             style={[
               styles.modeCard,
-              activeMode === "creator" && styles.modeCardActive,
+              selectedMode === "creator" && styles.modeCardSelected,
             ]}
           >
             <View style={styles.cardHeaderRow}>
@@ -119,8 +130,11 @@ export default function ModeSwitchModal() {
                   Event publishing, analytics, tickets & payouts
                 </AppText>
               </View>
-              {activeMode === "creator" ? (
-                <StatusPill label="ACTIVE" type="verified" />
+              {selectedMode === "creator" ? (
+                <StatusPill
+                  label={activeMode === "creator" ? "ACTIVE" : "SELECTED"}
+                  type="verified"
+                />
               ) : null}
             </View>
 
@@ -141,17 +155,13 @@ export default function ModeSwitchModal() {
 
       <View style={styles.footer}>
         <GradientButton
-          label={`Switch to ${activeMode === "consumer" ? "Creator" : "Consumer"} Mode`}
-          onPress={
-            activeMode === "consumer"
-              ? handleSelectCreator
-              : handleSelectConsumer
-          }
+          label={`Confirm ${selectedMode === "consumer" ? "Consumer" : "Creator"} Mode`}
+          onPress={handleConfirmSwitch}
           fullWidth
         />
         <SecondaryButton
-          label="Done"
-          onPress={() => router.back()}
+          label="Cancel (Keep Current Mode)"
+          onPress={handleCancel}
           fullWidth
           style={styles.doneBtn}
         />
@@ -185,7 +195,7 @@ const styles = StyleSheet.create({
   modeCard: {
     gap: theme.spacing.md,
   },
-  modeCardActive: {
+  modeCardSelected: {
     borderColor: theme.colors.accentStart,
     borderWidth: 1.5,
   },

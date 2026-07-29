@@ -36,12 +36,12 @@ export const PrototypeBadge: React.FC<PrototypeBadgeProps> = ({
 
 const styles = StyleSheet.create({
   badge: {
-    backgroundColor: "rgba(251, 191, 36, 0.12)",
+    backgroundColor: theme.colors.amberBadgeBg,
     paddingHorizontal: theme.spacing.sm,
     paddingVertical: theme.spacing.xxs,
     borderRadius: theme.radii.sm,
     borderWidth: 1,
-    borderColor: "rgba(251, 191, 36, 0.3)",
+    borderColor: theme.colors.amberBadgeBorder,
     alignSelf: "flex-start",
   },
   text: {

@@ -9,12 +9,14 @@ import { StatusPill } from "../../../src/components/ui/StatusPill";
 import { EmptyState } from "../../../src/components/feedback/EmptyState";
 import { mockEvents } from "../../../src/fixtures";
 import { useSessionStore } from "../../../src/state/useSessionStore";
+import { formatCurrency, formatDate } from "../../../src/utils/format";
 import { theme } from "../../../src/design-system/theme";
 
 export default function SavedEventsScreen() {
   const router = useRouter();
   const { status } = useSessionStore();
-  const savedEvents = mockEvents;
+
+  const savedEvents = mockEvents.filter((evt) => evt.isSaved);
 
   return (
     <Screen safeAreaEdges={["top"]} style={styles.container}>
@@ -36,6 +38,14 @@ export default function SavedEventsScreen() {
             onAction={() => router.push("/(public)/sign-in")}
             icon="heart"
           />
+        ) : savedEvents.length === 0 ? (
+          <EmptyState
+            title="Your Saved List is Empty"
+            description="Tap the heart icon on any event card to save it to your bookmarks for quick access."
+            actionLabel="Explore Nearby Events"
+            onAction={() => router.push("/(consumer)/explore")}
+            icon="heart"
+          />
         ) : (
           <View style={styles.list}>
             {savedEvents.map((evt) => (
@@ -55,11 +65,8 @@ export default function SavedEventsScreen() {
                   color={theme.colors.accentStart}
                   style={styles.price}
                 >
-                  {new Date(evt.occurrence.startTime).toLocaleDateString(
-                    "en-ZA",
-                    { month: "short", day: "numeric" },
-                  )}{" "}
-                  • R{evt.startingPriceMinor / 100} ZAR
+                  {formatDate(evt.occurrence.startTime)} •{" "}
+                  {formatCurrency(evt.startingPriceMinor / 100, evt.currency)}
                 </AppText>
               </SurfaceCard>
             ))}
