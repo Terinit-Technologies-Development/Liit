@@ -5,6 +5,13 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as SplashScreen from "expo-splash-screen";
 import * as Font from "expo-font";
+import {
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+} from "@expo-google-fonts/plus-jakarta-sans";
+import { Syne_700Bold, Syne_800ExtraBold } from "@expo-google-fonts/syne";
 import { theme } from "../design-system/theme";
 
 // Keep splash screen visible until initial fonts & state are ready
@@ -14,14 +21,13 @@ export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: (failureCount, error: any) => {
-        // Do not retry 40x error or deliberate test errors repeatedly
+      retry: (failureCount) => {
         if (failureCount >= 2) return false;
         return true;
       },
     },
     mutations: {
-      retry: false, // Never automatically retry financial or state mutations
+      retry: false,
     },
   },
 });
@@ -66,9 +72,13 @@ export const AppProviders: React.FC<AppProvidersProps> = ({ children }) => {
   useEffect(() => {
     async function prepare() {
       try {
-        // Pre-load typography fonts or fallbacks
         await Font.loadAsync({
-          // Add font assets when available, otherwise system fallbacks are used
+          "PlusJakartaSans-Regular": PlusJakartaSans_400Regular,
+          "PlusJakartaSans-Medium": PlusJakartaSans_500Medium,
+          "PlusJakartaSans-SemiBold": PlusJakartaSans_600SemiBold,
+          "PlusJakartaSans-Bold": PlusJakartaSans_700Bold,
+          "Syne-Bold": Syne_700Bold,
+          "Syne-ExtraBold": Syne_800ExtraBold,
         });
       } catch (e) {
         console.warn("Font loading notice:", e);
