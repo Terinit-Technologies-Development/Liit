@@ -1,0 +1,92 @@
+import React from "react";
+import { View, StyleProp, ViewStyle } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { theme } from "../theme";
+import { layoutTokens } from "../tokens/layout";
+
+export type SemanticIconName =
+  | "feed"
+  | "explore"
+  | "map"
+  | "tickets"
+  | "profile"
+  | "dashboard"
+  | "create"
+  | "events"
+  | "tools"
+  | "settings"
+  | "search"
+  | "filter"
+  | "calendar"
+  | "location"
+  | "user"
+  | "heart"
+  | "share"
+  | "close"
+  | "back"
+  | "check"
+  | "alert"
+  | "refresh"
+  | "bell"
+  | "sparkles"
+  | "chevronRight"
+  | "chevronLeft";
+
+const iconNameMap: Record<SemanticIconName, keyof typeof Ionicons.glyphMap> = {
+  feed: "flame-outline",
+  explore: "compass-outline",
+  map: "map-outline",
+  tickets: "ticket-outline",
+  profile: "person-outline",
+  dashboard: "stats-chart-outline",
+  create: "add-circle-outline",
+  events: "calendar-outline",
+  tools: "construct-outline",
+  settings: "options-outline",
+  search: "search-outline",
+  filter: "funnel-outline",
+  calendar: "calendar-clear-outline",
+  location: "location-outline",
+  user: "person-circle-outline",
+  heart: "heart-outline",
+  share: "share-social-outline",
+  close: "close-outline",
+  back: "arrow-back-outline",
+  check: "checkmark-outline",
+  alert: "alert-circle-outline",
+  refresh: "refresh-outline",
+  bell: "notifications-outline",
+  sparkles: "sparkles-outline",
+  chevronRight: "chevron-forward-outline",
+  chevronLeft: "chevron-back-outline",
+};
+
+export interface IconProps {
+  name: SemanticIconName;
+  size?: keyof typeof layoutTokens.iconSizes | number;
+  color?: string;
+  style?: StyleProp<ViewStyle>;
+  accessibilityLabel?: string;
+}
+
+export const Icon: React.FC<IconProps> = ({
+  name,
+  size = "md",
+  color = theme.colors.textPrimary,
+  style,
+  accessibilityLabel,
+}) => {
+  const numericSize =
+    typeof size === "number" ? size : layoutTokens.iconSizes[size] || 24;
+  const ioniconName = iconNameMap[name] || "help-circle-outline";
+
+  return (
+    <View
+      style={style}
+      accessibilityRole="image"
+      accessibilityLabel={accessibilityLabel || `${name} icon`}
+    >
+      <Ionicons name={ioniconName} size={numericSize} color={color} />
+    </View>
+  );
+};

@@ -1,0 +1,12 @@
+appId: com.liit.app
+---
+- launchApp
+- assertVisible: "Feed"
+- tapOn: "Feed"
+- assertVisible: "Consumer Feed"
+- tapOn: "Open Prototype Controls"
+- assertVisible: "Prototype Controls"
+- tapOn: "Creator Mode"
+- tapOn: "Close controls"
+- assertVisible: "Dashboard"
+- assertVisible: "Creator Dashboard"
