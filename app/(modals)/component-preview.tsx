@@ -4,10 +4,16 @@ import { useRouter } from "expo-router";
 import { Screen } from "../../src/components/ui/Screen";
 import { AppText } from "../../src/components/ui/AppText";
 import { AppButton } from "../../src/components/ui/AppButton";
+import { GradientButton } from "../../src/components/ui/GradientButton";
+import { SecondaryButton } from "../../src/components/ui/SecondaryButton";
 import { IconButton } from "../../src/components/ui/IconButton";
+import { GlassSurface } from "../../src/components/ui/GlassSurface";
 import { Surface } from "../../src/components/ui/Surface";
 import { Card } from "../../src/components/ui/Card";
 import { Chip } from "../../src/components/ui/Chip";
+import { StatusPill } from "../../src/components/ui/StatusPill";
+import { SectionHeader } from "../../src/components/ui/SectionHeader";
+import { PrototypeBadge } from "../../src/components/ui/PrototypeBadge";
 import { Avatar } from "../../src/components/ui/Avatar";
 import { Divider } from "../../src/components/ui/Divider";
 import { Stack } from "../../src/components/ui/Stack";
@@ -26,7 +32,7 @@ export default function ComponentPreviewScreen() {
   return (
     <Screen scrollable>
       <Row justify="space-between" align="center" style={styles.topRow}>
-        <AppText variant="heading">UI Component Preview</AppText>
+        <AppText variant="heading">UI Component Preview Library</AppText>
         <IconButton
           icon="close"
           onPress={() => router.back()}
@@ -37,11 +43,15 @@ export default function ComponentPreviewScreen() {
       </Row>
 
       <Stack gap="xxl" style={styles.content}>
-        {/* Typography */}
+        {/* Typography & Badges */}
         <Stack gap="sm">
-          <AppText variant="heading" color={theme.colors.accentStart}>
-            1. Typography Tokens
-          </AppText>
+          <SectionHeader title="1. Typography & Badges" />
+          <Row gap="xs" align="center">
+            <PrototypeBadge label="PROTOTYPE COMPONENT" />
+            <StatusPill label="LIVE" type="live" />
+            <StatusPill label="VERIFIED" type="verified" />
+            <StatusPill label="DRAFT" type="draft" />
+          </Row>
           <AppText variant="display">Display Text (34px)</AppText>
           <AppText variant="title">Title Text (26px)</AppText>
           <AppText variant="heading">Heading Text (22px)</AppText>
@@ -54,56 +64,62 @@ export default function ComponentPreviewScreen() {
           <AppText variant="label" color={theme.colors.textMuted}>
             LABEL TEXT (12px)
           </AppText>
-          <AppText variant="metric">R 95,000 (Metric)</AppText>
         </Stack>
 
         <Divider />
 
-        {/* Buttons */}
+        {/* Action Buttons */}
         <Stack gap="md">
-          <AppText variant="heading" color={theme.colors.accentStart}>
-            2. AppButton & IconButton
-          </AppText>
-          <Row gap="sm" wrap>
-            <AppButton label="Primary" onPress={() => {}} variant="primary" />
-            <AppButton
-              label="Secondary"
+          <SectionHeader title="2. Action Buttons (Pill & Secondary)" />
+          <Stack gap="sm">
+            <GradientButton
+              label="Gradient Button (Signature)"
               onPress={() => {}}
-              variant="secondary"
+              fullWidth
             />
-            <AppButton label="Ghost" onPress={() => {}} variant="ghost" />
-            <AppButton label="Danger" onPress={() => {}} variant="danger" />
-          </Row>
-          <Row gap="sm">
-            <AppButton label="Loading State" onPress={() => {}} loading />
-            <AppButton label="Disabled" onPress={() => {}} disabled />
-          </Row>
-          <Row gap="md">
-            <IconButton
-              icon="heart"
+            <SecondaryButton
+              label="Secondary Tonal Button"
               onPress={() => {}}
-              accessibilityLabel="Like event"
+              fullWidth
             />
-            <IconButton
-              icon="share"
-              onPress={() => {}}
-              accessibilityLabel="Share event"
-            />
-            <IconButton
-              icon="bell"
-              onPress={() => {}}
-              accessibilityLabel="Notifications"
-            />
-          </Row>
+            <Row gap="sm" wrap>
+              <AppButton label="Primary" onPress={() => {}} variant="primary" />
+              <AppButton label="Ghost" onPress={() => {}} variant="ghost" />
+              <AppButton label="Danger" onPress={() => {}} variant="danger" />
+            </Row>
+            <Row gap="sm">
+              <AppButton label="Loading State" onPress={() => {}} loading />
+              <AppButton label="Disabled State" onPress={() => {}} disabled />
+            </Row>
+          </Stack>
         </Stack>
 
         <Divider />
 
-        {/* Chips */}
+        {/* Surfaces & Glassmorphism */}
+        <Stack gap="md">
+          <SectionHeader title="3. Glassmorphism & Tonal Surfaces" />
+          <GlassSurface radius="largeCard" padding="lg">
+            <AppText variant="subheading" color={theme.colors.textPrimary}>
+              GlassSurface Component
+            </AppText>
+            <AppText variant="body" color={theme.colors.textSecondary}>
+              Translucent dark surface with 72% opacity and ghost border.
+            </AppText>
+          </GlassSurface>
+          <Surface level="elevated" padding="lg">
+            <AppText variant="body">Surface Level: Elevated (#272431)</AppText>
+          </Surface>
+          <Card radius="xl" padding="lg">
+            <AppText variant="subheading">Card Primitive (24px Radius)</AppText>
+          </Card>
+        </Stack>
+
+        <Divider />
+
+        {/* Chips & Avatars */}
         <Stack gap="sm">
-          <AppText variant="heading" color={theme.colors.accentStart}>
-            3. Chips & Avatars
-          </AppText>
+          <SectionHeader title="4. Chips & Avatars" />
           <Row gap="xs" wrap>
             <Chip label="Unselected Chip" selected={false} />
             <Chip label="Selected Chip" selected={true} />
@@ -119,32 +135,9 @@ export default function ComponentPreviewScreen() {
 
         <Divider />
 
-        {/* Surfaces & Cards */}
-        <Stack gap="md">
-          <AppText variant="heading" color={theme.colors.accentStart}>
-            4. Surfaces & Cards
-          </AppText>
-          <Surface level="primary" padding="lg">
-            <AppText variant="body">Surface Level: Primary</AppText>
-          </Surface>
-          <Surface level="elevated" padding="lg">
-            <AppText variant="body">Surface Level: Elevated</AppText>
-          </Surface>
-          <Card radius="xl" padding="lg">
-            <AppText variant="subheading">Card Primitive (24px Radius)</AppText>
-            <AppText variant="body" color={theme.colors.textSecondary}>
-              Tonal surface separation with soft borders.
-            </AppText>
-          </Card>
-        </Stack>
-
-        <Divider />
-
         {/* Form Controls */}
         <Stack gap="md">
-          <AppText variant="heading" color={theme.colors.accentStart}>
-            5. Form Controls & Validation
-          </AppText>
+          <SectionHeader title="5. Form Controls & Validation" />
           <DemoForm />
         </Stack>
 
@@ -152,21 +145,19 @@ export default function ComponentPreviewScreen() {
 
         {/* Feedback States */}
         <Stack gap="md">
-          <AppText variant="heading" color={theme.colors.accentStart}>
-            6. Feedback States
-          </AppText>
+          <SectionHeader title="6. Feedback States" />
           <OfflineBanner />
-          <LoadingView message="Loading preview component..." />
+          <LoadingView message="Loading component preview..." />
           <Skeleton height={60} borderRadius="lg" />
           <EmptyState
             title="Empty Preview State"
-            description="No items found matching your current filter criteria."
-            actionLabel="Reset Filters"
+            description="No items found matching your current search query."
+            actionLabel="Reset Search"
             onAction={() => {}}
           />
           <ErrorState
             title="Error Preview State"
-            message="Failed to load mock data response."
+            message="Failed to connect to local mock repository."
             onRetry={() => {}}
           />
         </Stack>

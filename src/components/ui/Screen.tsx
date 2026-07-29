@@ -12,6 +12,7 @@ export interface ScreenProps {
   statusBarStyle?: StatusBarStyle;
   unsafe?: boolean;
   gutter?: boolean;
+  safeAreaEdges?: ("top" | "bottom" | "left" | "right")[];
 }
 
 export const Screen: React.FC<ScreenProps> = ({
@@ -22,12 +23,18 @@ export const Screen: React.FC<ScreenProps> = ({
   statusBarStyle = "light",
   unsafe = false,
   gutter = true,
+  safeAreaEdges,
 }) => {
   const insets = useSafeAreaInsets();
 
+  const includeTop =
+    !unsafe && (!safeAreaEdges || safeAreaEdges.includes("top"));
+  const includeBottom =
+    !unsafe && (!safeAreaEdges || safeAreaEdges.includes("bottom"));
+
   const containerPadding: ViewStyle = {
-    paddingTop: unsafe ? 0 : insets.top,
-    paddingBottom: unsafe ? 0 : insets.bottom,
+    paddingTop: includeTop ? insets.top : 0,
+    paddingBottom: includeBottom ? insets.bottom : 0,
     paddingLeft: unsafe ? 0 : insets.left + (gutter ? theme.spacing.gutter : 0),
     paddingRight: unsafe
       ? 0

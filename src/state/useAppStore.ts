@@ -14,8 +14,10 @@ export interface AppState {
 
   // Actions
   setActiveMode: (mode: ProductMode) => void;
+  setMode: (mode: ProductMode) => void;
   setScenario: (scenario: PrototypeScenario) => void;
   setOnboardingCompleted: (completed: boolean) => void;
+  completeOnboarding: () => void;
   setPermission: (
     key: keyof PermissionState,
     value: "granted" | "denied" | "prompt",
@@ -26,7 +28,7 @@ export interface AppState {
 const initialAppState = {
   activeMode: "consumer" as ProductMode,
   scenario: "normal" as PrototypeScenario,
-  hasCompletedOnboarding: true,
+  hasCompletedOnboarding: false,
   permissions: {
     location: "prompt" as const,
     notifications: "prompt" as const,
@@ -40,9 +42,11 @@ export const useAppStore = create<AppState>()(
       ...initialAppState,
 
       setActiveMode: (mode: ProductMode) => set({ activeMode: mode }),
+      setMode: (mode: ProductMode) => set({ activeMode: mode }),
       setScenario: (scenario: PrototypeScenario) => set({ scenario }),
       setOnboardingCompleted: (completed: boolean) =>
         set({ hasCompletedOnboarding: completed }),
+      completeOnboarding: () => set({ hasCompletedOnboarding: true }),
       setPermission: (key, value) =>
         set((state) => ({
           permissions: { ...state.permissions, [key]: value },

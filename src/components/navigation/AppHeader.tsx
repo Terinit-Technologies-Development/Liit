@@ -11,23 +11,41 @@ import { theme } from "../../design-system/theme";
 export interface AppHeaderProps {
   title: string;
   showBack?: boolean;
+  onBackPress?: () => void;
+  onBack?: () => void;
   showDevControls?: boolean;
   rightActionIcon?: string;
   onRightAction?: () => void;
+  rightAction?: {
+    icon: string;
+    accessibilityLabel: string;
+    onPress: () => void;
+  };
   style?: ViewStyle;
 }
 
 export const AppHeader: React.FC<AppHeaderProps> = ({
   title,
   showBack = false,
+  onBackPress,
+  onBack,
   showDevControls = true,
-  rightActionIcon,
-  onRightAction,
+  rightAction,
   style,
 }) => {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const activeMode = useAppStore((state) => state.activeMode);
+
+  const handleBack = () => {
+    if (onBackPress) {
+      onBackPress();
+    } else if (onBack) {
+      onBack();
+    } else {
+      router.back();
+    }
+  };
 
   return (
     <View
@@ -43,7 +61,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
           {showBack ? (
             <IconButton
               icon="back"
-              onPress={() => router.back()}
+              onPress={handleBack}
               accessibilityLabel="Navigate back"
               variant="ghost"
               size="sm"
@@ -55,6 +73,15 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         </View>
 
         <View style={styles.rightSection}>
+          {rightAction ? (
+            <IconButton
+              icon={rightAction.icon as any}
+              onPress={rightAction.onPress}
+              accessibilityLabel={rightAction.accessibilityLabel}
+              variant="surface"
+              size="sm"
+            />
+          ) : null}
           <Chip
             label={activeMode.toUpperCase()}
             selected={activeMode === "creator"}
