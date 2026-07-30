@@ -26,6 +26,7 @@ export type SemanticIconName =
   | "back"
   | "arrowLeft"
   | "check"
+  | "checkmark"
   | "alert"
   | "alertCircle"
   | "refresh"
@@ -38,6 +39,8 @@ export type SemanticIconName =
   | "bookmarkFilled"
   | "mapPin"
   | "messageCircle"
+  | "chat"
+  | "more"
   | "landmark"
   | "palette"
   | "utensils"
@@ -68,6 +71,7 @@ const iconNameMap: Record<SemanticIconName, keyof typeof Ionicons.glyphMap> = {
   back: "arrow-back-outline",
   arrowLeft: "arrow-back-outline",
   check: "checkmark-outline",
+  checkmark: "checkmark-outline",
   alert: "alert-circle-outline",
   alertCircle: "alert-circle-outline",
   refresh: "refresh-outline",
@@ -80,6 +84,8 @@ const iconNameMap: Record<SemanticIconName, keyof typeof Ionicons.glyphMap> = {
   bookmarkFilled: "bookmark",
   mapPin: "location-outline",
   messageCircle: "chatbubble-outline",
+  chat: "chatbubble-outline",
+  more: "ellipsis-horizontal-outline",
   landmark: "library-outline",
   palette: "color-palette-outline",
   utensils: "restaurant-outline",

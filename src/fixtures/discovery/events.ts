@@ -106,13 +106,13 @@ export const discoveryEvents: Event[] = [
     description:
       "A curated deep house showcase featuring underground producers and analog vinyl sets.",
     category: "nightlife",
-    status: "live", // Live right now!
+    status: "sold_out",
     host: discoveryHosts[0],
     venue: discoveryVenues[0],
     occurrence: {
       id: "occ-5",
-      startTime: "2026-07-30T19:00:00.000Z",
-      endTime: "2026-07-30T23:59:00.000Z",
+      startTime: "2026-08-02T19:00:00.000Z",
+      endTime: "2026-08-02T23:59:00.000Z",
       doorsOpen: "18:30",
     },
     heroImageKey: "eventDeepHouseRooftop",
@@ -120,7 +120,7 @@ export const discoveryEvents: Event[] = [
     startingPriceMinor: 18000, // R180.00
     currency: "ZAR",
     totalCapacity: 180,
-    remainingTickets: 25,
+    remainingTickets: 0,
     isSaved: false,
   },
   {
@@ -130,21 +130,21 @@ export const discoveryEvents: Event[] = [
     description:
       "Massive outdoor festival with top headliner DJs, food trucks, and light shows.",
     category: "music",
-    status: "sold_out",
+    status: "live",
     host: discoveryHosts[3],
     venue: discoveryVenues[2],
     occurrence: {
       id: "occ-6",
-      startTime: "2026-08-02T14:00:00.000Z",
-      endTime: "2026-08-02T23:00:00.000Z",
-      doorsOpen: "13:00",
+      startTime: "2026-07-30T19:00:00.000Z",
+      endTime: "2026-07-30T23:59:00.000Z",
+      doorsOpen: "18:00",
     },
     heroImageKey: "eventAmapianoSunset",
     galleryImageKeys: ["eventAmapianoSunset"],
     startingPriceMinor: 30000, // R300.00
     currency: "ZAR",
     totalCapacity: 2500,
-    remainingTickets: 0,
+    remainingTickets: 250,
     isSaved: false,
   },
   {
@@ -168,6 +168,30 @@ export const discoveryEvents: Event[] = [
     startingPriceMinor: 45000,
     currency: "ZAR",
     totalCapacity: 400,
+    remainingTickets: 0,
+    isSaved: false,
+  },
+  {
+    id: "evt-completed-highlight",
+    title: "Jozi Culture Retrospective",
+    tagline: "A completed showcase of Jozi nightlife and culture",
+    description:
+      "A completed retrospective showcase of Jozi nightlife and culture.",
+    category: "cultural",
+    status: "published",
+    host: discoveryHosts[0],
+    venue: discoveryVenues[0],
+    occurrence: {
+      id: "occ-8",
+      startTime: "2026-07-01T10:00:00.000Z",
+      endTime: "2026-07-01T18:00:00.000Z",
+      doorsOpen: "09:30",
+    },
+    heroImageKey: "eventMidnightGrooves",
+    galleryImageKeys: ["eventMidnightGrooves"],
+    startingPriceMinor: 20000,
+    currency: "ZAR",
+    totalCapacity: 150,
     remainingTickets: 0,
     isSaved: false,
   },

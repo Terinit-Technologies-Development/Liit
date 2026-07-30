@@ -14,6 +14,7 @@ import { IconButton } from "../../src/components/ui/IconButton";
 import { useAppStore, PrototypeScenario } from "../../src/state/useAppStore";
 import { useSessionStore } from "../../src/state/useSessionStore";
 import { useDiscoveryStore } from "../../src/state/useDiscoveryStore";
+import { useMapDiscoveryStore } from "../../src/state/useMapDiscoveryStore";
 import { mockNotificationRepository } from "../../src/repositories/mock/MockNotificationRepository";
 import { envConfig } from "../../src/config/env";
 import { mockUser } from "../../src/fixtures";
@@ -35,6 +36,7 @@ export default function PrototypeControlsScreen() {
 
   const resetSession = useSessionStore((s) => s.resetSession);
   const resetDiscovery = useDiscoveryStore((s) => s.resetDiscovery);
+  const resetMapDiscovery = useMapDiscoveryStore((s) => s.resetMapDiscovery);
 
   const handleModeSwitch = (mode: "consumer" | "creator") => {
     setActiveMode(mode);
@@ -49,6 +51,7 @@ export default function PrototypeControlsScreen() {
     resetPrototype();
     resetSession();
     resetDiscovery();
+    resetMapDiscovery();
     mockNotificationRepository.reset();
     queryClient.clear();
   };
@@ -62,6 +65,8 @@ export default function PrototypeControlsScreen() {
     { key: "empty_discovery", label: "Empty Discovery" },
     { key: "discovery_error", label: "Discovery Error" },
     { key: "notifications_disabled", label: "Notifications Disabled" },
+    { key: "map_location_disabled", label: "Map Location Disabled" },
+    { key: "map_no_results", label: "Map No Results" },
   ];
 
   return (

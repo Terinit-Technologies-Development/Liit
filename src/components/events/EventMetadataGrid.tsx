@@ -1,0 +1,82 @@
+import React from "react";
+import { StyleSheet, View } from "react-native";
+import { Event } from "../../domain/events";
+import { Card } from "../ui/Card";
+import { AppText } from "../ui/AppText";
+import { Icon } from "../../design-system/icons/Icon";
+import { formatCurrency, formatDate } from "../../utils/format";
+import { theme } from "../../design-system/theme";
+
+export interface EventMetadataGridProps {
+  event: Event;
+}
+
+export function EventMetadataGrid({ event }: EventMetadataGridProps) {
+  const dateStr = formatDate(event.occurrence.startTime);
+  const timeStr = `${new Date(event.occurrence.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })} - ${new Date(event.occurrence.endTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}`;
+  const priceStr =
+    event.startingPriceMinor === 0
+      ? "Free Entry"
+      : `From ${formatCurrency(event.startingPriceMinor, event.currency)}`;
+
+  return (
+    <Card radius="xl" padding="md" style={styles.gridCard}>
+      <View style={styles.row}>
+        <Icon name="calendar" size="sm" color={theme.colors.accentStart} />
+        <View style={styles.col}>
+          <AppText variant="caption" color={theme.colors.textMuted}>
+            Date & Time
+          </AppText>
+          <AppText variant="body" style={styles.val}>
+            {dateStr} • {timeStr}
+          </AppText>
+        </View>
+      </View>
+
+      <View style={styles.row}>
+        <Icon name="location" size="sm" color={theme.colors.accentStart} />
+        <View style={styles.col}>
+          <AppText variant="caption" color={theme.colors.textMuted}>
+            Location
+          </AppText>
+          <AppText variant="body" style={styles.val}>
+            {event.venue.name}, {event.venue.suburb}
+          </AppText>
+        </View>
+      </View>
+
+      <View style={styles.row}>
+        <Icon name="sparkles" size="sm" color={theme.colors.accentStart} />
+        <View style={styles.col}>
+          <AppText variant="caption" color={theme.colors.textMuted}>
+            Category & Pricing
+          </AppText>
+          <AppText variant="body" style={styles.val}>
+            {event.category.toUpperCase()} • {priceStr}
+          </AppText>
+        </View>
+      </View>
+    </Card>
+  );
+}
+
+const styles = StyleSheet.create({
+  gridCard: {
+    backgroundColor: theme.colors.surfacePrimary,
+    borderColor: theme.colors.borderSubtle,
+    borderWidth: 1,
+    gap: theme.spacing.md,
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: theme.spacing.sm,
+  },
+  col: {
+    flex: 1,
+    gap: 2,
+  },
+  val: {
+    fontWeight: "600",
+  },
+});

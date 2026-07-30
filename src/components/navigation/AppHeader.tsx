@@ -17,8 +17,9 @@ export interface AppHeaderProps {
   rightActionIcon?: string;
   onRightAction?: () => void;
   rightAction?: {
-    icon: string;
-    accessibilityLabel: string;
+    label?: string;
+    icon?: string;
+    accessibilityLabel?: string;
     onPress: () => void;
     testID?: string;
   };
@@ -75,14 +76,22 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
 
         <View style={styles.rightSection}>
           {rightAction ? (
-            <IconButton
-              testID={rightAction.testID}
-              icon={rightAction.icon as any}
-              onPress={rightAction.onPress}
-              accessibilityLabel={rightAction.accessibilityLabel}
-              variant="surface"
-              size="sm"
-            />
+            rightAction.label ? (
+              <Chip label={rightAction.label} onPress={rightAction.onPress} />
+            ) : (
+              <IconButton
+                testID={rightAction.testID}
+                icon={(rightAction.icon ?? "close") as any}
+                onPress={rightAction.onPress}
+                accessibilityLabel={
+                  rightAction.accessibilityLabel ??
+                  rightAction.label ??
+                  "Right action"
+                }
+                variant="surface"
+                size="sm"
+              />
+            )
           ) : null}
           <Chip
             label={activeMode.toUpperCase()}

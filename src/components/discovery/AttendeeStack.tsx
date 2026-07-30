@@ -7,11 +7,19 @@ import { theme } from "../../design-system/theme";
 
 export interface AttendeeStackProps {
   imageKeys?: (ImageAssetKey | string)[];
+  avatarKeys?: (ImageAssetKey | string)[];
   count: number;
+  maxVisible?: number;
 }
 
-export function AttendeeStack({ imageKeys = [], count }: AttendeeStackProps) {
-  const visibleKeys = imageKeys.slice(0, 3);
+export function AttendeeStack({
+  imageKeys = [],
+  avatarKeys = [],
+  count,
+  maxVisible = 3,
+}: AttendeeStackProps) {
+  const keysToUse = avatarKeys.length > 0 ? avatarKeys : imageKeys;
+  const visibleKeys = keysToUse.slice(0, maxVisible);
 
   return (
     <View

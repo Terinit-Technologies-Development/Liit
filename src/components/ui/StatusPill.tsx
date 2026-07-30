@@ -16,16 +16,22 @@ export type StatusPillType =
   | "neutral";
 
 export interface StatusPillProps {
-  label: string;
+  label?: string;
   type?: StatusPillType;
+  status?: string;
+  size?: "sm" | "md" | "lg";
   style?: ViewStyle;
 }
 
 export const StatusPill: React.FC<StatusPillProps> = ({
   label,
   type = "live",
+  status,
+  size: _size,
   style,
 }) => {
+  const textLabel = label ?? status ?? "Live";
+
   const getColors = () => {
     switch (type) {
       case "live":
@@ -90,10 +96,10 @@ export const StatusPill: React.FC<StatusPillProps> = ({
         style,
       ]}
       accessibilityRole="text"
-      accessibilityLabel={`Status: ${label}`}
+      accessibilityLabel={`Status: ${textLabel}`}
     >
       <AppText variant="label" color={palette.fg} align="center">
-        {label.toUpperCase()}
+        {textLabel.toUpperCase()}
       </AppText>
     </View>
   );

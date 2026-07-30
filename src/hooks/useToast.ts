@@ -28,3 +28,11 @@ export const useToast = create<ToastState>((set) => ({
   },
   hideToast: () => set({ toast: null }),
 }));
+
+export function showToast(
+  title: string,
+  message: string,
+  type: ToastMessage["type"] = "info",
+) {
+  useToast.getState().showToast(title, message, type);
+}

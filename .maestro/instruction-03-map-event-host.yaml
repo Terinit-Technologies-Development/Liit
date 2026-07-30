@@ -1,0 +1,52 @@
+appId: com.liit.app
+name: "LIIT Instruction 3 — Map to Event to Host"
+tags:
+  - instruction-03
+  - smoke
+---
+- launchApp:
+    clearState: true
+
+- runFlow:
+    file: "flows/authenticated-onboarding.yaml"
+
+- tapOn: "Map"
+
+- assertVisible:
+    id: "mock-map-canvas"
+
+- tapOn:
+    id: "map-pin-evt-midnight-grooves"
+
+- assertVisible:
+    id: "map-event-preview"
+
+- tapOn:
+    id: "map-preview-view-details"
+
+- assertVisible: "Midnight Grooves"
+- assertVisible: "Choose tickets"
+
+- tapOn:
+    id: "event-detail-save"
+
+- tapOn:
+    id: "event-host-card"
+
+- assertVisible: "Upcoming Events"
+
+- tapOn:
+    id: "host-follow"
+
+- stopApp
+- launchApp
+
+- tapOn: "Map"
+- tapOn:
+    id: "map-pin-evt-midnight-grooves"
+- tapOn:
+    id: "map-preview-view-details"
+- tapOn:
+    id: "event-host-card"
+
+- assertVisible: "Following"

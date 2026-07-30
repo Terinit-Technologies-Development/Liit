@@ -1,4 +1,5 @@
 import { DiscoveryFilters, FeedMode } from "../domain/discovery";
+import { MapFilters } from "../domain/map";
 import { NotificationFilter } from "../repositories/contracts/NotificationRepository";
 
 export const queryKeys = {
@@ -29,6 +30,33 @@ export const queryKeys = {
           filters,
         },
       ] as const,
+  },
+  map: {
+    all: ["map"] as const,
+    snapshot: (filters: MapFilters, scenario: string) =>
+      [
+        ...queryKeys.map.all,
+        "snapshot",
+        {
+          filters,
+          scenario,
+          city: "Johannesburg",
+        },
+      ] as const,
+  },
+  eventDetail: {
+    all: ["event-detail"] as const,
+    detail: (eventId: string) =>
+      [...queryKeys.eventDetail.all, "detail", eventId] as const,
+    related: (eventId: string) =>
+      [...queryKeys.eventDetail.all, "related", eventId] as const,
+  },
+  hosts: {
+    all: ["hosts"] as const,
+    publicProfile: (hostId: string) =>
+      [...queryKeys.hosts.all, "public-profile", hostId] as const,
+    upcomingEvents: (hostId: string) =>
+      [...queryKeys.hosts.all, "upcoming-events", hostId] as const,
   },
   commerce: {
     all: ["commerce"] as const,
