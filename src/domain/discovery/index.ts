@@ -6,6 +6,9 @@ export type FeedMode = "live_recent" | "upcoming";
 export type DiscoveryFixtureScenario =
   "normal" | "empty_discovery" | "sold_out" | "live_event";
 
+export type DiscoveryCollection =
+  "trending" | "recommended" | "this_weekend" | "nearby" | "venues";
+
 export type FeedEntry =
   | {
       id: string;
@@ -82,7 +85,7 @@ export interface DiscoverySearchRouteParams {
   q?: string;
   tab?: SearchResultTab;
   category?: string;
-  collection?: string;
+  collection?: DiscoveryCollection | string;
   source?: "feed" | "explore" | "notification";
 }
 
@@ -101,7 +104,7 @@ export interface DiscoverySearchInput {
   query: string;
   filters: DiscoveryFilters;
   scenario?: DiscoveryFixtureScenario;
-  collection?: string;
+  collection?: DiscoveryCollection | string;
 }
 
 export interface DiscoverySearchResult {

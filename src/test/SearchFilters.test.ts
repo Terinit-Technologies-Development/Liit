@@ -1,4 +1,5 @@
 import {
+  getWeekendRange,
   haversineKm,
   matchesDatePreset,
   mockDiscoveryRepository,
@@ -32,7 +33,7 @@ describe("Search Date & Distance Filtering Logic", () => {
     },
     occurrence: {
       id: "occ1",
-      startTime: "2026-07-31T18:00:00Z", // Friday
+      startTime: "2026-07-31T18:00:00Z", // Friday Jul 31
       endTime: "2026-07-31T23:00:00Z",
       doorsOpen: "2026-07-31T17:00:00Z",
     },
@@ -44,8 +45,8 @@ describe("Search Date & Distance Filtering Logic", () => {
     remainingTickets: 50,
   };
 
-  it("matchesDatePreset correctly handles any, today, tomorrow, and this_weekend", () => {
-    const nowIso = "2026-07-30T20:00:00.000Z"; // Thursday
+  it("matchesDatePreset correctly handles any, today, tomorrow, and this_weekend relative to fixture clock", () => {
+    const nowIso = "2026-07-30T20:00:00.000Z"; // Thursday Jul 30
 
     expect(matchesDatePreset(baseEvent, "any", nowIso)).toBe(true);
 
@@ -69,6 +70,29 @@ describe("Search Date & Distance Filtering Logic", () => {
     expect(matchesDatePreset(tomorrowEvent, "tomorrow", nowIso)).toBe(true);
 
     expect(matchesDatePreset(baseEvent, "this_weekend", nowIso)).toBe(true);
+  });
+
+  it("excludes a future weekend event beyond the current weekend interval", () => {
+    const nowIso = "2026-07-30T20:00:00.000Z"; // Thursday Jul 30
+    const futureWeekendEvent = {
+      ...baseEvent,
+      occurrence: {
+        ...baseEvent.occurrence,
+        startTime: "2026-08-14T18:00:00Z", // 2 weeks later
+      },
+    };
+
+    expect(matchesDatePreset(futureWeekendEvent, "this_weekend", nowIso)).toBe(
+      false,
+    );
+  });
+
+  it("calculates weekend date range interval accurately", () => {
+    const nowIso = "2026-07-30T20:00:00.000Z"; // Thursday Jul 30
+    const { start, end } = getWeekendRange(nowIso);
+
+    expect(new Date(start).toISOString()).toContain("2026-07-31");
+    expect(new Date(end).toISOString()).toContain("2026-08-03");
   });
 
   it("calculates metric distance accurately using haversine formula", () => {

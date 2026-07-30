@@ -1,4 +1,5 @@
 import {
+  DiscoveryCollection,
   DiscoveryFixtureScenario,
   DiscoverySearchInput,
   DiscoverySearchResult,
@@ -24,6 +25,19 @@ import { DiscoveryRepository } from "../contracts/DiscoveryRepository";
 const JOHANNESBURG_CENTRE = {
   latitude: -26.2041,
   longitude: 28.0473,
+};
+
+const COLLECTION_EVENT_IDS: Record<string, Set<string>> = {
+  trending: new Set([
+    "evt-deep-house-rooftop",
+    "evt-midnight-grooves",
+    "evt-soweto-food-market",
+  ]),
+  recommended: new Set([
+    "evt-rosebank-art-jazz",
+    "evt-jozi-run-club",
+    "evt-midnight-grooves",
+  ]),
 };
 
 function normalise(text: string): string {
@@ -77,16 +91,49 @@ export function applyFeedScenario(
   if (scenario === "empty_discovery") {
     return [];
   }
+
+  let transformedFirstEvent = false;
+
   return items.map((entry) => {
-    if (entry.kind === "event") {
-      const [updatedEvent] = applyEventScenario([entry.event], scenario);
-      return {
-        ...entry,
-        event: updatedEvent,
-      };
+    if (
+      entry.kind !== "event" ||
+      transformedFirstEvent ||
+      scenario === "normal"
+    ) {
+      return entry;
     }
-    return entry;
+
+    transformedFirstEvent = true;
+
+    const [event] = applyEventScenario([entry.event], scenario);
+
+    return {
+      ...entry,
+      event,
+    };
   });
+}
+
+export function getWeekendRange(nowIso: string): {
+  start: number;
+  end: number;
+} {
+  const now = new Date(nowIso);
+  const day = now.getUTCDay();
+
+  const daysUntilFriday = day <= 5 ? 5 - day : 6;
+
+  const friday = new Date(now);
+  friday.setUTCDate(now.getUTCDate() + daysUntilFriday);
+  friday.setUTCHours(0, 0, 0, 0);
+
+  const monday = new Date(friday);
+  monday.setUTCDate(friday.getUTCDate() + 3);
+
+  return {
+    start: friday.getTime(),
+    end: monday.getTime(),
+  };
 }
 
 export function matchesDatePreset(
@@ -98,22 +145,40 @@ export function matchesDatePreset(
     return true;
   }
 
-  const eventDate = new Date(event.occurrence.startTime);
+  const eventTime = new Date(event.occurrence.startTime).getTime();
   const now = new Date(nowIso);
 
   if (preset === "today") {
+    const eventDate = new Date(event.occurrence.startTime);
     return eventDate.toDateString() === now.toDateString();
   }
 
   if (preset === "tomorrow") {
     const tomorrow = new Date(now);
     tomorrow.setDate(tomorrow.getDate() + 1);
+    const eventDate = new Date(event.occurrence.startTime);
     return eventDate.toDateString() === tomorrow.toDateString();
   }
 
   if (preset === "this_weekend") {
-    const day = eventDate.getDay();
-    return day === 5 || day === 6 || day === 0;
+    const { start, end } = getWeekendRange(nowIso);
+    return eventTime >= start && eventTime < end;
+  }
+
+  return true;
+}
+
+export function matchesCollection(
+  event: Event,
+  collection?: DiscoveryCollection | string,
+): boolean {
+  if (!collection || collection === "venues") {
+    return true;
+  }
+
+  if (collection === "trending" || collection === "recommended") {
+    const set = COLLECTION_EVENT_IDS[collection];
+    return set ? set.has(event.id) : true;
   }
 
   return true;
@@ -165,7 +230,9 @@ export class MockDiscoveryRepository implements DiscoveryRepository {
       const baseEvents = applyEventScenario(discoveryEvents, scenario);
 
       return {
-        trending: baseEvents.slice(0, 4),
+        trending: baseEvents.filter((evt) =>
+          matchesCollection(evt, "trending"),
+        ),
         categories: [
           "music",
           "nightlife",
@@ -177,9 +244,15 @@ export class MockDiscoveryRepository implements DiscoveryRepository {
         ],
         featuredVenues:
           scenario === "empty_discovery" ? [] : discoveryVenues.slice(0, 4),
-        recommended: baseEvents.slice(1, 5),
-        thisWeekend: baseEvents.slice(2, 6),
-        nearby: baseEvents.slice(0, 5),
+        recommended: baseEvents.filter((evt) =>
+          matchesCollection(evt, "recommended"),
+        ),
+        thisWeekend: baseEvents.filter((evt) =>
+          matchesDatePreset(evt, "this_weekend"),
+        ),
+        nearby: baseEvents.filter(
+          (evt) => haversineKm(JOHANNESBURG_CENTRE, evt.venue) <= 10,
+        ),
       };
     }, options);
   }
@@ -230,14 +303,7 @@ export class MockDiscoveryRepository implements DiscoveryRepository {
           input.filters.distanceKm === null ||
           distKm <= input.filters.distanceKm;
 
-        const matchesCollection =
-          !input.collection ||
-          (input.collection === "this_weekend" &&
-            matchesDatePreset(event, "this_weekend")) ||
-          (input.collection === "nearby" && distKm <= 10) ||
-          input.collection === "trending" ||
-          input.collection === "recommended" ||
-          input.collection === "venues";
+        const matchCol = matchesCollection(event, input.collection);
 
         return (
           matchesQuery &&
@@ -247,7 +313,7 @@ export class MockDiscoveryRepository implements DiscoveryRepository {
           matchesLive &&
           matchesDate &&
           matchesDistance &&
-          matchesCollection
+          matchCol
         );
       });
 

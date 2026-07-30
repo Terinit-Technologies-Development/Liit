@@ -6,6 +6,7 @@ import { AppText } from "../../src/components/ui/AppText";
 import { Chip } from "../../src/components/ui/Chip";
 import { SectionHeader } from "../../src/components/ui/SectionHeader";
 import { ErrorState } from "../../src/components/ui/ErrorState";
+import { DiscoveryCollection } from "../../src/domain/discovery";
 import { CollectionRail } from "../../src/components/discovery/CollectionRail";
 import {
   EventCard,
@@ -56,10 +57,14 @@ export default function ExploreScreen() {
     });
   };
 
-  const openSearchCollection = (collectionName: string) => {
+  const openSearchCollection = (collectionName: DiscoveryCollection) => {
     router.push({
       pathname: ROUTES.consumer.search as any,
-      params: { collection: collectionName, source: "explore" },
+      params: {
+        collection: collectionName,
+        tab: collectionName === "venues" ? "venues" : "events",
+        source: "explore",
+      },
     });
   };
 

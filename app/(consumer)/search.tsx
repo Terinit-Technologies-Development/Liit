@@ -26,39 +26,11 @@ import {
   DiscoveryFilters,
   DiscoverySearchRouteParams,
   SearchResultTab,
+  filtersFromRoute,
 } from "../../src/domain/discovery";
-import { EventCategory } from "../../src/domain/events";
 import { ROUTES } from "../../src/navigation/routes";
 import { theme } from "../../src/design-system/theme";
 import { Icon } from "../../src/design-system/icons/Icon";
-
-export function filtersFromRoute(
-  params: DiscoverySearchRouteParams,
-  current: DiscoveryFilters,
-): DiscoveryFilters {
-  if (params.category) {
-    return {
-      ...current,
-      category: params.category as EventCategory,
-    };
-  }
-
-  if (params.collection === "this_weekend") {
-    return {
-      ...current,
-      date: "this_weekend",
-    };
-  }
-
-  if (params.collection === "nearby") {
-    return {
-      ...current,
-      distanceKm: 10,
-    };
-  }
-
-  return current;
-}
 
 function countActiveFilters(filters: DiscoveryFilters): number {
   let count = 0;

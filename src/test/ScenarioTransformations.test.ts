@@ -33,7 +33,7 @@ describe("Discovery Scenario Transformations", () => {
     expect(search.hosts).toHaveLength(0);
   });
 
-  it("sold_out scenario transforms the first event into a sold out state with 0 remaining tickets", async () => {
+  it("sold_out scenario transforms ONLY the first feed event into a sold out state while subsequent events remain unchanged", async () => {
     const feed = await mockDiscoveryRepository.getFeed({
       mode: "live_recent",
       city: "Johannesburg",
@@ -41,15 +41,21 @@ describe("Discovery Scenario Transformations", () => {
       scenario: "sold_out",
     });
 
-    const firstItem = feed.items.find((item) => item.kind === "event");
-    expect(firstItem).toBeDefined();
-    if (firstItem && firstItem.kind === "event") {
-      expect(firstItem.event.status).toBe("sold_out");
-      expect(firstItem.event.remainingTickets).toBe(0);
+    const eventItems = feed.items.filter((item) => item.kind === "event");
+    expect(eventItems.length).toBeGreaterThan(1);
+
+    if (eventItems[0] && eventItems[0].kind === "event") {
+      expect(eventItems[0].event.status).toBe("sold_out");
+      expect(eventItems[0].event.remainingTickets).toBe(0);
+    }
+
+    if (eventItems[1] && eventItems[1].kind === "event") {
+      expect(eventItems[1].event.status).not.toBe("sold_out");
+      expect(eventItems[1].event.remainingTickets).toBeGreaterThan(0);
     }
   });
 
-  it("live_event scenario transforms the first event into a live status event", async () => {
+  it("live_event scenario transforms ONLY the first event while subsequent events remain unchanged", async () => {
     const explore = await mockDiscoveryRepository.getExplore({
       city: "Johannesburg",
       scenario: "live_event",
@@ -59,6 +65,7 @@ describe("Discovery Scenario Transformations", () => {
     expect(explore.trending[0].occurrence.startTime).toBe(
       "2026-07-30T19:00:00.000Z",
     );
+    expect(explore.trending[1].status).not.toBe("live");
   });
 
   it("normal scenario returns unaltered default discovery fixtures", async () => {
