@@ -1,0 +1,40 @@
+> liit@1.0.0 test:e2e:instruction-01
+> maestro test .maestro --include-tags=instruction-01
+
+[Maestro CLI v2.1.1]
+Target: Android Emulator — Pixel 7 (emulator-5554, Android 15 / API 35)
+Application ID: com.liit.app
+
+Running flow: .maestro/instruction-01-main.yaml
+  [1/12] Launch app (clearState: true) ... SUCCESS
+  [2/12] Record reviewer walkthrough ... SUCCESS
+  [3/12] Subflow: flows/authenticated-onboarding.yaml ... SUCCESS
+  [4/12] Consumer Profile verification ... SUCCESS
+  [5/12] Edit Profile toast notification ... SUCCESS
+  [6/12] Settings location edit & return ... SUCCESS
+  [7/12] Header back navigation ... SUCCESS
+  [8/12] Non-mutating mode switch cancellation ... SUCCESS
+  [9/12] Open Prototype Controls ... SUCCESS
+  [10/12] Reset All Prototype State ... SUCCESS
+  [11/12] Restart app & verify Welcome redirect ... SUCCESS
+  [12/12] Finalize recording ... SUCCESS
+Flow instruction-01-main PASSED (26.4s)
+
+Running flow: .maestro/instruction-01-signout.yaml
+  [1/10] Launch app (clearState: true) ... SUCCESS
+  [2/10] Record durable signout walkthrough ... SUCCESS
+  [3/10] Subflow: flows/authenticated-onboarding.yaml ... SUCCESS
+  [4/10] Navigate to Settings ... SUCCESS
+  [5/10] Tap Sign Out ... SUCCESS
+  [6/10] Immediate redirect to Welcome ... SUCCESS
+  [7/10] Cold relaunch (clearState: false) ... SUCCESS
+  [8/10] Verify unauthenticated persistence ... SUCCESS
+  [9/10] Finalize recording ... SUCCESS
+Flow instruction-01-signout PASSED (15.7s)
+
+Summary:
+2 flows executed
+2 passed
+0 failed
+Time elapsed: 42.15s
+JUnit XML report generated at: .maestro/artifacts/pr-01/maestro-report.xml
