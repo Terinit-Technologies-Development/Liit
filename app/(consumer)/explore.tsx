@@ -5,6 +5,7 @@ import { Screen } from "../../src/components/ui/Screen";
 import { AppText } from "../../src/components/ui/AppText";
 import { Chip } from "../../src/components/ui/Chip";
 import { SectionHeader } from "../../src/components/ui/SectionHeader";
+import { ErrorState } from "../../src/components/ui/ErrorState";
 import { CollectionRail } from "../../src/components/discovery/CollectionRail";
 import {
   EventCard,
@@ -128,12 +129,12 @@ export default function ExploreScreen() {
             <EventCardSkeleton />
           </View>
         ) : exploreQuery.isError ? (
-          <View style={styles.emptyContainer}>
-            <AppText variant="heading">Explore did not load</AppText>
-            <AppText variant="caption" color={theme.colors.textMuted}>
-              Please check your connection and try again.
-            </AppText>
-          </View>
+          <ErrorState
+            title="Explore did not load"
+            description="Please check your connection and try again."
+            actionLabel="Retry"
+            onAction={() => exploreQuery.refetch()}
+          />
         ) : data ? (
           <View style={styles.railsContainer}>
             {/* Trending Now */}

@@ -27,6 +27,7 @@ export type SemanticIconName =
   | "arrowLeft"
   | "check"
   | "alert"
+  | "alertCircle"
   | "refresh"
   | "bell"
   | "sparkles"
@@ -68,6 +69,7 @@ const iconNameMap: Record<SemanticIconName, keyof typeof Ionicons.glyphMap> = {
   arrowLeft: "arrow-back-outline",
   check: "checkmark-outline",
   alert: "alert-circle-outline",
+  alertCircle: "alert-circle-outline",
   refresh: "refresh-outline",
   bell: "notifications-outline",
   sparkles: "sparkles-outline",

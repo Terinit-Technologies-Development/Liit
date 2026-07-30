@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { AppText } from "../ui/AppText";
 import { Icon, SemanticIconName } from "../../design-system/icons/Icon";
+import { IconButton } from "../ui/IconButton";
 import { theme } from "../../design-system/theme";
 
 export interface TextFieldProps extends RNTextInputProps {
@@ -16,6 +17,11 @@ export interface TextFieldProps extends RNTextInputProps {
   error?: string;
   leftIcon?: SemanticIconName;
   rightIcon?: SemanticIconName;
+  rightAction?: {
+    icon: SemanticIconName;
+    accessibilityLabel: string;
+    onPress(): void;
+  };
   disabled?: boolean;
   containerStyle?: ViewStyle;
 }
@@ -26,6 +32,7 @@ export const TextField: React.FC<TextFieldProps> = ({
   error,
   leftIcon,
   rightIcon,
+  rightAction,
   disabled = false,
   containerStyle,
   style,
@@ -106,7 +113,15 @@ export const TextField: React.FC<TextFieldProps> = ({
           {...props}
         />
 
-        {rightIcon ? (
+        {rightAction ? (
+          <IconButton
+            icon={rightAction.icon}
+            accessibilityLabel={rightAction.accessibilityLabel}
+            onPress={rightAction.onPress}
+            variant="ghost"
+            size="sm"
+          />
+        ) : rightIcon ? (
           <Icon
             name={rightIcon}
             size="sm"

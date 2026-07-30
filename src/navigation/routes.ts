@@ -2,6 +2,22 @@
  * Typed route helper constants for LIIT navigation.
  */
 
+export const CONSUMER_TAB_ROUTES = [
+  { name: "feed", title: "Feed", icon: "feed", visible: true },
+  { name: "explore", title: "Explore", icon: "explore", visible: true },
+  { name: "map", title: "Map", icon: "map", visible: true },
+  { name: "tickets", title: "Tickets", icon: "tickets", visible: true },
+  { name: "profile", title: "Profile", icon: "profile", visible: true },
+  { name: "settings", title: "Settings", icon: "settings", visible: false },
+  { name: "search", title: "Search", icon: "search", visible: false },
+  {
+    name: "notifications",
+    title: "Notifications",
+    icon: "bell",
+    visible: false,
+  },
+] as const;
+
 export const ROUTES = {
   public: {
     welcome: "/(public)/welcome",

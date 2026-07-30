@@ -1,7 +1,10 @@
 import React from "react";
 import { Tabs } from "expo-router";
-import { Icon } from "../../src/design-system/icons/Icon";
+import { Icon, SemanticIconName } from "../../src/design-system/icons/Icon";
 import { theme } from "../../src/design-system/theme";
+import { CONSUMER_TAB_ROUTES } from "../../src/navigation/routes";
+
+export { CONSUMER_TAB_ROUTES };
 
 export default function ConsumerLayout() {
   return (
@@ -22,69 +25,25 @@ export default function ConsumerLayout() {
         },
       }}
     >
-      <Tabs.Screen
-        name="feed"
-        options={{
-          title: "Feed",
-          tabBarIcon: ({ color }) => (
-            <Icon name="feed" size="sm" color={color as string} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: "Explore",
-          tabBarIcon: ({ color }) => (
-            <Icon name="explore" size="sm" color={color as string} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="map"
-        options={{
-          title: "Map",
-          tabBarIcon: ({ color }) => (
-            <Icon name="map" size="sm" color={color as string} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="tickets"
-        options={{
-          title: "Tickets",
-          tabBarIcon: ({ color }) => (
-            <Icon name="tickets" size="sm" color={color as string} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: "Profile",
-          tabBarIcon: ({ color }) => (
-            <Icon name="profile" size="sm" color={color as string} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="search"
-        options={{
-          href: null,
-        }}
-      />
-      <Tabs.Screen
-        name="notifications"
-        options={{
-          href: null,
-        }}
-      />
+      {CONSUMER_TAB_ROUTES.map((route) => (
+        <Tabs.Screen
+          key={route.name}
+          name={route.name}
+          options={{
+            title: route.title,
+            href: route.visible ? undefined : null,
+            tabBarIcon: route.visible
+              ? ({ color }) => (
+                  <Icon
+                    name={route.icon as SemanticIconName}
+                    size="sm"
+                    color={color as string}
+                  />
+                )
+              : undefined,
+          }}
+        />
+      ))}
     </Tabs>
   );
 }

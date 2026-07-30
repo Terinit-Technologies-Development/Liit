@@ -6,6 +6,7 @@ import { AppText } from "../../src/components/ui/AppText";
 import { SectionHeader } from "../../src/components/ui/SectionHeader";
 import { DiscoveryHeader } from "../../src/components/navigation/DiscoveryHeader";
 import { SegmentedControl } from "../../src/components/ui/SegmentedControl";
+import { ErrorState } from "../../src/components/ui/ErrorState";
 import {
   EventCard,
   EventCardSkeleton,
@@ -137,12 +138,12 @@ export default function FeedScreen() {
               <EventCardSkeleton />
             </View>
           ) : feedQuery.isError ? (
-            <View style={styles.emptyContainer}>
-              <AppText variant="heading">The city pulse did not load</AppText>
-              <AppText variant="caption" color={theme.colors.textMuted}>
-                Try the discovery fixtures again.
-              </AppText>
-            </View>
+            <ErrorState
+              title="The city pulse did not load"
+              description="Try the discovery fixtures again."
+              actionLabel="Retry"
+              onAction={() => feedQuery.refetch()}
+            />
           ) : (
             <View style={styles.emptyContainer}>
               <AppText variant="heading">The city is quiet</AppText>

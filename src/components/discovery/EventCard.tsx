@@ -14,8 +14,7 @@ import {
 import { getImageSource } from "../../assets/image-registry";
 import { theme } from "../../design-system/theme";
 
-export type EventCardVariant =
-  "featured" | "standard" | "compact" | "live-content";
+export type EventCardVariant = "featured" | "standard" | "compact";
 
 export interface EventCardProps {
   event: Event;

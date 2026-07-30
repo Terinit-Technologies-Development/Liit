@@ -3,6 +3,9 @@ import { ImageAssetKey } from "../../assets/image-registry";
 
 export type FeedMode = "live_recent" | "upcoming";
 
+export type DiscoveryFixtureScenario =
+  "normal" | "empty_discovery" | "sold_out" | "live_event";
+
 export type FeedEntry =
   | {
       id: string;
@@ -42,6 +45,7 @@ export interface FeedRequest {
   mode: FeedMode;
   city: string;
   cursor: string | null;
+  scenario?: DiscoveryFixtureScenario;
 }
 
 export interface VenueSummary extends Venue {
@@ -60,6 +64,7 @@ export interface ExploreCollection {
 
 export interface ExploreRequest {
   city: string;
+  scenario?: DiscoveryFixtureScenario;
 }
 
 export interface ExplorePayload {
@@ -95,10 +100,40 @@ export interface DiscoveryFilters {
 export interface DiscoverySearchInput {
   query: string;
   filters: DiscoveryFilters;
+  scenario?: DiscoveryFixtureScenario;
+  collection?: string;
 }
 
 export interface DiscoverySearchResult {
   events: Event[];
   hosts: HostSummary[];
   venues: VenueSummary[];
+}
+
+export function filtersFromRoute(
+  params: DiscoverySearchRouteParams,
+  current: DiscoveryFilters,
+): DiscoveryFilters {
+  if (params.category) {
+    return {
+      ...current,
+      category: params.category as EventCategory,
+    };
+  }
+
+  if (params.collection === "this_weekend") {
+    return {
+      ...current,
+      date: "this_weekend",
+    };
+  }
+
+  if (params.collection === "nearby") {
+    return {
+      ...current,
+      distanceKm: 10,
+    };
+  }
+
+  return current;
 }
