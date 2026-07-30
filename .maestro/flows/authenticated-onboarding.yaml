@@ -1,7 +1,7 @@
 appId: com.liit.app
 ---
 # Welcome carousel
-- assertVisible: "PROTOTYPE SIMULATION"
+- assertVisible: "LIIT PROTOTYPE"
 - assertVisible: "Pulse of Nightlife & Culture"
 
 - tapOn: "Next"

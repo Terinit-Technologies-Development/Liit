@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Maestro Instruction 1 Test Suite" tests="2" failures="0" errors="0" time="42.15">
+  <testsuite name="instruction-01" tests="2" failures="0" errors="0" time="42.15" timestamp="2026-07-30T10:00:00Z">
+    <testcase classname="com.liit.app" name="instruction-01-main" time="26.40" />
+    <testcase classname="com.liit.app" name="instruction-01-signout" time="15.75" />
+  </testsuite>
+</testsuites>

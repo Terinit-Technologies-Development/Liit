@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-var-requires */
+declare const require: (moduleName: string) => any;
 const fs = require('fs');
 const path = require('path');
 
