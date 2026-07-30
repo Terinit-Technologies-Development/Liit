@@ -1,0 +1,174 @@
+import { Event } from "../../domain/events";
+import { discoveryHosts } from "./hosts";
+import { discoveryVenues } from "./venues";
+
+export const discoveryEvents: Event[] = [
+  {
+    id: "evt-midnight-grooves",
+    title: "Midnight Kinetic Grooves",
+    tagline: "Johannesburg's premier deep house & amapiano experience",
+    description:
+      "Join us under the stars at Braamfontein Rooftop for an immersive night of electronic sounds, curated visuals, and local DJ showcases.",
+    category: "nightlife",
+    status: "published",
+    host: discoveryHosts[0],
+    venue: discoveryVenues[0],
+    occurrence: {
+      id: "occ-1",
+      startTime: "2026-07-30T21:00:00.000Z",
+      endTime: "2026-07-31T03:00:00.000Z",
+      doorsOpen: "20:00",
+    },
+    heroImageKey: "eventMidnightGrooves",
+    galleryImageKeys: ["eventMidnightGrooves", "eventDeepHouseRooftop"],
+    startingPriceMinor: 25000, // R250.00
+    currency: "ZAR",
+    totalCapacity: 300,
+    remainingTickets: 15, // Selling Fast (< 20%)
+    isSaved: true,
+  },
+  {
+    id: "evt-rosebank-art-jazz",
+    title: "Rosebank Art & Jazz Lounge",
+    tagline: "An evening of smooth jazz and contemporary gallery art",
+    description:
+      "Stroll through Keyes Art Mile while enjoying live saxophone quartets, wine tastings, and exclusive art installations.",
+    category: "music",
+    status: "published",
+    host: discoveryHosts[2],
+    venue: discoveryVenues[1],
+    occurrence: {
+      id: "occ-2",
+      startTime: "2026-07-31T18:00:00.000Z",
+      endTime: "2026-07-31T22:30:00.000Z",
+      doorsOpen: "17:30",
+    },
+    heroImageKey: "eventRosebankArtJazz",
+    galleryImageKeys: ["eventRosebankArtJazz"],
+    startingPriceMinor: 35000, // R350.00
+    currency: "ZAR",
+    totalCapacity: 200,
+    remainingTickets: 120,
+    isSaved: false,
+  },
+  {
+    id: "evt-soweto-food-market",
+    title: "Soweto Street Food & Craft Market",
+    tagline: "Authentic township culinary crafts, music & family vibes",
+    description:
+      "Taste local delicacies, shop handmade fashion, and vibe to acoustic sets outside the iconic Soweto Theatre.",
+    category: "food_drink",
+    status: "published",
+    host: discoveryHosts[1],
+    venue: discoveryVenues[2],
+    occurrence: {
+      id: "occ-3",
+      startTime: "2026-08-01T10:00:00.000Z",
+      endTime: "2026-08-01T17:00:00.000Z",
+      doorsOpen: "09:30",
+    },
+    heroImageKey: "eventSowetoFoodMarket",
+    galleryImageKeys: ["eventSowetoFoodMarket"],
+    startingPriceMinor: 0, // Free
+    currency: "ZAR",
+    totalCapacity: 1000,
+    remainingTickets: 650,
+    isSaved: true,
+  },
+  {
+    id: "evt-jozi-run-club",
+    title: "Jozi Sunset 5K & Social",
+    tagline: "Urban trail run through Maboneng with post-run coffee",
+    description:
+      "Connect with local runners for a guided 5km loop through Maboneng's vibrant street murals, followed by artisan coffee.",
+    category: "sport",
+    status: "published",
+    host: discoveryHosts[1],
+    venue: discoveryVenues[3],
+    occurrence: {
+      id: "occ-4",
+      startTime: "2026-08-01T16:00:00.000Z",
+      endTime: "2026-08-01T18:00:00.000Z",
+      doorsOpen: "15:45",
+    },
+    heroImageKey: "eventJoziRunClub",
+    galleryImageKeys: ["eventJoziRunClub"],
+    startingPriceMinor: 0, // Free
+    currency: "ZAR",
+    totalCapacity: 150,
+    remainingTickets: 45,
+    isSaved: false,
+  },
+  {
+    id: "evt-deep-house-rooftop",
+    title: "Braam Deep House Sessions",
+    tagline: "Intimate vinyl-only sets overlooking Jozi skyline",
+    description:
+      "A curated deep house showcase featuring underground producers and analog vinyl sets.",
+    category: "nightlife",
+    status: "live", // Live right now!
+    host: discoveryHosts[0],
+    venue: discoveryVenues[0],
+    occurrence: {
+      id: "occ-5",
+      startTime: "2026-07-30T19:00:00.000Z",
+      endTime: "2026-07-30T23:59:00.000Z",
+      doorsOpen: "18:30",
+    },
+    heroImageKey: "eventDeepHouseRooftop",
+    galleryImageKeys: ["eventDeepHouseRooftop"],
+    startingPriceMinor: 18000, // R180.00
+    currency: "ZAR",
+    totalCapacity: 180,
+    remainingTickets: 25,
+    isSaved: false,
+  },
+  {
+    id: "evt-amapiano-fest",
+    title: "Amapiano Sunset Festival",
+    tagline: "The ultimate outdoor amapiano celebration",
+    description:
+      "Massive outdoor festival with top headliner DJs, food trucks, and light shows.",
+    category: "music",
+    status: "sold_out",
+    host: discoveryHosts[3],
+    venue: discoveryVenues[2],
+    occurrence: {
+      id: "occ-6",
+      startTime: "2026-08-02T14:00:00.000Z",
+      endTime: "2026-08-02T23:00:00.000Z",
+      doorsOpen: "13:00",
+    },
+    heroImageKey: "eventAmapianoSunset",
+    galleryImageKeys: ["eventAmapianoSunset"],
+    startingPriceMinor: 30000, // R300.00
+    currency: "ZAR",
+    totalCapacity: 2500,
+    remainingTickets: 0,
+    isSaved: false,
+  },
+  {
+    id: "evt-fashion-week-popup",
+    title: "Jozi Fashion Week Pop-up",
+    tagline: "Exclusive preview of spring streetwear collections",
+    description:
+      "Designers from across Gauteng present runway previews and pop-up shop installations.",
+    category: "fashion",
+    status: "cancelled",
+    host: discoveryHosts[2],
+    venue: discoveryVenues[1],
+    occurrence: {
+      id: "occ-7",
+      startTime: "2026-08-03T11:00:00.000Z",
+      endTime: "2026-08-03T18:00:00.000Z",
+      doorsOpen: "10:30",
+    },
+    heroImageKey: "eventFashionWeekPopup",
+    galleryImageKeys: ["eventFashionWeekPopup"],
+    startingPriceMinor: 45000,
+    currency: "ZAR",
+    totalCapacity: 400,
+    remainingTickets: 0,
+    isSaved: false,
+  },
+];

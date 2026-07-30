@@ -1,6 +1,7 @@
 import React from "react";
 import { StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { Screen } from "../../src/components/ui/Screen";
 import { AppText } from "../../src/components/ui/AppText";
 import { AppButton } from "../../src/components/ui/AppButton";
@@ -12,12 +13,16 @@ import { Divider } from "../../src/components/ui/Divider";
 import { IconButton } from "../../src/components/ui/IconButton";
 import { useAppStore, PrototypeScenario } from "../../src/state/useAppStore";
 import { useSessionStore } from "../../src/state/useSessionStore";
+import { useDiscoveryStore } from "../../src/state/useDiscoveryStore";
+import { mockNotificationRepository } from "../../src/repositories/mock/MockNotificationRepository";
 import { envConfig } from "../../src/config/env";
 import { mockUser } from "../../src/fixtures";
 import { theme } from "../../src/design-system/theme";
 
 export default function PrototypeControlsScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+
   const {
     activeMode,
     scenario,
@@ -29,6 +34,7 @@ export default function PrototypeControlsScreen() {
   } = useAppStore();
 
   const resetSession = useSessionStore((s) => s.resetSession);
+  const resetDiscovery = useDiscoveryStore((s) => s.resetDiscovery);
 
   const handleModeSwitch = (mode: "consumer" | "creator") => {
     setActiveMode(mode);
@@ -42,6 +48,9 @@ export default function PrototypeControlsScreen() {
   const handleResetAll = () => {
     resetPrototype();
     resetSession();
+    resetDiscovery();
+    mockNotificationRepository.reset();
+    queryClient.clear();
   };
 
   const scenarios: { key: PrototypeScenario; label: string }[] = [
@@ -50,6 +59,9 @@ export default function PrototypeControlsScreen() {
     { key: "offline", label: "Offline State" },
     { key: "payment_decline", label: "Payment Decline" },
     { key: "live_event", label: "Live Event Active" },
+    { key: "empty_discovery", label: "Empty Discovery" },
+    { key: "discovery_error", label: "Discovery Error" },
+    { key: "notifications_disabled", label: "Notifications Disabled" },
   ];
 
   return (

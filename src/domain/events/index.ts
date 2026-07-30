@@ -1,11 +1,21 @@
 /**
  * Events Domain Models
  */
+import { ImageAssetKey } from "../../assets/image-registry";
 
 export type EventStatus =
   "draft" | "published" | "live" | "sold_out" | "cancelled" | "completed";
+
 export type EventCategory =
-  "music" | "nightlife" | "cultural" | "fashion" | "art" | "food_drink";
+  | "music"
+  | "nightlife"
+  | "cultural"
+  | "fashion"
+  | "art"
+  | "food_drink"
+  | "sport"
+  | "networking"
+  | "pop_up";
 
 export interface Venue {
   id: string;
@@ -23,6 +33,7 @@ export interface HostSummary {
   name: string;
   handle: string;
   avatarUrl: string;
+  avatarImageKey?: ImageAssetKey;
   isVerified: boolean;
 }
 
@@ -43,8 +54,10 @@ export interface Event {
   host: HostSummary;
   venue: Venue;
   occurrence: EventOccurrence;
-  heroImageUrl: string;
-  galleryImageUrls: string[];
+  heroImageUrl?: string;
+  galleryImageUrls?: string[];
+  heroImageKey?: ImageAssetKey;
+  galleryImageKeys?: ImageAssetKey[];
   startingPriceMinor: number; // e.g. 25000 for R250.00
   currency: string; // "ZAR"
   totalCapacity: number;

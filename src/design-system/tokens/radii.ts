@@ -7,6 +7,7 @@ export const radiiTokens = {
   xl: 24,
   xxl: 32,
   largeCard: 32,
+  pill: 9999,
   full: 9999,
 } as const;
 

@@ -1,22 +1,42 @@
-/**
- * Notifications Domain Models
- */
+import { ImageAssetKey } from "../../assets/image-registry";
 
-export type NotificationType =
+export type ConsumerNotificationType =
   | "ticket_confirmed"
   | "event_reminder"
   | "event_update"
-  | "creator_payout"
-  | "social_follow";
+  | "host_post"
+  | "social_follow"
+  | "social_reaction"
+  | "booking_confirmed";
 
-export type NotificationReadState = "read" | "unread";
+export type NotificationTarget =
+  | {
+      kind: "tickets";
+    }
+  | {
+      kind: "event";
+      eventId: string;
+    }
+  | {
+      kind: "host";
+      hostId: string;
+    }
+  | {
+      kind: "search";
+      query?: string;
+    }
+  | {
+      kind: "profile";
+    };
 
 export interface NotificationItem {
   id: string;
-  type: NotificationType;
+  type: ConsumerNotificationType;
   title: string;
   body: string;
-  readState: NotificationReadState;
-  createdAt: string; // ISO 8601 string
-  targetRoute?: string;
+  createdAt: string;
+  readState: "unread" | "read";
+  target: NotificationTarget;
+  avatarImageKey?: ImageAssetKey;
+  eventImageKey?: ImageAssetKey;
 }

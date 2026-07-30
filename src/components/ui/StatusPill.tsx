@@ -4,7 +4,16 @@ import { AppText } from "./AppText";
 import { theme } from "../../design-system/theme";
 
 export type StatusPillType =
-  "live" | "verified" | "draft" | "completed" | "warning" | "success";
+  | "live"
+  | "verified"
+  | "draft"
+  | "completed"
+  | "warning"
+  | "success"
+  | "sold_out"
+  | "free"
+  | "info"
+  | "neutral";
 
 export interface StatusPillProps {
   label: string;
@@ -38,13 +47,32 @@ export const StatusPill: React.FC<StatusPillProps> = ({
           fg: theme.colors.emerald400,
           border: theme.colors.emerald400,
         };
+      case "free":
+        return {
+          bg: "rgba(52, 211, 153, 0.2)",
+          fg: theme.colors.emerald400,
+          border: theme.colors.emerald400,
+        };
       case "warning":
-      case "draft":
-      default:
         return {
           bg: theme.colors.amberBadgeBg,
           fg: theme.colors.amber400,
           border: theme.colors.amber400,
+        };
+      case "sold_out":
+      case "neutral":
+        return {
+          bg: "rgba(181, 174, 196, 0.15)",
+          fg: theme.colors.textMuted,
+          border: theme.colors.borderStrong,
+        };
+      case "info":
+      case "draft":
+      default:
+        return {
+          bg: theme.colors.violetBadgeBg,
+          fg: theme.colors.accentStart,
+          border: theme.colors.accentStart,
         };
     }
   };

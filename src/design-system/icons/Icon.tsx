@@ -24,14 +24,27 @@ export type SemanticIconName =
   | "share"
   | "close"
   | "back"
+  | "arrowLeft"
   | "check"
   | "alert"
+  | "alertCircle"
   | "refresh"
   | "bell"
   | "sparkles"
   | "chevronRight"
   | "chevronLeft"
-  | "music";
+  | "music"
+  | "bookmark"
+  | "bookmarkFilled"
+  | "mapPin"
+  | "messageCircle"
+  | "landmark"
+  | "palette"
+  | "utensils"
+  | "activity"
+  | "users"
+  | "shoppingBag"
+  | "moon";
 
 const iconNameMap: Record<SemanticIconName, keyof typeof Ionicons.glyphMap> = {
   feed: "flame-outline",
@@ -53,14 +66,27 @@ const iconNameMap: Record<SemanticIconName, keyof typeof Ionicons.glyphMap> = {
   share: "share-social-outline",
   close: "close-outline",
   back: "arrow-back-outline",
+  arrowLeft: "arrow-back-outline",
   check: "checkmark-outline",
   alert: "alert-circle-outline",
+  alertCircle: "alert-circle-outline",
   refresh: "refresh-outline",
   bell: "notifications-outline",
   sparkles: "sparkles-outline",
   chevronRight: "chevron-forward-outline",
   chevronLeft: "chevron-back-outline",
   music: "musical-notes-outline",
+  bookmark: "bookmark-outline",
+  bookmarkFilled: "bookmark",
+  mapPin: "location-outline",
+  messageCircle: "chatbubble-outline",
+  landmark: "library-outline",
+  palette: "color-palette-outline",
+  utensils: "restaurant-outline",
+  activity: "fitness-outline",
+  users: "people-outline",
+  shoppingBag: "bag-handle-outline",
+  moon: "moon-outline",
 };
 
 export interface IconProps {

@@ -8,9 +8,10 @@ export interface IconButtonProps {
   onPress: () => void;
   accessibilityLabel: string; // Required for accessibility!
   size?: "sm" | "md" | "lg";
-  variant?: "surface" | "ghost";
+  variant?: "surface" | "ghost" | "gradient";
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
+  testID?: string;
 }
 
 export const IconButton: React.FC<IconButtonProps> = ({
@@ -21,12 +22,26 @@ export const IconButton: React.FC<IconButtonProps> = ({
   variant = "surface",
   disabled = false,
   style,
+  testID,
 }) => {
   const isInteractive = !disabled;
   const iconSize = size === "sm" ? "sm" : size === "lg" ? "lg" : "md";
 
+  const getBgColor = (pressed: boolean) => {
+    if (variant === "gradient") {
+      return pressed ? theme.colors.accentPressed : theme.colors.accentStart;
+    }
+    if (variant === "surface") {
+      return pressed
+        ? theme.colors.surfaceElevated
+        : theme.colors.surfacePrimary;
+    }
+    return pressed ? theme.colors.interactivePressed : "transparent";
+  };
+
   return (
     <Pressable
+      testID={testID}
       onPress={isInteractive ? onPress : undefined}
       disabled={!isInteractive}
       accessibilityRole="button"
@@ -35,20 +50,17 @@ export const IconButton: React.FC<IconButtonProps> = ({
       style={({ pressed }) => [
         styles.base,
         {
-          backgroundColor:
-            variant === "surface"
-              ? pressed
-                ? theme.colors.surfaceElevated
-                : theme.colors.surfacePrimary
-              : pressed
-                ? theme.colors.interactivePressed
-                : "transparent",
+          backgroundColor: getBgColor(pressed),
           opacity: disabled ? 0.4 : 1,
         },
         style,
       ]}
     >
-      <Icon name={icon} size={iconSize} color={theme.colors.textPrimary} />
+      <Icon
+        name={icon}
+        size={iconSize}
+        color={variant === "gradient" ? "#000000" : theme.colors.textPrimary}
+      />
     </Pressable>
   );
 };
