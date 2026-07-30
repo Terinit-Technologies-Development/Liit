@@ -18,6 +18,8 @@ export const ROUTES = {
     savedEvents: "/(consumer)/profile/saved",
     activity: "/(consumer)/profile/activity",
     settings: "/(consumer)/settings",
+    search: "/(consumer)/search",
+    notifications: "/(consumer)/notifications",
   },
   creator: {
     dashboard: "/(creator)/dashboard",
@@ -30,6 +32,7 @@ export const ROUTES = {
     modeSwitch: "/(modals)/mode-switch",
     prototypeControls: "/(modals)/prototype-controls",
     componentPreview: "/(modals)/component-preview",
+    searchFilters: "/(modals)/search-filters",
   },
 } as const;
 

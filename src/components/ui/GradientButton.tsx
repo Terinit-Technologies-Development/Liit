@@ -19,6 +19,7 @@ export interface GradientButtonProps {
   rightIcon?: SemanticIconName;
   fullWidth?: boolean;
   accessibilityLabel?: string;
+  testID?: string;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -31,12 +32,14 @@ export const GradientButton: React.FC<GradientButtonProps> = ({
   rightIcon,
   fullWidth = false,
   accessibilityLabel,
+  testID,
   style,
 }) => {
   const isInteractive = !disabled && !loading;
 
   return (
     <Pressable
+      testID={testID}
       onPress={isInteractive ? onPress : undefined}
       disabled={!isInteractive}
       accessibilityRole="button"

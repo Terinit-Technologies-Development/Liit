@@ -74,6 +74,7 @@ export const semanticColors = {
   skeletonHighlight: "rgba(39, 36, 49, 0.9)",
 
   // Semantic Badge & Glow Tokens
+  purple: colorPrimitives.purple400,
   purpleBadgeBg: "rgba(193, 128, 255, 0.12)",
   purpleBadgeBorder: "rgba(193, 128, 255, 0.30)",
   pinkBadgeBg: "rgba(255, 77, 125, 0.15)",

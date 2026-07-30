@@ -1,0 +1,87 @@
+appId: com.liit.app
+name: "LIIT Instruction 2 — discovery happy path"
+tags:
+  - instruction-02
+  - smoke
+---
+- launchApp:
+    clearState: true
+
+- startRecording:
+    path: "artifacts/pr-02/instruction-02-discovery"
+    optional: false
+
+- runFlow:
+    file: "flows/authenticated-onboarding.yaml"
+
+# Feed
+- assertVisible: "Johannesburg"
+- assertVisible: "Live & Recent"
+
+- tapOn:
+    id: "feed-mode-upcoming"
+
+- assertVisible: "Upcoming Events"
+
+- tapOn:
+    id: "feed-mode-live-recent"
+
+# Search from Feed
+- tapOn:
+    id: "feed-open-search"
+
+- assertVisible: "Search events, hosts, or venues..."
+
+- tapOn:
+    id: "search-input"
+
+- inputText: "Amapiano"
+
+- assertVisible: "Events"
+- assertVisible: "Hosts"
+- assertVisible: "Venues"
+
+# Search filters
+- tapOn:
+    id: "search-open-filters"
+
+- assertVisible: "Search Filters"
+
+- tapOn: "Nightlife & Clubs"
+- tapOn:
+    id: "filters-apply"
+
+- assertVisible: "Events"
+
+# Return and open Explore
+- tapOn: "Navigate back"
+- tapOn: "Explore"
+
+- assertVisible: "Trending Now"
+- assertVisible: "Categories"
+- assertVisible: "Featured Venues"
+
+- tapOn:
+    id: "explore-see-all-trending"
+
+- assertVisible: "Events"
+
+# Notifications
+- tapOn: "Navigate back"
+- tapOn: "Feed"
+
+- tapOn:
+    id: "feed-open-notifications"
+
+- assertVisible: "Notifications"
+- assertVisible: "All"
+- assertVisible: "Events"
+- assertVisible: "Activity"
+
+- tapOn:
+    id: "notifications-filter-events"
+
+- tapOn:
+    id: "notifications-mark-all-read"
+
+- stopRecording

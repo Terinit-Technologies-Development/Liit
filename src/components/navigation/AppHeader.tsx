@@ -20,6 +20,7 @@ export interface AppHeaderProps {
     icon: string;
     accessibilityLabel: string;
     onPress: () => void;
+    testID?: string;
   };
   style?: ViewStyle;
 }
@@ -75,6 +76,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         <View style={styles.rightSection}>
           {rightAction ? (
             <IconButton
+              testID={rightAction.testID}
               icon={rightAction.icon as any}
               onPress={rightAction.onPress}
               accessibilityLabel={rightAction.accessibilityLabel}

@@ -1,0 +1,56 @@
+> liit@1.0.0 test:e2e:instruction-02
+> maestro test .maestro --include-tags=instruction-02
+
+Running flow instruction-02-discovery.yaml...
+  [+] launchApp: com.liit.app
+  [+] runFlow: flows/authenticated-onboarding.yaml
+  [+] assertVisible: "Johannesburg"
+  [+] assertVisible: "Live & Recent"
+  [+] tapOn: id "feed-mode-upcoming"
+  [+] assertVisible: "Upcoming Events"
+  [+] tapOn: id "feed-mode-live-recent"
+  [+] tapOn: id "feed-open-search"
+  [+] assertVisible: "Search events, hosts, or venues..."
+  [+] inputText: "Amapiano"
+  [+] assertVisible: "Events"
+  [+] assertVisible: "Hosts"
+  [+] assertVisible: "Venues"
+  [+] tapOn: id "search-open-filters"
+  [+] assertVisible: "Search Filters"
+  [+] tapOn: "Nightlife & Clubs"
+  [+] tapOn: id "filters-apply"
+  [+] tapOn: "Navigate back"
+  [+] tapOn: "Explore"
+  [+] assertVisible: "Trending Now"
+  [+] tapOn: id "explore-see-all-trending"
+  [+] tapOn: "Navigate back"
+  [+] tapOn: "Feed"
+  [+] tapOn: id "feed-open-notifications"
+  [+] assertVisible: "Notifications"
+  [+] tapOn: id "notifications-filter-events"
+  [+] tapOn: id "notifications-mark-all-read"
+  [+] Flow passed (14.2s)
+
+Running flow instruction-02-states.yaml...
+  [+] launchApp: com.liit.app
+  [+] runFlow: flows/authenticated-onboarding.yaml
+  [+] tapOn: "Open Prototype Controls"
+  [+] tapOn: "Offline State"
+  [+] tapOn: "Close controls"
+  [+] tapOn: "Explore"
+  [+] assertVisible: "Offline state"
+  [+] tapOn: id "explore-search-entry"
+  [+] inputText: "Quantum Ballet"
+  [+] assertVisible: "No events for"
+  [+] tapOn: "Navigate back"
+  [+] tapOn: "Feed"
+  [+] tapOn: "Open Prototype Controls"
+  [+] tapOn: "Notifications Disabled"
+  [+] tapOn: "Close controls"
+  [+] tapOn: id "feed-open-notifications"
+  [+] assertVisible: "Notifications are paused"
+  [+] tapOn: "Open Prototype Controls"
+  [+] tapOn: "Reset All Prototype State"
+  [+] Flow passed (11.8s)
+
+Passed: 2/2 flows executed successfully.

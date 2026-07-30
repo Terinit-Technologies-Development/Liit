@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet, ViewStyle } from "react-native";
+import { View, StyleSheet, ViewStyle, ImageSourcePropType } from "react-native";
 import { Image } from "expo-image";
 import { AppText } from "./AppText";
 import { Icon } from "../../design-system/icons/Icon";
@@ -7,9 +7,9 @@ import { theme } from "../../design-system/theme";
 
 export interface AvatarProps {
   uri?: string;
-  source?: string;
+  source?: string | ImageSourcePropType;
   name?: string;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "xs" | "sm" | "md" | "lg" | "xl";
   isVerified?: boolean;
   style?: ViewStyle;
 }
@@ -22,9 +22,27 @@ export const Avatar: React.FC<AvatarProps> = ({
   isVerified = false,
   style,
 }) => {
-  const imageUri = uri || source;
+  const imageSource: ImageSourcePropType | { uri: string } | undefined =
+    typeof source === "object"
+      ? source
+      : typeof source === "number"
+        ? source
+        : typeof source === "string"
+          ? { uri: source }
+          : uri
+            ? { uri }
+            : undefined;
+
   const dimension =
-    size === "sm" ? 32 : size === "lg" ? 56 : size === "xl" ? 80 : 44;
+    size === "xs"
+      ? 24
+      : size === "sm"
+        ? 32
+        : size === "lg"
+          ? 56
+          : size === "xl"
+            ? 80
+            : 44;
 
   const initials = name
     .split(" ")
@@ -35,9 +53,9 @@ export const Avatar: React.FC<AvatarProps> = ({
 
   return (
     <View style={[{ width: dimension, height: dimension }, style]}>
-      {imageUri ? (
+      {imageSource ? (
         <Image
-          source={{ uri: imageUri }}
+          source={imageSource}
           style={[
             styles.image,
             {

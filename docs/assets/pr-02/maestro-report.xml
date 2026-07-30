@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Maestro Tests" tests="2" failures="0" errors="0" time="26.0">
+  <testsuite name="instruction-02-discovery" tests="1" failures="0" errors="0" time="14.2">
+    <testcase name="LIIT Instruction 2 — discovery happy path" classname="instruction-02-discovery" time="14.2"/>
+  </testsuite>
+  <testsuite name="instruction-02-states" tests="1" failures="0" errors="0" time="11.8">
+    <testcase name="LIIT Instruction 2 — empty, offline, and disabled states" classname="instruction-02-states" time="11.8"/>
+  </testsuite>
+</testsuites>

@@ -4,7 +4,14 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ProductMode, PermissionState } from "../domain/identity";
 
 export type PrototypeScenario =
-  "normal" | "sold_out" | "offline" | "payment_decline" | "live_event";
+  | "normal"
+  | "sold_out"
+  | "offline"
+  | "payment_decline"
+  | "live_event"
+  | "empty_discovery"
+  | "discovery_error"
+  | "notifications_disabled";
 
 export interface AppState {
   activeMode: ProductMode;

@@ -6,8 +6,9 @@ import {
   CreatorEventSummary,
   PayoutSummary,
 } from "../domain/creator";
-import { NotificationItem } from "../domain/notifications";
 import { ConversationSummary } from "../domain/social";
+
+export * from "./discovery";
 
 export const mockUser: User = {
   id: "usr_jhb_001",
@@ -65,6 +66,8 @@ export const mockEvents: Event[] = [
       endTime: "2026-08-16T02:00:00Z",
       doorsOpen: "2026-08-15T17:00:00Z",
     },
+    heroImageKey: "eventMidnightGrooves",
+    galleryImageKeys: ["eventMidnightGrooves"],
     heroImageUrl:
       "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=800&q=80",
     galleryImageUrls: [
@@ -108,6 +111,8 @@ export const mockEvents: Event[] = [
       endTime: "2026-08-22T21:00:00Z",
       doorsOpen: "2026-08-22T14:30:00Z",
     },
+    heroImageKey: "eventRosebankArtJazz",
+    galleryImageKeys: ["eventRosebankArtJazz"],
     heroImageUrl:
       "https://images.unsplash.com/photo-1511192336575-5a79af67a629?auto=format&fit=crop&w=800&q=80",
     galleryImageUrls: [],
@@ -186,18 +191,6 @@ export const mockPayouts: PayoutSummary[] = [
     status: "paid",
     scheduledDate: "2026-07-20",
     bankAccountLast4: "4092",
-  },
-];
-
-export const mockNotifications: NotificationItem[] = [
-  {
-    id: "notif_001",
-    type: "ticket_confirmed",
-    title: "Ticket Confirmed!",
-    body: "You are going to Midnight Grooves JHB on Aug 15.",
-    readState: "unread",
-    createdAt: "2026-07-28T14:30:00Z",
-    targetRoute: "/(consumer)/tickets",
   },
 ];
 

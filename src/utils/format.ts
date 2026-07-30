@@ -48,6 +48,18 @@ export function formatTime(
   }).format(date);
 }
 
+export function formatDateRange(
+  startIso: string,
+  endIso?: string,
+  locale: string = "en-ZA",
+): string {
+  const start = new Date(startIso);
+  if (isNaN(start.getTime())) return startIso;
+  const dateStr = formatDate(startIso, "short", locale);
+  const timeStr = formatTime(startIso, locale);
+  return `${dateStr}, ${timeStr}`;
+}
+
 export function formatDistance(distanceKm: number): string {
   if (distanceKm < 1) {
     return `${Math.round(distanceKm * 1000)} m`;

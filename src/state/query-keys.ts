@@ -1,3 +1,6 @@
+import { DiscoveryFilters, FeedMode } from "../domain/discovery";
+import { NotificationFilter } from "../repositories/contracts/NotificationRepository";
+
 export const queryKeys = {
   identity: {
     all: ["identity"] as const,
@@ -10,6 +13,22 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.events.all, "detail", id] as const,
     search: (query: string) =>
       [...queryKeys.events.all, "search", query] as const,
+  },
+  discovery: {
+    all: ["discovery"] as const,
+    feed: (mode: FeedMode, city: string, scenario: string) =>
+      [...queryKeys.discovery.all, "feed", { mode, city, scenario }] as const,
+    explore: (city: string, scenario: string) =>
+      [...queryKeys.discovery.all, "explore", { city, scenario }] as const,
+    search: (query: string, filters: DiscoveryFilters) =>
+      [
+        ...queryKeys.discovery.all,
+        "search",
+        {
+          query: query.trim().toLocaleLowerCase(),
+          filters,
+        },
+      ] as const,
   },
   commerce: {
     all: ["commerce"] as const,
@@ -29,6 +48,7 @@ export const queryKeys = {
   },
   notifications: {
     all: ["notifications"] as const,
-    list: () => [...queryKeys.notifications.all, "list"] as const,
+    list: (filter: NotificationFilter = "all") =>
+      [...queryKeys.notifications.all, "list", filter] as const,
   },
 };

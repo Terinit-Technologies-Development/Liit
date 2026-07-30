@@ -1,0 +1,58 @@
+appId: com.liit.app
+name: "LIIT Instruction 2 — empty, offline, and disabled states"
+tags:
+  - instruction-02
+  - states
+---
+- launchApp:
+    clearState: true
+
+- startRecording:
+    path: "artifacts/pr-02/instruction-02-states"
+    optional: false
+
+- runFlow:
+    file: "flows/authenticated-onboarding.yaml"
+
+# Offline Explore
+- tapOn: "Open Prototype Controls"
+- tapOn: "Offline State"
+- tapOn: "Close controls"
+
+- tapOn: "Explore"
+- assertVisible: "Offline state"
+- assertVisible: "Johannesburg"
+
+# Search no results
+- tapOn:
+    id: "explore-search-entry"
+
+- tapOn:
+    id: "search-input"
+
+- inputText: "Quantum Ballet"
+
+- assertVisible: "No events for"
+
+# Notification disabled state
+- tapOn: "Navigate back"
+- tapOn: "Feed"
+- tapOn: "Open Prototype Controls"
+- tapOn: "Notifications Disabled"
+- tapOn: "Close controls"
+
+- tapOn:
+    id: "feed-open-notifications"
+
+- assertVisible: "Notifications are paused"
+
+# Full reset
+- tapOn: "Open Prototype Controls"
+- tapOn: "Reset All Prototype State"
+
+- stopApp
+- launchApp
+
+- assertVisible: "Pulse of Nightlife & Culture"
+
+- stopRecording
