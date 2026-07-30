@@ -7,8 +7,9 @@ export interface IconButtonProps {
   icon: SemanticIconName;
   onPress: () => void;
   accessibilityLabel: string; // Required for accessibility!
+  accessibilityState?: { selected?: boolean; disabled?: boolean };
   size?: "sm" | "md" | "lg";
-  variant?: "surface" | "ghost" | "gradient";
+  variant?: "surface" | "ghost" | "gradient" | "glass";
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
   testID?: string;
@@ -18,6 +19,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
   icon,
   onPress,
   accessibilityLabel,
+  accessibilityState,
   size = "md",
   variant = "surface",
   disabled = false,
@@ -30,6 +32,9 @@ export const IconButton: React.FC<IconButtonProps> = ({
   const getBgColor = (pressed: boolean) => {
     if (variant === "gradient") {
       return pressed ? theme.colors.accentPressed : theme.colors.accentStart;
+    }
+    if (variant === "glass") {
+      return pressed ? "rgba(255, 255, 255, 0.2)" : "rgba(33, 30, 42, 0.65)";
     }
     if (variant === "surface") {
       return pressed
@@ -46,7 +51,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
       disabled={!isInteractive}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
-      accessibilityState={{ disabled: !isInteractive }}
+      accessibilityState={{ disabled: !isInteractive, ...accessibilityState }}
       style={({ pressed }) => [
         styles.base,
         {

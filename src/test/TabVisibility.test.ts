@@ -15,11 +15,17 @@ describe("Consumer Bottom Tabs Visibility", () => {
     ]);
   });
 
-  it("hides contextual routes (settings, search, notifications) from bottom navigation", () => {
+  it("hides contextual routes (settings, search, notifications, events, hosts) from bottom navigation", () => {
     const hiddenRoutes = CONSUMER_TAB_ROUTES.filter(
       (route) => !route.visible,
     ).map((route) => route.name);
 
-    expect(hiddenRoutes).toEqual(["settings", "search", "notifications"]);
+    expect(hiddenRoutes).toEqual([
+      "settings",
+      "search",
+      "notifications",
+      "events",
+      "hosts",
+    ]);
   });
 });

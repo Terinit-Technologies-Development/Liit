@@ -22,6 +22,7 @@ interface DiscoveryState {
   recentSearches: string[];
   filters: DiscoveryFilters;
   followedHostIds: string[];
+  savedEventIds: string[];
   hasHydrated: boolean;
 
   setFeedMode(mode: FeedMode): void;
@@ -30,6 +31,7 @@ interface DiscoveryState {
   clearRecentSearches(): void;
   setFilters(filters: DiscoveryFilters): void;
   toggleHostFollow(hostId: string): void;
+  toggleSavedEvent(eventId: string): void;
   resetDiscovery(): void;
 }
 
@@ -39,6 +41,7 @@ const initialState = {
   recentSearches: ["Amapiano", "Braamfontein", "This weekend"],
   filters: DEFAULT_DISCOVERY_FILTERS,
   followedHostIds: [] as string[],
+  savedEventIds: ["evt-midnight-grooves", "evt-soweto-food-market"] as string[],
   hasHydrated: false,
 };
 
@@ -79,6 +82,16 @@ export const useDiscoveryStore = create<DiscoveryState>()(
           followedHostIds: current.includes(hostId)
             ? current.filter((id) => id !== hostId)
             : [...current, hostId],
+        });
+      },
+
+      toggleSavedEvent: (eventId) => {
+        const current = get().savedEventIds;
+
+        set({
+          savedEventIds: current.includes(eventId)
+            ? current.filter((id) => id !== eventId)
+            : [...current, eventId],
         });
       },
 

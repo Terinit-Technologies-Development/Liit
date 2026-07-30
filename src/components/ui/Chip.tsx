@@ -7,6 +7,8 @@ import { theme } from "../../design-system/theme";
 export interface ChipProps {
   label: string;
   selected?: boolean;
+  active?: boolean;
+  size?: "sm" | "md";
   onPress?: () => void;
   icon?: SemanticIconName;
   style?: StyleProp<ViewStyle>;
@@ -15,25 +17,30 @@ export interface ChipProps {
 export const Chip: React.FC<ChipProps> = ({
   label,
   selected = false,
+  active = false,
+  size = "md",
   onPress,
   icon,
   style,
 }) => {
+  const isSelected = selected || active;
+
   return (
     <Pressable
       onPress={onPress}
       disabled={!onPress}
       accessibilityRole="button"
-      accessibilityState={{ selected }}
+      accessibilityState={{ selected: isSelected }}
       style={({ pressed }) => [
         styles.chip,
+        size === "sm" && styles.chipSm,
         {
-          backgroundColor: selected
+          backgroundColor: isSelected
             ? theme.colors.accentSolid
             : pressed
               ? theme.colors.surfaceElevated
               : theme.colors.surfacePrimary,
-          borderColor: selected
+          borderColor: isSelected
             ? theme.colors.accentStart
             : theme.colors.borderSubtle,
         },
@@ -45,14 +52,16 @@ export const Chip: React.FC<ChipProps> = ({
           name={icon}
           size="xs"
           color={
-            selected ? theme.colors.textInverse : theme.colors.textSecondary
+            isSelected ? theme.colors.textInverse : theme.colors.textSecondary
           }
           style={styles.icon}
         />
       ) : null}
       <AppText
-        variant="label"
-        color={selected ? theme.colors.textInverse : theme.colors.textSecondary}
+        variant={size === "sm" ? "caption" : "label"}
+        color={
+          isSelected ? theme.colors.textInverse : theme.colors.textSecondary
+        }
       >
         {label}
       </AppText>
@@ -69,6 +78,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
+  },
+  chipSm: {
+    minHeight: 24,
+    paddingHorizontal: theme.spacing.sm,
   },
   icon: {
     marginRight: theme.spacing.xs,

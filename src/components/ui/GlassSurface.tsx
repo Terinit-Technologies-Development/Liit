@@ -7,6 +7,7 @@ export interface GlassSurfaceProps {
   radius?: keyof typeof theme.radii;
   padding?: keyof typeof theme.spacing;
   border?: boolean;
+  intensity?: "low" | "medium" | "high" | string;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -15,6 +16,7 @@ export const GlassSurface: React.FC<GlassSurfaceProps> = ({
   radius = "xl",
   padding = "lg",
   border = true,
+  intensity: _intensity = "medium",
   style,
 }) => {
   return (

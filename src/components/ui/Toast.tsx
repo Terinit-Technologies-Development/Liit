@@ -1,9 +1,11 @@
 import React from "react";
 import { View, StyleSheet, Pressable } from "react-native";
-import { useToast } from "../../hooks/useToast";
+import { useToast, showToast } from "../../hooks/useToast";
 import { AppText } from "./AppText";
 import { Icon } from "../../design-system/icons/Icon";
 import { theme } from "../../design-system/theme";
+
+export { showToast };
 
 export const ToastBanner: React.FC = () => {
   const { toast, hideToast } = useToast();

@@ -171,4 +171,28 @@ export const discoveryEvents: Event[] = [
     remainingTickets: 0,
     isSaved: false,
   },
+  {
+    id: "evt-completed-highlight",
+    title: "Jozi Culture Retrospective",
+    tagline: "A completed showcase of Jozi nightlife and culture",
+    description:
+      "A completed retrospective showcase of Jozi nightlife and culture.",
+    category: "cultural",
+    status: "published",
+    host: discoveryHosts[0],
+    venue: discoveryVenues[0],
+    occurrence: {
+      id: "occ-8",
+      startTime: "2026-07-01T10:00:00.000Z",
+      endTime: "2026-07-01T18:00:00.000Z",
+      doorsOpen: "09:30",
+    },
+    heroImageKey: "eventMidnightGrooves",
+    galleryImageKeys: ["eventMidnightGrooves"],
+    startingPriceMinor: 20000,
+    currency: "ZAR",
+    totalCapacity: 150,
+    remainingTickets: 0,
+    isSaved: false,
+  },
 ];

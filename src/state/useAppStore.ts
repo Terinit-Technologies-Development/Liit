@@ -11,7 +11,9 @@ export type PrototypeScenario =
   | "live_event"
   | "empty_discovery"
   | "discovery_error"
-  | "notifications_disabled";
+  | "notifications_disabled"
+  | "map_location_disabled"
+  | "map_no_results";
 
 export interface AppState {
   activeMode: ProductMode;

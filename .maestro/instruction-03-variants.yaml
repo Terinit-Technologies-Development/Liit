@@ -1,0 +1,56 @@
+appId: com.liit.app
+name: "LIIT Instruction 3 — Event variants and Map states"
+tags:
+  - instruction-03
+  - states
+---
+- launchApp:
+    clearState: true
+
+- runFlow:
+    file: "flows/authenticated-onboarding.yaml"
+
+# Map location disabled
+- tapOn: "Open Prototype Controls"
+- tapOn: "Map Location Disabled"
+- tapOn: "Close controls"
+
+- tapOn: "Map"
+- assertVisible: "Location is disabled"
+
+- tapOn: "Use Johannesburg Fixtures"
+
+- assertVisible:
+    id: "mock-map-canvas"
+
+# List mode
+- tapOn:
+    id: "map-mode-switch-item-list"
+
+- assertVisible: "Map Results"
+
+# Map filters
+- tapOn:
+    id: "map-open-filters"
+
+- assertVisible: "Map Filters"
+
+- tapOn: "Music"
+- tapOn:
+    id: "map-filters-apply"
+
+# Sold-out Event
+- tapOn: "Open Prototype Controls"
+- tapOn: "Sold Out State"
+- tapOn: "Close controls"
+
+- tapOn:
+    id: "map-mode-switch-item-map"
+
+- tapOn:
+    id: "map-pin-evt-deep-house-rooftop"
+
+- tapOn:
+    id: "map-preview-view-details"
+
+- assertVisible: "Join waitlist"

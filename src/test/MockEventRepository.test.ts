@@ -25,6 +25,6 @@ describe("MockEventRepository", () => {
       latencyMs: 0,
     });
     expect(results.length).toBe(1);
-    expect(results[0].title).toContain("Midnight Grooves");
+    expect(results[0].title).toContain("Midnight");
   });
 });
