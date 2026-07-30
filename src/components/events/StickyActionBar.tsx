@@ -1,5 +1,6 @@
 import React from "react";
 import { StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { EventConversionModel } from "../../domain/event-detail/conversion-model";
 import { TicketTier } from "../../domain/event-detail";
 import { GradientButton } from "../ui/GradientButton";
@@ -18,9 +19,12 @@ export function StickyActionBar({
   selectedTier,
   onPrimaryAction,
 }: StickyActionBarProps) {
+  const insets = useSafeAreaInsets();
+  const bottomPadding = Math.max(insets.bottom, theme.spacing.md);
+
   if (conversion.mode === "none" || !conversion.primaryLabel) {
     return (
-      <View style={styles.endedContainer}>
+      <View style={[styles.endedContainer, { paddingBottom: bottomPadding }]}>
         <AppText variant="label" color={theme.colors.textMuted}>
           {conversion.supportingLabel}
         </AppText>
@@ -33,7 +37,7 @@ export function StickyActionBar({
     : null;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingBottom: bottomPadding }]}>
       <View style={styles.textCol}>
         {priceLabel ? (
           <AppText variant="subheading" style={styles.price}>
@@ -70,7 +74,7 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: theme.colors.borderSubtle,
     paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
+    paddingTop: theme.spacing.md,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -86,7 +90,7 @@ const styles = StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: theme.colors.borderSubtle,
     paddingHorizontal: theme.spacing.lg,
-    paddingVertical: theme.spacing.md,
+    paddingTop: theme.spacing.md,
     alignItems: "center",
     justifyContent: "center",
     zIndex: 30,

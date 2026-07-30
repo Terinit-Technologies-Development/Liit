@@ -1,8 +1,21 @@
 import { mockHostRepository } from "../repositories/mock/MockHostRepository";
+import { discoveryEvents } from "../fixtures/discovery";
 
 describe("MockHostRepository & Host Profiles", () => {
-  it("returns public host profile with metrics and highlights for host-1", async () => {
-    const profile = await mockHostRepository.getPublicProfile("host-1");
+  it("resolves every Event host through the public Host repository", async () => {
+    const uniqueHostIds = [
+      ...new Set(discoveryEvents.map((event) => event.host.id)),
+    ];
+
+    for (const hostId of uniqueHostIds) {
+      const profile = await mockHostRepository.getPublicProfile(hostId);
+      expect(profile).not.toBeNull();
+      expect(profile?.host.id).toBe(hostId);
+    }
+  });
+
+  it("returns public host profile with metrics and highlights for host-groove-co", async () => {
+    const profile = await mockHostRepository.getPublicProfile("host-groove-co");
     expect(profile).not.toBeNull();
     expect(profile?.host.name).toBe("Groove Co.");
     expect(profile?.metrics.length).toBeGreaterThan(0);
@@ -12,18 +25,23 @@ describe("MockHostRepository & Host Profiles", () => {
     ]);
   });
 
-  it("lists upcoming events for host-1 resolved against canonical discovery events", async () => {
-    const events = await mockHostRepository.listUpcomingEvents("host-1");
+  it("lists upcoming events for host-groove-co resolved against canonical discovery events", async () => {
+    const events =
+      await mockHostRepository.listUpcomingEvents("host-groove-co");
     expect(events.length).toBe(2);
     expect(events[0].id).toBe("evt-midnight-grooves");
   });
 
-  it("returns host profile with no upcoming events for host-4", async () => {
-    const profile = await mockHostRepository.getPublicProfile("host-4");
+  it("returns host profile with no upcoming events for host-amapiano-pulse", async () => {
+    const profile = await mockHostRepository.getPublicProfile(
+      "host-amapiano-pulse",
+    );
     expect(profile).not.toBeNull();
     expect(profile?.upcomingEventIds).toEqual([]);
 
-    const events = await mockHostRepository.listUpcomingEvents("host-4");
+    const events = await mockHostRepository.listUpcomingEvents(
+      "host-amapiano-pulse",
+    );
     expect(events).toEqual([]);
   });
 

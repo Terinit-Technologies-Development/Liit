@@ -1,4 +1,4 @@
-import { EventCategory } from "../events";
+import { Event, EventCategory } from "../events";
 
 export type MapDisplayMode = "map" | "list";
 
@@ -49,9 +49,10 @@ export interface MapEventNode {
 export type MapRenderNode = MapClusterNode | MapEventNode;
 
 export interface MapSnapshot {
-  points: MapEventPoint[];
-  eventIds: string[];
   city: "Johannesburg";
+  events: Event[];
+  eventIds: string[];
+  points: MapEventPoint[];
 }
 
 export const JOHANNESBURG_BOUNDS = {

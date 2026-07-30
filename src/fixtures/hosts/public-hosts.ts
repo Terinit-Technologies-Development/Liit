@@ -2,7 +2,7 @@ import { PublicHostProfile } from "../../domain/hosts/public-host";
 import { discoveryHosts } from "../discovery";
 
 export const publicHostProfiles: Record<string, PublicHostProfile> = {
-  "host-1": {
+  "host-groove-co": {
     host: discoveryHosts[0], // Groove Co.
     coverImageKey: "eventMidnightGrooves",
     bio: "Johannesburg's premier nightlife & electronic event collective. Curating deep house, amapiano, and immersive rooftop experiences across Gauteng.",
@@ -28,7 +28,7 @@ export const publicHostProfiles: Record<string, PublicHostProfile> = {
     ],
   },
 
-  "host-2": {
+  "host-jozi-vibe-tribe": {
     host: discoveryHosts[1], // Jozi Vibe Tribe
     coverImageKey: "eventSowetoFoodMarket",
     bio: "Community-driven cultural pop-ups, street food markets, and urban trail run socials connecting Johannesburg's creative pulse.",
@@ -48,7 +48,7 @@ export const publicHostProfiles: Record<string, PublicHostProfile> = {
     ],
   },
 
-  "host-3": {
+  "host-art-hub-jhb": {
     host: discoveryHosts[2], // Art Hub JHB
     coverImageKey: "eventRosebankArtJazz",
     bio: "Contemporary art gallery lounge, live jazz quartets, and fashion pop-ups along Keyes Art Mile, Rosebank.",
@@ -61,7 +61,7 @@ export const publicHostProfiles: Record<string, PublicHostProfile> = {
     pastHighlights: [],
   },
 
-  "host-4": {
+  "host-amapiano-pulse": {
     host: discoveryHosts[3], // Amapiano Pulse (Host with NO upcoming events)
     coverImageKey: "eventAmapianoSunset",
     bio: "Underground amapiano movement bringing raw township soundscapes to Johannesburg stages.",

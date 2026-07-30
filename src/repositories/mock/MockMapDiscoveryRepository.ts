@@ -3,6 +3,7 @@ import { Event } from "../../domain/events";
 import { discoveryEvents } from "../../fixtures/discovery";
 import { mapEventPoints } from "../../fixtures/map";
 import { MockOptions, simulateMockOperation } from "../../utils/mock-operation";
+import { PrototypeScenario } from "../../state/useAppStore";
 import {
   MapDiscoveryRepository,
   MapDiscoveryRequest,
@@ -39,6 +40,41 @@ function matchesMapFilters(event: Event, filters: MapFilters): boolean {
   return true;
 }
 
+function applyMapScenario(
+  events: Event[],
+  scenario: PrototypeScenario,
+): Event[] {
+  if (scenario === "sold_out") {
+    return events.map((event, index) =>
+      index === 0
+        ? {
+            ...event,
+            status: "sold_out",
+            remainingTickets: 0,
+          }
+        : event,
+    );
+  }
+
+  if (scenario === "live_event") {
+    return events.map((event, index) =>
+      index === 0
+        ? {
+            ...event,
+            status: "live",
+            occurrence: {
+              ...event.occurrence,
+              startTime: "2026-07-30T19:00:00.000Z",
+              endTime: "2026-07-30T23:59:00.000Z",
+            },
+          }
+        : event,
+    );
+  }
+
+  return events;
+}
+
 export class MockMapDiscoveryRepository implements MapDiscoveryRepository {
   async getSnapshot(
     request: MapDiscoveryRequest,
@@ -48,12 +84,15 @@ export class MockMapDiscoveryRepository implements MapDiscoveryRepository {
       if (request.scenario === "map_no_results") {
         return {
           city: "Johannesburg",
+          events: [],
           points: [],
           eventIds: [],
         };
       }
 
-      const filteredEvents = discoveryEvents.filter((event) =>
+      const baseEvents = applyMapScenario(discoveryEvents, request.scenario);
+
+      const filteredEvents = baseEvents.filter((event) =>
         matchesMapFilters(event, request.filters),
       );
 
@@ -76,6 +115,7 @@ export class MockMapDiscoveryRepository implements MapDiscoveryRepository {
 
       return {
         city: "Johannesburg",
+        events: filteredEvents,
         eventIds: points.map((p) => p.eventId),
         points,
       };

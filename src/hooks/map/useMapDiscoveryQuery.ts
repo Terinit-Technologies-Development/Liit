@@ -16,10 +16,15 @@ export function useMapDiscoveryQuery({
   return useQuery({
     queryKey: queryKeys.map.snapshot(filters, scenario),
     queryFn: () =>
-      mockMapDiscoveryRepository.getSnapshot({
-        city: "Johannesburg",
-        filters,
-        scenario,
-      }),
+      mockMapDiscoveryRepository.getSnapshot(
+        {
+          city: "Johannesburg",
+          filters,
+          scenario,
+        },
+        {
+          shouldFail: scenario === "discovery_error",
+        },
+      ),
   });
 }

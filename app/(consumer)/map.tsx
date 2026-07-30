@@ -59,9 +59,11 @@ export default function MapScreen() {
     setViewport,
     filters,
     locationState,
+    setLocationState,
+    setFilters,
   } = useMapDiscoveryStore();
 
-  const scenario = useAppStore((state) => state.scenario);
+  const { scenario, setScenario } = useAppStore();
   const savedEventIds = useDiscoveryStore((state) => state.savedEventIds);
   const toggleSavedEvent = useDiscoveryStore((state) => state.toggleSavedEvent);
 
@@ -71,8 +73,14 @@ export default function MapScreen() {
   });
 
   const eventLookup = useMemo(
-    () => Object.fromEntries(discoveryEvents.map((event) => [event.id, event])),
-    [],
+    () =>
+      Object.fromEntries(
+        (mapQuery.data?.events ?? discoveryEvents).map((event) => [
+          event.id,
+          event,
+        ]),
+      ),
+    [mapQuery.data?.events],
   );
 
   const selectedEvent = selectedEventId ? eventLookup[selectedEventId] : null;
@@ -95,12 +103,17 @@ export default function MapScreen() {
       .filter((evt): evt is (typeof discoveryEvents)[0] => Boolean(evt));
   }, [mapQuery.data, eventLookup]);
 
-  if (scenario === "map_location_disabled" || locationState === "disabled") {
+  const isLocationDisabled =
+    locationState === "disabled" ||
+    (scenario === "map_location_disabled" && locationState !== "manual_city");
+
+  if (isLocationDisabled) {
     return (
       <MapLocationDisabledState
-        onChooseJohannesburg={() =>
-          useMapDiscoveryStore.getState().setLocationState("manual_city")
-        }
+        onChooseJohannesburg={() => {
+          setLocationState("manual_city");
+          setScenario("normal");
+        }}
       />
     );
   }
@@ -182,11 +195,13 @@ export default function MapScreen() {
       ) : mapQuery.data && mapQuery.data.points.length === 0 ? (
         <EmptyState
           title="No nearby events"
-          description="Adjust the Map filters or restore the normal prototype scenario."
-          actionLabel="Reset Map filters"
-          onAction={() =>
-            useMapDiscoveryStore.getState().setFilters(DEFAULT_MAP_FILTERS)
-          }
+          description="Adjust your filters or restore the normal Map fixtures."
+          actionLabel="Restore Map results"
+          onAction={() => {
+            setFilters(DEFAULT_MAP_FILTERS);
+            setScenario("normal");
+            selectEvent(null);
+          }}
         />
       ) : displayMode === "map" ? (
         <View style={styles.mapArea}>
