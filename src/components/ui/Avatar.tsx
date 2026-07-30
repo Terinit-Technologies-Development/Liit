@@ -7,6 +7,7 @@ import { theme } from "../../design-system/theme";
 
 export interface AvatarProps {
   uri?: string;
+  source?: string;
   name?: string;
   size?: "sm" | "md" | "lg" | "xl";
   isVerified?: boolean;
@@ -15,11 +16,13 @@ export interface AvatarProps {
 
 export const Avatar: React.FC<AvatarProps> = ({
   uri,
+  source,
   name = "User",
   size = "md",
   isVerified = false,
   style,
 }) => {
+  const imageUri = uri || source;
   const dimension =
     size === "sm" ? 32 : size === "lg" ? 56 : size === "xl" ? 80 : 44;
 
@@ -32,9 +35,9 @@ export const Avatar: React.FC<AvatarProps> = ({
 
   return (
     <View style={[{ width: dimension, height: dimension }, style]}>
-      {uri ? (
+      {imageUri ? (
         <Image
-          source={{ uri }}
+          source={{ uri: imageUri }}
           style={[
             styles.image,
             {

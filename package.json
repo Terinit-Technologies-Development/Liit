@@ -62,7 +62,10 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"app/**/*.{ts,tsx}\"",
     "format:write": "prettier --write \"src/**/*.{ts,tsx}\" \"app/**/*.{ts,tsx}\"",
     "test": "jest",
-    "test:e2e": "maestro test .maestro/smoke.yaml"
+    "test:e2e": "maestro test .maestro --include-tags=instruction-01",
+    "test:e2e:instruction-01": "maestro test .maestro --include-tags=instruction-01",
+    "test:e2e:instruction-01:main": "maestro test .maestro/instruction-01-main.yaml",
+    "test:e2e:instruction-01:signout": "maestro test .maestro/instruction-01-signout.yaml"
   },
   "private": true
 }

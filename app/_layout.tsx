@@ -1,6 +1,7 @@
 import React from "react";
 import { Stack } from "expo-router";
 import { AppProviders } from "../src/providers/AppProviders";
+import { ToastBanner } from "../src/components/ui/Toast";
 import { theme } from "../src/design-system/theme";
 
 export default function RootLayout() {
@@ -14,6 +15,7 @@ export default function RootLayout() {
         }}
       >
         <Stack.Screen name="index" />
+        <Stack.Screen name="(public)" />
         <Stack.Screen name="(onboarding)" />
         <Stack.Screen name="(consumer)" />
         <Stack.Screen name="(creator)" />
@@ -25,6 +27,7 @@ export default function RootLayout() {
           }}
         />
       </Stack>
+      <ToastBanner />
     </AppProviders>
   );
 }

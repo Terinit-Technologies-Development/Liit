@@ -2,9 +2,12 @@ name: LIIT Foundation Quality CI
 
 on:
   push:
-    branches: [ main, chore/liit-app-foundation ]
+    branches: [ main, chore/liit-app-foundation, feat/liit-01-foundation-identity ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, feat/liit-01-foundation-identity ]
+
+permissions:
+  contents: read
 
 jobs:
   verify:
@@ -25,7 +28,7 @@ jobs:
         run: npm ci --legacy-peer-deps
 
       - name: Check Formatting with Prettier
-        run: npx prettier --check "src/**/*.{ts,tsx}" "app/**/*.{ts,tsx}"
+        run: npm run format:check
 
       - name: Run ESLint Type Linter
         run: npm run lint
@@ -34,4 +37,4 @@ jobs:
         run: npm run typecheck
 
       - name: Run Unit & Component Tests
-        run: npm run test -- --ci --maxWorkers=2
+        run: npm run test -- --ci --runInBand

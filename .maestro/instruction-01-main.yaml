@@ -1,0 +1,80 @@
+appId: com.liit.app
+name: "LIIT Instruction 1 — onboarding, profile, settings, mode cancellation, reset"
+tags:
+  - instruction-01
+  - smoke
+---
+- launchApp:
+    clearState: true
+
+- startRecording:
+    path: "artifacts/pr-01/instruction-01-main"
+    label: "Record the complete Instruction 1 reviewer journey"
+    optional: false
+
+- runFlow:
+    file: "flows/authenticated-onboarding.yaml"
+    label: "Complete denied-location onboarding and simulated sign-in"
+
+# Consumer Profile
+- tapOn: "Profile"
+- assertVisible: "Consumer Profile"
+- assertVisible: "Thabo Mbeki"
+- assertVisible: "CONSUMER"
+
+# Edit Profile must produce an explicit prototype response
+- tapOn: "Edit Profile"
+- assertVisible: "Profile editing is simulated in prototype mode."
+- takeScreenshot: "artifacts/pr-01/profile-edit-toast"
+
+# Settings location editing
+- tapOn: "Settings & Preferences"
+- assertVisible: "Preferences"
+- assertVisible: "Active Location: Johannesburg"
+
+- tapOn: "Location Services"
+- assertVisible: "Where are you discovering events?"
+
+- tapOn: "Cape Town"
+- tapOn: "Save & Return to Settings"
+
+- assertVisible: "Preferences"
+- assertVisible: "Active Location: Cape Town"
+- takeScreenshot: "artifacts/pr-01/settings-location-return"
+
+# Return to Profile through actual header back action
+- tapOn: "Navigate back"
+- assertVisible: "Consumer Profile"
+
+# Mode switch cancellation must use product Profile entry
+- tapOn:
+    id: "profile-open-mode-switch"
+- assertVisible: "Choose Your LIIT Experience"
+
+- tapOn:
+    id: "mode-select-creator"
+- assertVisible: "SELECTED"
+
+- tapOn:
+    id: "mode-cancel"
+
+# Verify cancellation preserved original mode and route
+- assertVisible: "Consumer Profile"
+- assertVisible: "CONSUMER"
+- takeScreenshot: "artifacts/pr-01/mode-switch-cancelled"
+
+# Perform full prototype reset while Prototype Controls is reachable
+- tapOn: "Open Prototype Controls"
+- assertVisible: "Prototype Controls"
+
+- tapOn: "Reset All Prototype State"
+
+# Restart app without clearState to prove reset persistence
+- stopApp
+- launchApp
+
+- assertVisible: "Pulse of Nightlife & Culture"
+- assertNotVisible: "Consumer Profile"
+- takeScreenshot: "artifacts/pr-01/reset-returned-to-welcome"
+
+- stopRecording

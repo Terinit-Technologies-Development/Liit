@@ -1,0 +1,39 @@
+appId: com.liit.app
+name: "LIIT Instruction 1 — durable sign-out and cold relaunch"
+tags:
+  - instruction-01
+  - auth
+---
+- launchApp:
+    clearState: true
+
+- startRecording:
+    path: "artifacts/pr-01/instruction-01-signout"
+    label: "Record durable sign-out and cold relaunch"
+    optional: false
+
+- runFlow:
+    file: "flows/authenticated-onboarding.yaml"
+    label: "Create a deterministic authenticated session"
+
+- tapOn: "Profile"
+- assertVisible: "Consumer Profile"
+
+- tapOn: "Settings & Preferences"
+- assertVisible: "Session Status: AUTHENTICATED"
+
+- tapOn: "Sign Out"
+
+# Immediate redirect after sign-out
+- assertVisible: "Pulse of Nightlife & Culture"
+- takeScreenshot: "artifacts/pr-01/signout-immediate"
+
+# Relaunch without clearState so persisted unauthenticated state is tested
+- stopApp
+- launchApp
+
+- assertVisible: "Pulse of Nightlife & Culture"
+- assertNotVisible: "Feed"
+- takeScreenshot: "artifacts/pr-01/signout-cold-relaunch"
+
+- stopRecording
