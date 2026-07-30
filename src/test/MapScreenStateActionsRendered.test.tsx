@@ -1,14 +1,46 @@
 import React from "react";
 import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import MapScreen from "../../app/(consumer)/map";
 import PrototypeControlsScreen from "../../app/(modals)/prototype-controls";
-import { EmptyState } from "../components/feedback/EmptyState";
 import { useAppStore } from "../state/useAppStore";
 import {
   useMapDiscoveryStore,
   DEFAULT_VIEWPORT,
 } from "../state/useMapDiscoveryStore";
 import { DEFAULT_MAP_FILTERS } from "../domain/map/map-filter-schema";
+import { discoveryEvents } from "../fixtures/discovery";
+import { mapEventPoints } from "../fixtures/map";
+
+const mockNormalSnapshot = {
+  city: "Johannesburg" as const,
+  events: [discoveryEvents[0]],
+  eventIds: [discoveryEvents[0].id],
+  points: [mapEventPoints[0]],
+};
+
+const mockEmptySnapshot = {
+  city: "Johannesburg" as const,
+  events: [],
+  eventIds: [],
+  points: [],
+};
+
+jest.mock("../hooks/map/useMapDiscoveryQuery", () => ({
+  useMapDiscoveryQuery: jest.fn(
+    ({ scenario, filters }: { scenario: string; filters: any }) => ({
+      data:
+        scenario === "discovery_error" || scenario === "loading"
+          ? undefined
+          : scenario === "map_no_results" || filters.distanceKm === 5
+            ? mockEmptySnapshot
+            : mockNormalSnapshot,
+      isLoading: scenario === "loading",
+      isError: scenario === "discovery_error",
+      refetch: jest.fn(),
+    }),
+  ),
+}));
 
 const mockBack = jest.fn();
 const mockReplace = jest.fn();
@@ -45,21 +77,13 @@ describe("Map Screen State Actions Rendered Integration", () => {
     mockReplace.mockClear();
   });
 
-  it("renders Location Disabled action and exits disabled scenario when pressed", async () => {
+  it("exits the real location-disabled Map state when Use Johannesburg Fixtures is pressed", async () => {
     useAppStore.setState({ scenario: "map_location_disabled" });
 
-    const handleChooseJohannesburg = () => {
-      useMapDiscoveryStore.getState().setLocationState("manual_city");
-      useAppStore.getState().setScenario("normal");
-    };
-
     const screen = render(
-      <EmptyState
-        title="Location is disabled"
-        description="Location permissions are disabled in this prototype scenario."
-        actionLabel="Use Johannesburg Fixtures"
-        onAction={handleChooseJohannesburg}
-      />,
+      <QueryClientProvider client={queryClient}>
+        <MapScreen />
+      </QueryClientProvider>,
     );
 
     expect(screen.getByText("Location is disabled")).toBeTruthy();
@@ -69,30 +93,24 @@ describe("Map Screen State Actions Rendered Integration", () => {
     await waitFor(() => {
       expect(useAppStore.getState().scenario).toBe("normal");
       expect(useMapDiscoveryStore.getState().locationState).toBe("manual_city");
+      expect(screen.getByTestId("mock-map-canvas")).toBeTruthy();
     });
   });
 
-  it("renders No Nearby Events action and restores Map results when pressed", async () => {
+  it("restores results through the real Map empty-state action when Restore Map results is pressed", async () => {
     useAppStore.setState({ scenario: "map_no_results" });
     useMapDiscoveryStore.setState({
-      selectedEventId: "evt-1",
+      selectedEventId: "evt-midnight-grooves",
       filters: { ...DEFAULT_MAP_FILTERS, freeOnly: true },
     });
 
-    const handleRestoreMapResults = () => {
-      useMapDiscoveryStore.getState().setFilters(DEFAULT_MAP_FILTERS);
-      useAppStore.getState().setScenario("normal");
-      useMapDiscoveryStore.getState().selectEvent(null);
-    };
-
     const screen = render(
-      <EmptyState
-        title="No nearby events"
-        description="Adjust your filters or restore the normal Map fixtures."
-        actionLabel="Restore Map results"
-        onAction={handleRestoreMapResults}
-      />,
+      <QueryClientProvider client={queryClient}>
+        <MapScreen />
+      </QueryClientProvider>,
     );
+
+    expect(screen.getByText("No nearby events")).toBeTruthy();
 
     fireEvent.press(screen.getByText("Restore Map results"));
 
@@ -102,6 +120,7 @@ describe("Map Screen State Actions Rendered Integration", () => {
         DEFAULT_MAP_FILTERS,
       );
       expect(useMapDiscoveryStore.getState().selectedEventId).toBeNull();
+      expect(screen.getByTestId("mock-map-canvas")).toBeTruthy();
     });
   });
 
@@ -128,5 +147,54 @@ describe("Map Screen State Actions Rendered Integration", () => {
       expect(state.filters.freeOnly).toBe(false);
       expect(state.locationState).toBe("available");
     });
+  });
+
+  it("clears an excluded selection when distance filter excludes the selected event", async () => {
+    useMapDiscoveryStore.setState({
+      selectedEventId: discoveryEvents[0].id,
+      filters: { ...DEFAULT_MAP_FILTERS, distanceKm: 5 },
+    });
+
+    const screen = render(
+      <QueryClientProvider client={queryClient}>
+        <MapScreen />
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => {
+      expect(useMapDiscoveryStore.getState().selectedEventId).toBeNull();
+      expect(screen.queryByTestId("map-event-preview")).toBeNull();
+    });
+  });
+
+  it("does not render preview card when discovery_error occurs", async () => {
+    useAppStore.setState({ scenario: "discovery_error" });
+    useMapDiscoveryStore.setState({
+      selectedEventId: discoveryEvents[0].id,
+    });
+
+    const screen = render(
+      <QueryClientProvider client={queryClient}>
+        <MapScreen />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByText("The event map did not load")).toBeTruthy();
+    expect(screen.queryByTestId("map-event-preview")).toBeNull();
+  });
+
+  it("does not render preview card during query loading state", async () => {
+    useAppStore.setState({ scenario: "loading" as any });
+    useMapDiscoveryStore.setState({
+      selectedEventId: discoveryEvents[0].id,
+    });
+
+    const screen = render(
+      <QueryClientProvider client={queryClient}>
+        <MapScreen />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.queryByTestId("map-event-preview")).toBeNull();
   });
 });

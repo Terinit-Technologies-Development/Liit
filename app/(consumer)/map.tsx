@@ -85,10 +85,7 @@ export default function MapScreen() {
   const eventLookup = useMemo(
     () =>
       Object.fromEntries(
-        (mapQuery.data?.events ?? discoveryEvents).map((event) => [
-          event.id,
-          event,
-        ]),
+        (mapQuery.data?.events ?? []).map((event) => [event.id, event]),
       ),
     [mapQuery.data?.events],
   );
@@ -257,10 +254,10 @@ export default function MapScreen() {
         />
       )}
 
-      {selectedEvent ? (
+      {selectedEvent && selectedPoint ? (
         <MapEventPreview
           event={selectedEvent}
-          distanceKm={selectedPoint?.distanceKm ?? 0}
+          distanceKm={selectedPoint.distanceKm}
           nowIso={DEMO_NOW_ISO}
           isSaved={savedEventIds.includes(selectedEvent.id)}
           onToggleSaved={() => toggleSavedEvent(selectedEvent.id)}
