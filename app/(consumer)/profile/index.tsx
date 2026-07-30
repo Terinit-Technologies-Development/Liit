@@ -174,6 +174,7 @@ export default function ProfileScreen() {
               accessibilityLabel="Settings and Preferences"
             />
             <Pressable
+              testID="profile-open-mode-switch"
               onPress={handleBecomeCreator}
               style={styles.creatorSwitchBanner}
               accessibilityRole="button"

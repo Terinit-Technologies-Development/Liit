@@ -1,8 +1,8 @@
-import React from "react";
-import { Pressable, StyleSheet, ViewStyle, StyleProp } from "react-native";
-import { AppText } from "./AppText";
-import { Icon, SemanticIconName } from "../../design-system/icons/Icon";
-import { theme } from "../../design-system/theme";
+import React from 'react';
+import { Pressable, StyleSheet, ViewStyle, StyleProp } from 'react-native';
+import { AppText } from './AppText';
+import { Icon, SemanticIconName } from '../../design-system/icons/Icon';
+import { theme } from '../../design-system/theme';
 
 export interface SecondaryButtonProps {
   label: string;
@@ -11,6 +11,7 @@ export interface SecondaryButtonProps {
   leftIcon?: SemanticIconName;
   fullWidth?: boolean;
   accessibilityLabel?: string;
+  testID?: string;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -21,10 +22,12 @@ export const SecondaryButton: React.FC<SecondaryButtonProps> = ({
   leftIcon,
   fullWidth = false,
   accessibilityLabel,
+  testID,
   style,
 }) => {
   return (
     <Pressable
+      testID={testID}
       onPress={disabled ? undefined : onPress}
       disabled={disabled}
       accessibilityRole="button"
@@ -37,7 +40,7 @@ export const SecondaryButton: React.FC<SecondaryButtonProps> = ({
             ? theme.colors.surfaceElevated
             : theme.colors.surfacePrimary,
           opacity: disabled ? 0.4 : 1,
-          alignSelf: fullWidth ? "stretch" : "flex-start",
+          alignSelf: fullWidth ? 'stretch' : 'flex-start',
         },
         style,
       ]}
@@ -64,9 +67,9 @@ const styles = StyleSheet.create({
     borderRadius: theme.radii.full,
     borderWidth: 1,
     borderColor: theme.colors.borderSubtle,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   icon: {
     marginRight: theme.spacing.xs,

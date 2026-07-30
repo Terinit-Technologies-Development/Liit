@@ -1,0 +1,40 @@
+appId: com.liit.app
+---
+# Welcome carousel
+- assertVisible: "PROTOTYPE SIMULATION"
+- assertVisible: "Pulse of Nightlife & Culture"
+
+- tapOn: "Next"
+- tapOn: "Next"
+- tapOn: "Get Started"
+
+# Location permission simulation
+- assertVisible: "Where are you discovering events?"
+- tapOn: "Simulate Denied Permission"
+- assertVisible: "Location Access Denied"
+
+# Manual city choice after denial
+- tapOn: "Johannesburg"
+- assertVisible: "Johannesburg"
+- takeScreenshot: "artifacts/pr-01/location-denied"
+
+- tapOn: "Continue"
+
+# Interest selection
+- assertVisible: "What experiences move you?"
+
+# Default fixture has 3 selected interests.
+- assertVisible: "Continue (3 Selected)"
+
+# Verify interactive selection with an initially unselected category.
+- tapOn: "Food & Pop-ups"
+- assertVisible: "Continue (4 Selected)"
+
+- tapOn: "Continue (4 Selected)"
+
+# Simulated authentication
+- assertVisible: "Sign in to LIIT"
+- tapOn: "Simulate Sign In"
+
+# Consumer shell
+- assertVisible: "Feed"

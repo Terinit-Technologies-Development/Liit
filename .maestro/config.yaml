@@ -1,0 +1,6 @@
+appId: com.liit.app
+
+flows:
+  - "instruction-01-*.yaml"
+
+testOutputDir: "artifacts/pr-01/test-output"

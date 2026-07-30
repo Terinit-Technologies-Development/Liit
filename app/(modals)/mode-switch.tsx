@@ -73,7 +73,10 @@ export default function ModeSwitchModal() {
         </AppText>
 
         {/* Consumer Card */}
-        <Pressable onPress={() => setSelectedMode("consumer")}>
+        <Pressable
+          testID="mode-select-consumer"
+          onPress={() => setSelectedMode("consumer")}
+        >
           <SurfaceCard
             style={[
               styles.modeCard,
@@ -115,7 +118,13 @@ export default function ModeSwitchModal() {
         </Pressable>
 
         {/* Creator Card */}
-        <Pressable onPress={() => setSelectedMode("creator")}>
+        <Pressable
+          testID="mode-select-creator"
+          onPress={() => setSelectedMode("creator")}
+          accessibilityRole="radio"
+          accessibilityState={{ checked: selectedMode === "creator" }}
+          accessibilityLabel="Select Creator Mode"
+        >
           <SurfaceCard
             style={[
               styles.modeCard,
@@ -160,6 +169,7 @@ export default function ModeSwitchModal() {
           fullWidth
         />
         <SecondaryButton
+          testID="mode-cancel"
           label="Cancel (Keep Current Mode)"
           onPress={handleCancel}
           fullWidth
