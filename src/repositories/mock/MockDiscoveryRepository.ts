@@ -114,25 +114,35 @@ export function applyFeedScenario(
   });
 }
 
+const JOHANNESBURG_OFFSET_MS = 2 * 60 * 60 * 1000;
+const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+
 export function getWeekendRange(nowIso: string): {
   start: number;
   end: number;
 } {
-  const now = new Date(nowIso);
-  const day = now.getUTCDay();
+  const localNow = new Date(Date.parse(nowIso) + JOHANNESBURG_OFFSET_MS);
 
-  const daysUntilFriday = day <= 5 ? 5 - day : 6;
+  const localDay = localNow.getUTCDay();
 
-  const friday = new Date(now);
-  friday.setUTCDate(now.getUTCDate() + daysUntilFriday);
-  friday.setUTCHours(0, 0, 0, 0);
+  const daysFromCurrentDateToFriday =
+    localDay === 6 ? -1 : localDay === 0 ? -2 : 5 - localDay;
 
-  const monday = new Date(friday);
-  monday.setUTCDate(friday.getUTCDate() + 3);
+  const fridayLocalMidnight = Date.UTC(
+    localNow.getUTCFullYear(),
+    localNow.getUTCMonth(),
+    localNow.getUTCDate() + daysFromCurrentDateToFriday,
+    0,
+    0,
+    0,
+    0,
+  );
+
+  const start = fridayLocalMidnight - JOHANNESBURG_OFFSET_MS;
 
   return {
-    start: friday.getTime(),
-    end: monday.getTime(),
+    start,
+    end: start + THREE_DAYS_MS,
   };
 }
 

@@ -6,7 +6,11 @@ import { AppText } from "../../src/components/ui/AppText";
 import { Chip } from "../../src/components/ui/Chip";
 import { SectionHeader } from "../../src/components/ui/SectionHeader";
 import { ErrorState } from "../../src/components/ui/ErrorState";
-import { DiscoveryCollection } from "../../src/domain/discovery";
+import { EmptyState } from "../../src/components/feedback/EmptyState";
+import {
+  DiscoveryCollection,
+  ExplorePayload,
+} from "../../src/domain/discovery";
 import { CollectionRail } from "../../src/components/discovery/CollectionRail";
 import {
   EventCard,
@@ -25,6 +29,16 @@ import { EventCategory } from "../../src/domain/events";
 import { ROUTES } from "../../src/navigation/routes";
 import { theme } from "../../src/design-system/theme";
 import { Icon } from "../../src/design-system/icons/Icon";
+
+function isExplorePayloadEmpty(data: ExplorePayload): boolean {
+  return (
+    data.trending.length === 0 &&
+    data.featuredVenues.length === 0 &&
+    data.recommended.length === 0 &&
+    data.thisWeekend.length === 0 &&
+    data.nearby.length === 0
+  );
+}
 
 export default function ExploreScreen() {
   const router = useRouter();
@@ -139,6 +153,13 @@ export default function ExploreScreen() {
             description="Please check your connection and try again."
             actionLabel="Retry"
             onAction={() => exploreQuery.refetch()}
+          />
+        ) : data && isExplorePayloadEmpty(data) ? (
+          <EmptyState
+            title="Nothing to explore yet"
+            description="Johannesburg discovery is empty in this prototype scenario."
+            actionLabel="Open prototype controls"
+            onAction={() => router.push(ROUTES.modals.prototypeControls as any)}
           />
         ) : data ? (
           <View style={styles.railsContainer}>

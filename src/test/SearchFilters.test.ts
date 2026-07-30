@@ -33,7 +33,7 @@ describe("Search Date & Distance Filtering Logic", () => {
     },
     occurrence: {
       id: "occ1",
-      startTime: "2026-07-31T18:00:00Z", // Friday Jul 31
+      startTime: "2026-07-31T18:00:00Z", // Friday Jul 31 20:00 SAST
       endTime: "2026-07-31T23:00:00Z",
       doorsOpen: "2026-07-31T17:00:00Z",
     },
@@ -72,6 +72,61 @@ describe("Search Date & Distance Filtering Logic", () => {
     expect(matchesDatePreset(baseEvent, "this_weekend", nowIso)).toBe(true);
   });
 
+  it("calculates getWeekendRange accurately across Thursday, Friday, Saturday, and Sunday in Johannesburg timezone", () => {
+    // Thursday Jul 30 2026 (SAST) -> Friday is Jul 31 00:00 SAST (Jul 30 22:00 UTC)
+    const thursdayNow = "2026-07-30T20:00:00.000Z";
+    const rangeThursday = getWeekendRange(thursdayNow);
+    expect(new Date(rangeThursday.start).toISOString()).toBe(
+      "2026-07-30T22:00:00.000Z",
+    ); // Friday 00:00 SAST
+    expect(new Date(rangeThursday.end).toISOString()).toBe(
+      "2026-08-02T22:00:00.000Z",
+    ); // Monday 00:00 SAST
+
+    // Friday Jul 31 2026 14:00 SAST (12:00 UTC)
+    const fridayNow = "2026-07-31T12:00:00.000Z";
+    const rangeFriday = getWeekendRange(fridayNow);
+    expect(rangeFriday.start).toBe(rangeThursday.start);
+
+    // Saturday Aug 1 2026 14:00 SAST (12:00 UTC) -> retains current weekend
+    const saturdayNow = "2026-08-01T12:00:00.000Z";
+    const rangeSaturday = getWeekendRange(saturdayNow);
+    expect(rangeSaturday.start).toBe(rangeThursday.start);
+
+    // Sunday Aug 2 2026 14:00 SAST (12:00 UTC) -> retains current weekend
+    const sundayNow = "2026-08-02T12:00:00.000Z";
+    const rangeSunday = getWeekendRange(sundayNow);
+    expect(rangeSunday.start).toBe(rangeThursday.start);
+  });
+
+  it("includes an event at 00:30 Friday SAST (Thursday 22:30 UTC)", () => {
+    const nowIso = "2026-07-30T20:00:00.000Z"; // Thursday evening
+    const earlyFridayEvent = {
+      ...baseEvent,
+      occurrence: {
+        ...baseEvent.occurrence,
+        startTime: "2026-07-30T22:30:00.000Z", // Friday 00:30 SAST
+      },
+    };
+
+    expect(matchesDatePreset(earlyFridayEvent, "this_weekend", nowIso)).toBe(
+      true,
+    );
+  });
+
+  it("excludes an event occurring after 00:00 Monday SAST (Sunday 22:00 UTC)", () => {
+    const nowIso = "2026-07-30T20:00:00.000Z";
+    const mondayEvent = {
+      ...baseEvent,
+      occurrence: {
+        ...baseEvent.occurrence,
+        startTime: "2026-08-02T22:05:00.000Z", // Monday 00:05 SAST
+      },
+    };
+
+    expect(matchesDatePreset(mondayEvent, "this_weekend", nowIso)).toBe(false);
+  });
+
   it("excludes a future weekend event beyond the current weekend interval", () => {
     const nowIso = "2026-07-30T20:00:00.000Z"; // Thursday Jul 30
     const futureWeekendEvent = {
@@ -85,14 +140,6 @@ describe("Search Date & Distance Filtering Logic", () => {
     expect(matchesDatePreset(futureWeekendEvent, "this_weekend", nowIso)).toBe(
       false,
     );
-  });
-
-  it("calculates weekend date range interval accurately", () => {
-    const nowIso = "2026-07-30T20:00:00.000Z"; // Thursday Jul 30
-    const { start, end } = getWeekendRange(nowIso);
-
-    expect(new Date(start).toISOString()).toContain("2026-07-31");
-    expect(new Date(end).toISOString()).toContain("2026-08-03");
   });
 
   it("calculates metric distance accurately using haversine formula", () => {
