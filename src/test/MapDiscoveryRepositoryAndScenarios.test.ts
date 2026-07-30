@@ -76,4 +76,23 @@ describe("MockMapDiscoveryRepository & Prototype Scenarios", () => {
 
     expect(snapshot.points.length).toBeDefined();
   });
+
+  it("removes distance-excluded Events from the snapshot", async () => {
+    const snapshot = await mockMapDiscoveryRepository.getSnapshot({
+      city: "Johannesburg",
+      scenario: "normal",
+      filters: {
+        ...DEFAULT_MAP_FILTERS,
+        distanceKm: 5,
+      },
+    });
+
+    expect(snapshot.eventIds).not.toContain("evt-soweto-food-market");
+    expect(snapshot.events.map((event) => event.id)).not.toContain(
+      "evt-soweto-food-market",
+    );
+    expect(snapshot.points.map((p) => p.eventId)).not.toContain(
+      "evt-soweto-food-market",
+    );
+  });
 });

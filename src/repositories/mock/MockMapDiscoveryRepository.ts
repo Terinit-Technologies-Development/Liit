@@ -92,14 +92,14 @@ export class MockMapDiscoveryRepository implements MapDiscoveryRepository {
 
       const baseEvents = applyMapScenario(discoveryEvents, request.scenario);
 
-      const filteredEvents = baseEvents.filter((event) =>
+      const candidateEvents = baseEvents.filter((event) =>
         matchesMapFilters(event, request.filters),
       );
 
-      const eventIds = filteredEvents.map((event) => event.id);
+      const candidateIds = new Set(candidateEvents.map((event) => event.id));
 
       const points = mapEventPoints.filter((point) => {
-        if (!eventIds.includes(point.eventId)) {
+        if (!candidateIds.has(point.eventId)) {
           return false;
         }
 
@@ -113,10 +113,17 @@ export class MockMapDiscoveryRepository implements MapDiscoveryRepository {
         return true;
       });
 
+      const visibleEventIds = points.map((point) => point.eventId);
+      const visibleEventIdSet = new Set(visibleEventIds);
+
+      const visibleEvents = candidateEvents.filter((event) =>
+        visibleEventIdSet.has(event.id),
+      );
+
       return {
         city: "Johannesburg",
-        events: filteredEvents,
-        eventIds: points.map((p) => p.eventId),
+        events: visibleEvents,
+        eventIds: visibleEventIds,
         points,
       };
     }, options);

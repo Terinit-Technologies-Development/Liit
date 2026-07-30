@@ -56,8 +56,8 @@ export interface MapSnapshot {
 }
 
 export const JOHANNESBURG_BOUNDS = {
-  north: -26.15,
-  south: -26.25,
-  west: 28.0,
-  east: 28.1,
+  north: -26.13,
+  south: -26.27,
+  west: 27.88,
+  east: 28.12,
 } as const;

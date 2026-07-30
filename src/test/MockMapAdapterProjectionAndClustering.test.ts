@@ -1,5 +1,6 @@
 import { mockMapAdapter } from "../adapters/map/MockMapAdapter";
 import { JOHANNESBURG_BOUNDS, MapViewport } from "../domain/map";
+import { mapEventPoints } from "../fixtures/map";
 
 describe("MockMapAdapter Projection & Clustering", () => {
   it("projects Johannesburg coordinates inside the canvas dimensions", () => {
@@ -19,6 +20,28 @@ describe("MockMapAdapter Projection & Clustering", () => {
     expect(point.x).toBeLessThanOrEqual(400);
     expect(point.y).toBeGreaterThanOrEqual(0);
     expect(point.y).toBeLessThanOrEqual(700);
+  });
+
+  it("projects every Map fixture inside a safe canvas margin", () => {
+    const width = 400;
+    const height = 700;
+    const margin = 24;
+
+    for (const fixture of mapEventPoints) {
+      const point = mockMapAdapter.project(
+        fixture.coordinate,
+        JOHANNESBURG_BOUNDS,
+        {
+          width,
+          height,
+        },
+      );
+
+      expect(point.x).toBeGreaterThanOrEqual(margin);
+      expect(point.x).toBeLessThanOrEqual(width - margin);
+      expect(point.y).toBeGreaterThanOrEqual(margin);
+      expect(point.y).toBeLessThanOrEqual(height - margin);
+    }
   });
 
   it("clusters points sharing clusterKey at zoom levels 1 and 2", () => {

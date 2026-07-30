@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Screen } from "../../src/components/ui/Screen";
@@ -71,6 +71,16 @@ export default function MapScreen() {
     filters,
     scenario,
   });
+
+  useEffect(() => {
+    if (!selectedEventId || !mapQuery.data) {
+      return;
+    }
+
+    if (!mapQuery.data.eventIds.includes(selectedEventId)) {
+      selectEvent(null);
+    }
+  }, [mapQuery.data, selectEvent, selectedEventId]);
 
   const eventLookup = useMemo(
     () =>
