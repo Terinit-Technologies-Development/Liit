@@ -1,0 +1,34 @@
+appId: com.liit.app
+tags:
+  - instruction-05
+---
+- launchApp:
+    clearState: true
+- runFlow:
+    file: flows/authenticated-onboarding.yaml
+- tapOn:
+    id: feed-open-inbox
+- assertVisible:
+    id: inbox-screen
+- tapOn:
+    id: inbox-row-conv-direct-alex
+- tapOn:
+    id: direct-thread-actions
+- assertVisible:
+    id: conversation-actions-modal
+- tapOn:
+    id: action-block-button
+- assertVisible:
+    id: direct-blocked-banner
+- tapOn:
+    id: direct-unblock-button
+- tapOn:
+    id: direct-thread-actions
+- tapOn:
+    id: action-report-button
+- assertVisible:
+    id: report-content-modal
+- tapOn:
+    id: report-reason-spam-or-unsolicited-promotion
+- tapOn:
+    id: report-submit-button

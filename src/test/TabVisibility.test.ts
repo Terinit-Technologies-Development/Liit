@@ -27,6 +27,7 @@ describe("Consumer Bottom Tabs Visibility", () => {
       "events",
       "hosts",
       "checkout",
+      "inbox",
     ]);
   });
 });

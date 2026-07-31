@@ -31,6 +31,12 @@ export const CONSUMER_TAB_ROUTES = [
     visible: false,
     hideTabBar: true,
   },
+  {
+    name: "inbox",
+    title: "Inbox",
+    visible: false,
+    hideTabBar: true,
+  },
 ] as const;
 
 export const ROUTES = {
@@ -58,6 +64,9 @@ export const ROUTES = {
     checkoutProcessing: "/(consumer)/checkout/[eventId]/processing",
     checkoutResult: "/(consumer)/checkout/[eventId]/result",
     fullTicket: "/(consumer)/tickets/[ticketId]",
+    inbox: "/(consumer)/inbox",
+    directThread: "/(consumer)/inbox/direct/[conversationId]",
+    inquiryThread: "/(consumer)/inbox/inquiries/[conversationId]",
   },
   creator: {
     dashboard: "/(creator)/dashboard",
@@ -76,6 +85,10 @@ export const ROUTES = {
     eventReport: "/(modals)/event-report",
     paymentMethod: "/(modals)/payment-method",
     ticketTerms: "/(modals)/ticket-terms",
+    newMessage: "/(modals)/new-message",
+    conversationActions: "/(modals)/conversation-actions",
+    reportContent: "/(modals)/report-content",
+    eventComments: "/(modals)/event-comments",
   },
 } as const;
 
@@ -178,6 +191,56 @@ export const routeBuilders = {
     return {
       pathname: ROUTES.consumer.fullTicket,
       params: { ticketId },
+    } as const;
+  },
+
+  inbox() {
+    return {
+      pathname: ROUTES.consumer.inbox,
+    } as const;
+  },
+
+  directThread(conversationId: string) {
+    return {
+      pathname: ROUTES.consumer.directThread,
+      params: { conversationId },
+    } as const;
+  },
+
+  inquiryThread(conversationId: string) {
+    return {
+      pathname: ROUTES.consumer.inquiryThread,
+      params: { conversationId },
+    } as const;
+  },
+
+  newMessageModal() {
+    return {
+      pathname: ROUTES.modals.newMessage,
+    } as const;
+  },
+
+  conversationActionsModal(conversationId: string) {
+    return {
+      pathname: ROUTES.modals.conversationActions,
+      params: { conversationId },
+    } as const;
+  },
+
+  reportContentModal(target: {
+    targetKind: "event" | "host" | "comment" | "message" | "user";
+    targetId: string;
+  }) {
+    return {
+      pathname: ROUTES.modals.reportContent,
+      params: target,
+    } as const;
+  },
+
+  eventCommentsModal(eventId: string) {
+    return {
+      pathname: ROUTES.modals.eventComments,
+      params: { eventId },
     } as const;
   },
 };

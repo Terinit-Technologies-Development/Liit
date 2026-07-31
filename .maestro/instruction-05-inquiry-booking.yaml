@@ -1,0 +1,28 @@
+appId: com.liit.app
+tags:
+  - instruction-05
+---
+- launchApp:
+    clearState: true
+- runFlow:
+    file: flows/authenticated-onboarding.yaml
+- tapOn:
+    id: feed-open-inbox
+- assertVisible:
+    id: inbox-screen
+- tapOn:
+    id: inbox-tab-inquiry
+- tapOn:
+    id: inbox-row-conv-inquiry-club-vibez
+- assertVisible:
+    id: inquiry-thread-screen
+- assertVisible:
+    id: inquiry-event-context-card
+- assertVisible:
+    id: inquiry-booking-link-card
+- tapOn:
+    id: booking-offer-cta
+- assertVisible:
+    id: checkout-tickets-screen
+- assertVisible:
+    id: ticket-tier-tier-vip-tables

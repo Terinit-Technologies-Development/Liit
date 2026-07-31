@@ -24,7 +24,7 @@ describe("Instruction 3 Routes and Tab Visibility", () => {
       (route) => "hideTabBar" in route && route.hideTabBar,
     ).map((route) => route.name);
 
-    expect(hiddenTabRoutes).toEqual(["events", "hosts", "checkout"]);
+    expect(hiddenTabRoutes).toEqual(["events", "hosts", "checkout", "inbox"]);
   });
 
   it("builds typed route parameters for event detail, host profile, share and report", () => {

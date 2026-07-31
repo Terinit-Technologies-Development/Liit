@@ -16,6 +16,7 @@ import { LiveContentPlaceholderCard } from "../../src/components/discovery/LiveC
 import { StoryRing } from "../../src/components/discovery/StoryRing";
 import { useFeedQuery } from "../../src/hooks/discovery/useFeedQuery";
 import { useNotificationsQuery } from "../../src/hooks/discovery/useNotificationsQuery";
+import { useConversationsQuery } from "../../src/hooks/social/useSocialQueries";
 import { useDiscoveryStore } from "../../src/state/useDiscoveryStore";
 import { useAppStore } from "../../src/state/useAppStore";
 import { useToast } from "../../src/hooks/useToast";
@@ -43,6 +44,11 @@ export default function FeedScreen() {
     router.push(routeBuilders.hostProfile(hostId));
   };
 
+  const inboxQuery = useConversationsQuery();
+  const unreadInboxCount = (inboxQuery.data ?? []).reduce(
+    (total, conv) => total + conv.unreadCount,
+    0,
+  );
   const feedItems = feedQuery.data?.items ?? [];
 
   return (
@@ -50,10 +56,12 @@ export default function FeedScreen() {
       <DiscoveryHeader
         city="Johannesburg"
         unreadCount={unreadCount}
+        unreadInboxCount={unreadInboxCount}
         onSearch={() => router.push(ROUTES.consumer.search as any)}
         onNotifications={() =>
           router.push(ROUTES.consumer.notifications as any)
         }
+        onInbox={() => router.push(routeBuilders.inbox())}
       />
 
       {scenario === "offline" ? (

@@ -1,0 +1,35 @@
+appId: com.liit.app
+tags:
+  - instruction-05
+---
+- launchApp:
+    clearState: true
+- runFlow:
+    file: flows/authenticated-onboarding.yaml
+- tapOn:
+    id: feed-open-inbox
+- assertVisible:
+    id: inbox-screen
+- tapOn:
+    id: inbox-tab-direct
+- tapOn:
+    id: inbox-row-conv-direct-alex
+- assertVisible:
+    id: direct-thread-screen
+- assertVisible:
+    id: direct-thread-header
+- assertVisible:
+    id: direct-thread-voice-call
+- assertVisible:
+    id: direct-thread-video-call
+- tapOn:
+    id: composer-input
+- inputText: "See you at 9pm!"
+- tapOn:
+    id: composer-send-button
+- assertVisible:
+    id: direct-thread-back
+- tapOn:
+    id: direct-thread-back
+- assertVisible:
+    id: inbox-screen
