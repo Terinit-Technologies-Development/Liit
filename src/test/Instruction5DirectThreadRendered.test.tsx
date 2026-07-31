@@ -107,9 +107,7 @@ describe("DirectThreadScreen Rendered Integration Tests", () => {
     jest.useRealTimers();
   });
 
-  it(
-    "Retries a failed outgoing message using retryMessage without creating duplicate messages",
-    async () => {
+  it("Retries a failed outgoing message using retryMessage without creating duplicate messages", async () => {
     const screen = render(
       <QueryClientProvider client={queryClient}>
         <DirectThreadScreen />

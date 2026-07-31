@@ -154,18 +154,21 @@ describe("Instruction 5 Social Modals Rendered Integration Tests", () => {
       fireEvent.press(sendBtn);
     });
 
-    // 2. Confirm failed cached row rendered and status label shown
+    // 2. Confirm failed cached row rendered and status label shown, and draft is retained in composer
     await waitFor(() => {
       expect(
         screen.getByText("Failed to post comment. Tap to retry."),
       ).toBeTruthy();
+      expect(screen.getByTestId("composer-input").props.value).toBe(
+        "This comment will FAIL!",
+      );
     });
 
     // Verify cache has single optimistic comment row with status 'failed'
-    let commentsCache = queryClient.getQueryData<Comment[]>(
+    const commentsCacheBefore = queryClient.getQueryData<Comment[]>(
       queryKeys.social.comments("evt-midnight-grooves"),
     );
-    const failedItem = commentsCache?.find(
+    const failedItem = commentsCacheBefore?.find(
       (c) => c.content === "This comment will FAIL!",
     );
     expect(failedItem).toBeDefined();
@@ -178,16 +181,30 @@ describe("Instruction 5 Social Modals Rendered Integration Tests", () => {
       await new Promise((r) => setTimeout(r, 600));
     });
 
-    // 4. Confirm retry succeeds and comment transitions to synced (no duplicates)
+    // 4. Confirm retry succeeds, draft is cleared, and comment transitions to synced (one cache row)
     await waitFor(() => {
       expect(
         screen.queryByText("Failed to post comment. Tap to retry."),
       ).toBeNull();
+      expect(screen.getByTestId("composer-input").props.value).toBe("");
     });
 
+    const commentsCacheAfter = queryClient.getQueryData<Comment[]>(
+      queryKeys.social.comments("evt-midnight-grooves"),
+    );
+    const syncedItems = commentsCacheAfter?.filter(
+      (c) => c.content === "This comment will FAIL!",
+    );
+    expect(syncedItems?.length).toBe(1);
+    expect(syncedItems?.[0].status).toBe("synced");
+
     // 5. Confirm only one final comment exists in repository storage
-    const storedComments = await mockSocialRepository.listComments("evt-midnight-grooves");
-    const storedFailItems = storedComments.filter((c) => c.content === "This comment will FAIL!");
+    const storedComments = await mockSocialRepository.listComments(
+      "evt-midnight-grooves",
+    );
+    const storedFailItems = storedComments.filter(
+      (c) => c.content === "This comment will FAIL!",
+    );
     expect(storedFailItems.length).toBe(1);
   });
 });

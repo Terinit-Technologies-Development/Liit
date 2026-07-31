@@ -85,6 +85,11 @@ describe("InquiryThreadScreen Rendered Integration Tests", () => {
   });
 
   it("Runs markRead effect on mount exactly once and updates cached inquiry conversation state", async () => {
+    const markReadSpy = jest.spyOn(
+      mockSocialRepository,
+      "markConversationRead",
+    );
+
     // Initially conv-inquiry-club-vibez has unreadCount = 1
     const initialConv = (await mockSocialRepository.getConversation(
       "conv-inquiry-club-vibez",
@@ -107,6 +112,10 @@ describe("InquiryThreadScreen Rendered Integration Tests", () => {
       )) as HostInquiryConversation;
       expect(updatedConv.unreadCount).toBe(0);
     });
+
+    expect(markReadSpy).toHaveBeenCalledTimes(1);
+    expect(markReadSpy).toHaveBeenCalledWith("conv-inquiry-club-vibez");
+    markReadSpy.mockRestore();
   });
 
   it("Initializes checkout session, preselects tier, renders CheckoutTickets quote, and navigates to Payment", async () => {

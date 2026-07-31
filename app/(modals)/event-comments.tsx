@@ -74,27 +74,30 @@ export default function EventCommentsModal() {
     );
   }
 
-  const handlePost = (text: string) => {
-    const clientMutationId = `${Date.now()}`;
+  const submitComment = (content: string, clientMutationId: string) => {
     postCommentMutation.mutate(
-      { eventId, content: text, clientMutationId },
+      {
+        eventId,
+        content,
+        clientMutationId,
+      },
       {
         onSuccess: () => {
-          setCommentText("");
+          setCommentText((current) => (current === content ? "" : current));
         },
       },
     );
+  };
+
+  const handlePost = (text: string) => {
+    submitComment(text, `${Date.now()}`);
   };
 
   const handleRetry = (comment: Comment) => {
     const clientMutationId = comment.id.startsWith("optimistic-")
       ? comment.id.replace("optimistic-", "")
       : comment.id;
-    postCommentMutation.mutate({
-      eventId,
-      content: comment.content,
-      clientMutationId,
-    });
+    submitComment(comment.content, clientMutationId);
   };
 
   const handleToggleReaction = (commentId: string) => {
