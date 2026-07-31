@@ -35,6 +35,7 @@ export default function ConsumerLayout() {
           options={{
             title: route.title,
             href: route.visible ? undefined : null,
+            tabBarButtonTestID: route.visible ? `tab-${route.name}` : undefined,
             tabBarStyle:
               "hideTabBar" in route && route.hideTabBar
                 ? { display: "none" }

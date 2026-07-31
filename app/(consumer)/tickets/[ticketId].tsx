@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import { ScrollView, StyleSheet, Switch, View } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import React, { useEffect, useState } from "react";
+import { Share, ScrollView, StyleSheet, Switch, View } from "react-native";
+import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { Screen } from "../../../src/components/ui/Screen";
 import { AppText } from "../../../src/components/ui/AppText";
 import { AppImage } from "../../../src/components/ui/AppImage";
@@ -61,6 +61,7 @@ export function getTicketEntryPresentation(
 
 export default function FullTicketScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const params = useLocalSearchParams<{ ticketId?: string | string[] }>();
   const ticketId = normaliseId(params.ticketId);
 
@@ -69,7 +70,18 @@ export default function FullTicketScreen() {
 
   const [highBrightness, setHighBrightness] = useState(false);
 
-  const isFreeRegistration = ticket?.source === "free_registration";
+  // Hide bottom tab bar when Full Ticket is presented
+  useEffect(() => {
+    const parent = navigation.getParent();
+    if (parent) {
+      parent.setOptions({ tabBarStyle: { display: "none" } });
+    }
+    return () => {
+      if (parent) {
+        parent.setOptions({ tabBarStyle: undefined });
+      }
+    };
+  }, [navigation]);
 
   if (ticketQuery.isLoading) {
     return (
@@ -96,7 +108,33 @@ export default function FullTicketScreen() {
     );
   }
 
+  const isFreeRegistration = ticket.source === "free_registration";
   const entryPresentation = getTicketEntryPresentation(ticket);
+  const isProfileVerification = ticket.entryMode === "profile_verification";
+  const canVerifyProfile = isProfileVerification && ticket.status === "valid";
+
+  const passPalette = highBrightness
+    ? {
+        background: "#FFFFFF",
+        surface: "#FFFFFF",
+        text: "#0F0D16",
+        secondaryText: "#3C3747",
+        border: "#0F0D16",
+      }
+    : {
+        background: theme.colors.canvas,
+        surface: theme.colors.surfacePrimary,
+        text: theme.colors.textPrimary,
+        secondaryText: theme.colors.textMuted,
+        border: theme.colors.borderSubtle,
+      };
+
+  const handleShare = async () => {
+    await Share.share({
+      title: ticket.eventSnapshot.title,
+      message: `${ticket.eventSnapshot.title}\nLIIT prototype pass — not valid for real entry.`,
+    });
+  };
 
   return (
     <Screen
@@ -104,26 +142,38 @@ export default function FullTicketScreen() {
       gutter={false}
       style={StyleSheet.flatten([
         styles.screen,
-        highBrightness && styles.highBrightness,
+        { backgroundColor: passPalette.background },
       ])}
+      testID="full-ticket-screen"
     >
       {/* Header */}
-      <View style={styles.header}>
+      <View
+        style={[
+          styles.header,
+          {
+            borderBottomColor: passPalette.border,
+            backgroundColor: passPalette.background,
+          },
+        ]}
+        testID="full-ticket-header"
+      >
         <IconButton
           icon="back"
           accessibilityLabel="Back to wallet"
           onPress={() => router.back()}
           variant="ghost"
         />
-        <AppText variant="subheading" style={styles.headerTitle}>
+        <AppText
+          variant="subheading"
+          style={styles.headerTitle}
+          color={passPalette.text}
+        >
           {isFreeRegistration ? "Registration Pass" : "Full Ticket"}
         </AppText>
         <IconButton
           icon="share"
           accessibilityLabel="Share this ticket"
-          onPress={() => {
-            /* placeholder — sharing not yet implemented */
-          }}
+          onPress={handleShare}
           variant="ghost"
           testID="full-ticket-share"
         />
@@ -141,12 +191,25 @@ export default function FullTicketScreen() {
         />
 
         {/* Status + Title */}
-        <View style={styles.section}>
+        <View
+          style={[
+            styles.section,
+            {
+              backgroundColor: passPalette.surface,
+              borderColor: passPalette.border,
+            },
+          ]}
+          testID="full-ticket-card-title"
+        >
           <View style={styles.statusRow}>
             <TicketStatusPill status={ticket.status} />
           </View>
 
-          <AppText variant="title" style={styles.eventTitle}>
+          <AppText
+            variant="title"
+            style={styles.eventTitle}
+            color={passPalette.text}
+          >
             {ticket.eventSnapshot.title}
           </AppText>
 
@@ -156,23 +219,62 @@ export default function FullTicketScreen() {
         </View>
 
         {/* Entry pass */}
-        <View style={styles.section}>
-          {isFreeRegistration ? (
+        <View
+          style={[
+            styles.section,
+            {
+              backgroundColor: passPalette.surface,
+              borderColor: passPalette.border,
+            },
+          ]}
+          testID="full-ticket-pass-container"
+        >
+          {canVerifyProfile ? (
             <View
-              style={styles.profileVerifyBox}
+              style={[
+                styles.profileVerifyBox,
+                {
+                  backgroundColor: highBrightness
+                    ? "#F0F0FF"
+                    : theme.colors.violetBadgeBg,
+                },
+              ]}
               testID="full-ticket-profile-verification"
               accessibilityLabel="Profile verification notice"
             >
-              <AppText variant="bodyStrong" align="center">
+              <AppText
+                variant="bodyStrong"
+                align="center"
+                color={passPalette.text}
+              >
                 Profile Verification
               </AppText>
               <AppText
                 variant="caption"
-                color={theme.colors.textMuted}
+                color={passPalette.secondaryText}
                 align="center"
               >
                 Show your LIIT profile at the event entrance. This prototype
                 registration is not valid for real entry.
+              </AppText>
+            </View>
+          ) : isProfileVerification ? (
+            <View
+              style={[
+                styles.disabledNotice,
+                {
+                  backgroundColor: passPalette.surface,
+                  borderColor: passPalette.border,
+                },
+              ]}
+              testID="full-ticket-entry-disabled-notice"
+            >
+              <AppText
+                variant="caption"
+                color={passPalette.secondaryText}
+                align="center"
+              >
+                {entryPresentation.message}
               </AppText>
             </View>
           ) : (
@@ -184,12 +286,18 @@ export default function FullTicketScreen() {
               />
               {!entryPresentation.canDisplayEntryCode && (
                 <View
-                  style={styles.disabledNotice}
+                  style={[
+                    styles.disabledNotice,
+                    {
+                      backgroundColor: passPalette.surface,
+                      borderColor: passPalette.border,
+                    },
+                  ]}
                   testID="full-ticket-entry-disabled-notice"
                 >
                   <AppText
                     variant="caption"
-                    color={theme.colors.textMuted}
+                    color={passPalette.secondaryText}
                     align="center"
                   >
                     {entryPresentation.message}
@@ -203,7 +311,9 @@ export default function FullTicketScreen() {
         {/* High-brightness toggle */}
         {!isFreeRegistration && (
           <View style={styles.brightnessRow}>
-            <AppText variant="label">High brightness visual mode</AppText>
+            <AppText variant="label" color={passPalette.text}>
+              High brightness visual mode
+            </AppText>
             <Switch
               testID="full-ticket-high-brightness"
               value={highBrightness}
@@ -215,35 +325,55 @@ export default function FullTicketScreen() {
         )}
 
         {/* Event Details */}
-        <View style={styles.section}>
-          <AppText variant="caption" color={theme.colors.textMuted}>
+        <View
+          style={[
+            styles.section,
+            {
+              backgroundColor: passPalette.surface,
+              borderColor: passPalette.border,
+            },
+          ]}
+        >
+          <AppText variant="caption" color={passPalette.secondaryText}>
             DATE & TIME
           </AppText>
-          <AppText variant="body">
+          <AppText variant="body" color={passPalette.text}>
             {formatDate(ticket.eventSnapshot.startTime, "long")} ·{" "}
             {formatTime(ticket.eventSnapshot.startTime)}
           </AppText>
 
           <AppText
             variant="caption"
-            color={theme.colors.textMuted}
+            color={passPalette.secondaryText}
             style={styles.detailGap}
           >
             VENUE
           </AppText>
-          <AppText variant="body">{ticket.eventSnapshot.venueName}</AppText>
-          <AppText variant="caption" color={theme.colors.textMuted}>
+          <AppText variant="body" color={passPalette.text}>
+            {ticket.eventSnapshot.venueName}
+          </AppText>
+          <AppText variant="caption" color={passPalette.secondaryText}>
             {ticket.eventSnapshot.venueSuburb}, {ticket.eventSnapshot.city}
           </AppText>
         </View>
 
         {/* Attendee */}
-        <View style={styles.section}>
-          <AppText variant="caption" color={theme.colors.textMuted}>
+        <View
+          style={[
+            styles.section,
+            {
+              backgroundColor: passPalette.surface,
+              borderColor: passPalette.border,
+            },
+          ]}
+        >
+          <AppText variant="caption" color={passPalette.secondaryText}>
             ATTENDEE
           </AppText>
-          <AppText variant="body">{ticket.attendeeName}</AppText>
-          <AppText variant="caption" color={theme.colors.textMuted}>
+          <AppText variant="body" color={passPalette.text}>
+            {ticket.attendeeName}
+          </AppText>
+          <AppText variant="caption" color={passPalette.secondaryText}>
             {ticket.id}
           </AppText>
         </View>
@@ -274,9 +404,6 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: theme.colors.canvas,
-  },
-  highBrightness: {
-    backgroundColor: "#FFFFFF",
   },
   header: {
     flexDirection: "row",
@@ -336,6 +463,8 @@ const styles = StyleSheet.create({
     padding: theme.spacing.md,
     backgroundColor: theme.colors.surfaceElevated,
     borderRadius: theme.radii.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: theme.colors.borderSubtle,
     marginTop: theme.spacing.sm,
   },
   center: {

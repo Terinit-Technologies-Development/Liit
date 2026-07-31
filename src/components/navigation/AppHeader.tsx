@@ -107,6 +107,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
               icon="settings"
               onPress={() => router.push("/(modals)/prototype-controls" as any)}
               accessibilityLabel="Open Prototype Controls"
+              testID="prototype-controls-button"
               variant="surface"
               size="sm"
             />

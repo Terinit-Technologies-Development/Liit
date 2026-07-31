@@ -228,6 +228,38 @@ describe("MockTicketingRepository — createFreeRegistration", () => {
     expect(tickets[0].entryMode).toBe("profile_verification");
     expect(tickets[0].status).toBe("valid");
   });
+
+  it("returns the same free registration for the same idempotency key", async () => {
+    const repo = makeRepo();
+    const tier = freeRegistrationTiers[0];
+    if (!tier) return;
+
+    const quote = buildCheckoutQuote("evt-soweto-food-market", [tier], {
+      [tier.id]: 1,
+    });
+
+    const initialWallet = await repo.listWalletTickets();
+    const seedCount = initialWallet.length;
+
+    const input = {
+      registrationId: "reg-idempotent-001",
+      eventId: "evt-soweto-food-market",
+      attendeeId: "usr-001",
+      attendeeName: "Test User",
+      quote,
+    };
+
+    const first = await repo.createFreeRegistration(input);
+    const second = await repo.createFreeRegistration(input);
+
+    expect(second.order.id).toBe(first.order.id);
+    expect(second.tickets.map((t) => t.id)).toEqual(
+      first.tickets.map((t) => t.id),
+    );
+
+    const finalWallet = await repo.listWalletTickets();
+    expect(finalWallet).toHaveLength(seedCount + first.tickets.length);
+  });
 });
 
 describe("MockTicketingRepository — getOrder and getTicket", () => {

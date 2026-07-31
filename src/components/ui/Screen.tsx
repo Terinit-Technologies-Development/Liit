@@ -13,6 +13,7 @@ export interface ScreenProps {
   unsafe?: boolean;
   gutter?: boolean;
   safeAreaEdges?: ("top" | "bottom" | "left" | "right")[];
+  testID?: string;
 }
 
 export const Screen: React.FC<ScreenProps> = ({
@@ -24,6 +25,7 @@ export const Screen: React.FC<ScreenProps> = ({
   unsafe = false,
   gutter = true,
   safeAreaEdges,
+  testID,
 }) => {
   const insets = useSafeAreaInsets();
 
@@ -42,7 +44,7 @@ export const Screen: React.FC<ScreenProps> = ({
   };
 
   return (
-    <View style={[styles.root, style]}>
+    <View style={[styles.root, style]} testID={testID}>
       <StatusBar style={statusBarStyle} />
       {scrollable ? (
         <ScrollView

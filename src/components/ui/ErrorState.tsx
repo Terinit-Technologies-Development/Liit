@@ -10,6 +10,7 @@ export interface ErrorStateProps {
   description?: string;
   actionLabel?: string;
   onAction?: () => void;
+  testID?: string;
 }
 
 export const ErrorState: React.FC<ErrorStateProps> = ({
@@ -17,9 +18,10 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
   description = "Something went wrong. Please try again.",
   actionLabel = "Retry",
   onAction,
+  testID = "error-state-view",
 }) => {
   return (
-    <View style={styles.container} testID="error-state-view">
+    <View style={styles.container} testID={testID}>
       <Icon name="alertCircle" size={40} color={theme.colors.statusDanger} />
       <AppText variant="heading" style={styles.title}>
         {title}

@@ -25,7 +25,8 @@ jest.mock("../hooks/ticketing/useTicketWalletQuery", () => {
 });
 
 jest.mock("../state/useAppStore", () => ({
-  useAppStore: (selector: any) => selector({ scenario: mockScenario, activeMode: "consumer" }),
+  useAppStore: (selector: any) =>
+    selector({ scenario: mockScenario, activeMode: "consumer" }),
 }));
 
 jest.mock("react-native-safe-area-context", () => ({
@@ -84,7 +85,9 @@ describe("TicketWalletRendered Integration", () => {
     fireEvent.press(screen.getByText("Midnight Grooves"));
 
     expect(mockPush).toHaveBeenCalledWith(
-      expect.objectContaining({ pathname: expect.stringContaining("/tickets") }),
+      expect.objectContaining({
+        pathname: expect.stringContaining("/tickets"),
+      }),
     );
   });
 

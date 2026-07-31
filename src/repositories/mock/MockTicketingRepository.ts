@@ -34,6 +34,16 @@ export function createTicketId(sequence: number): string {
   return `ticket-liit-${formatSequence(sequence)}`;
 }
 
+function normaliseState(
+  state: TicketingRepositoryState,
+): TicketingRepositoryState {
+  return {
+    ...state,
+    attempts: state.attempts ?? {},
+    freeRegistrations: state.freeRegistrations ?? {},
+  };
+}
+
 export function createSeedTicketingState(): TicketingRepositoryState {
   return {
     nextOrderSequence: 10,
@@ -41,6 +51,7 @@ export function createSeedTicketingState(): TicketingRepositoryState {
     orders: structuredClone(seedTicketOrders),
     tickets: structuredClone(seedWalletTickets),
     attempts: {},
+    freeRegistrations: {},
   };
 }
 
@@ -58,7 +69,7 @@ export class MockTicketingRepository implements TicketingRepository {
   private async loadState(): Promise<TicketingRepositoryState> {
     const stored = await this.storage.load();
     if (stored) {
-      return stored;
+      return normaliseState(stored);
     }
     const seeded = createSeedTicketingState();
     await this.storage.save(seeded);
@@ -119,8 +130,8 @@ export class MockTicketingRepository implements TicketingRepository {
             eventSnapshot: {
               title: event?.title ?? "LIIT Event",
               imageKey: event?.heroImageKey ?? "eventMidnightGrooves",
-              venueName: event?.venue.name ?? "Johannesburg Venue",
-              venueSuburb: event?.venue.suburb ?? "Johannesburg",
+              venueName: event?.venue.name ?? "Braamfontein Rooftop",
+              venueSuburb: event?.venue.suburb ?? "Braamfontein",
               city: "Johannesburg",
               startTime: event?.occurrence.startTime ?? DEMO_NOW_ISO,
               endTime: event?.occurrence.endTime ?? DEMO_NOW_ISO,
@@ -128,10 +139,6 @@ export class MockTicketingRepository implements TicketingRepository {
           });
         }
       }
-
-      const methodObj = mockPaymentMethods.find(
-        (m) => m.id === input.paymentMethodId,
-      );
 
       const newOrder: TicketOrder = {
         id: orderId,
@@ -141,7 +148,7 @@ export class MockTicketingRepository implements TicketingRepository {
         status: "paid",
         source: "paid",
         quote: input.quote,
-        paymentMethodLabel: methodObj?.label ?? "Demo Card",
+        paymentMethodLabel: "Demo Visa ending 4242",
         createdAt: DEMO_NOW_ISO,
         ticketIds: newTickets.map((t) => t.id),
       };
@@ -165,6 +172,22 @@ export class MockTicketingRepository implements TicketingRepository {
     await delayMs(800);
 
     const state = await this.loadState();
+
+    const existing = state.freeRegistrations[input.registrationId];
+    if (existing) {
+      const order = state.orders.find((item) => item.id === existing.orderId);
+      const tickets = existing.ticketIds
+        .map((ticketId) => state.tickets.find((item) => item.id === ticketId))
+        .filter((ticket): ticket is WalletTicket => Boolean(ticket));
+
+      if (order) {
+        return {
+          order: structuredClone(order),
+          tickets: structuredClone(tickets),
+        };
+      }
+    }
+
     const orderId = createOrderId(state.nextOrderSequence++);
     const event = discoveryEvents.find((e) => e.id === input.eventId);
 
@@ -212,6 +235,10 @@ export class MockTicketingRepository implements TicketingRepository {
 
     state.orders.unshift(newOrder);
     state.tickets.unshift(...newTickets);
+    state.freeRegistrations[input.registrationId] = {
+      orderId: newOrder.id,
+      ticketIds: newTickets.map((t) => t.id),
+    };
 
     await this.storage.save(state);
 

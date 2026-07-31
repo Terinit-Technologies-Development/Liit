@@ -9,7 +9,9 @@ tags:
 - launchApp:
     clearState: true
 
-# Wait for the consumer shell to be ready
+- runFlow:
+    file: "flows/authenticated-onboarding.yaml"
+
 - waitForAnimationToEnd:
     timeout: 3000
 

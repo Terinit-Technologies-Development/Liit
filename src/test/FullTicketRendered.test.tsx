@@ -7,12 +7,18 @@ const mockBack = jest.fn();
 const mockReplace = jest.fn();
 
 let mockTicketId = "ticket-liit-seed-0001";
+let mockTicketDataOverride: any = null;
 
 jest.mock("expo-router", () => ({
   useRouter: () => ({
     back: mockBack,
     replace: mockReplace,
     push: jest.fn(),
+  }),
+  useNavigation: () => ({
+    getParent: () => ({
+      setOptions: jest.fn(),
+    }),
   }),
   useLocalSearchParams: () => ({
     ticketId: mockTicketId,
@@ -23,7 +29,9 @@ jest.mock("../hooks/ticketing/useTicketQuery", () => {
   const { seedWalletTickets } = require("../fixtures/ticketing/wallet");
   return {
     useTicketQuery: jest.fn(() => ({
-      data: seedWalletTickets.find((t: any) => t.id === mockTicketId),
+      data:
+        mockTicketDataOverride ??
+        seedWalletTickets.find((t: any) => t.id === mockTicketId),
       isLoading: false,
       isError: false,
     })),
@@ -41,6 +49,7 @@ describe("FullTicketRendered Integration", () => {
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
+    mockTicketDataOverride = null;
     mockBack.mockClear();
     mockReplace.mockClear();
   });
@@ -113,7 +122,30 @@ describe("FullTicketRendered Integration", () => {
     expect(screen.queryByTestId("full-ticket-qr")).toBeNull();
   });
 
-  it("High-brightness toggle renders", () => {
+  it("free_registration cancelled/used ticket: displays disabled status notice instead of profile verification", () => {
+    const { seedWalletTickets } = require("../fixtures/ticketing/wallet");
+    const baseFreeTicket = seedWalletTickets.find(
+      (t: any) => t.id === "ticket-liit-seed-0002",
+    );
+    mockTicketDataOverride = {
+      ...baseFreeTicket,
+      status: "cancelled",
+    };
+
+    const screen = render(
+      <QueryClientProvider client={queryClient}>
+        <FullTicketScreen />
+      </QueryClientProvider>,
+    );
+
+    expect(
+      screen.getByTestId("full-ticket-entry-disabled-notice"),
+    ).toBeTruthy();
+    expect(screen.getByText("This ticket is cancelled.")).toBeTruthy();
+    expect(screen.queryByTestId("full-ticket-profile-verification")).toBeNull();
+  });
+
+  it("High-brightness toggle renders and updates screen and pass container styles to high-contrast palette", () => {
     mockTicketId = "ticket-liit-seed-0001";
     const screen = render(
       <QueryClientProvider client={queryClient}>
@@ -121,7 +153,24 @@ describe("FullTicketRendered Integration", () => {
       </QueryClientProvider>,
     );
 
-    expect(screen.getByTestId("full-ticket-high-brightness")).toBeTruthy();
+    const switchToggle = screen.getByTestId("full-ticket-high-brightness");
+    expect(switchToggle).toBeTruthy();
+
+    const screenViewBefore = screen.getByTestId("full-ticket-screen");
+    expect(screenViewBefore.props.style).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ backgroundColor: "#0F0D16" }),
+      ]),
+    );
+
+    fireEvent(switchToggle, "onValueChange", true);
+
+    const screenViewAfter = screen.getByTestId("full-ticket-screen");
+    expect(screenViewAfter.props.style).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ backgroundColor: "#FFFFFF" }),
+      ]),
+    );
   });
 
   it("Return to Wallet button navigates back", () => {

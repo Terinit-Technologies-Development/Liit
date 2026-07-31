@@ -1,15 +1,23 @@
 import React from "react";
-import { ScrollView, StyleSheet, View } from "react-native";
+import {
+  ActivityIndicator,
+  Share,
+  ScrollView,
+  StyleSheet,
+  View,
+} from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Screen } from "../../../../src/components/ui/Screen";
 import { AppText } from "../../../../src/components/ui/AppText";
 import { Icon } from "../../../../src/design-system/icons/Icon";
 import { GradientButton } from "../../../../src/components/ui/GradientButton";
 import { SecondaryButton } from "../../../../src/components/ui/SecondaryButton";
+import { ErrorState } from "../../../../src/components/ui/ErrorState";
 import { CheckoutProgress } from "../../../../src/components/ticketing/CheckoutProgress";
 import { OrderSummary } from "../../../../src/components/ticketing/OrderSummary";
 import { useOrderQuery } from "../../../../src/hooks/ticketing/useOrderQuery";
 import { useEventDetailQuery } from "../../../../src/hooks/events/useEventDetailQuery";
+import { useToast } from "../../../../src/hooks/useToast";
 import {
   CheckoutResultKind,
   routeBuilders,
@@ -23,10 +31,6 @@ function normaliseId(value: string | string[] | undefined): string | null {
   return null;
 }
 
-/**
- * Strictly validates the result param. Returns null for any unrecognised
- * value — a malformed deep link must NEVER show a false success confirmation.
- */
 function parseResult(
   value: string | string[] | undefined,
 ): CheckoutResultKind | null {
@@ -44,6 +48,7 @@ function parseResult(
 
 export default function CheckoutResultScreen() {
   const router = useRouter();
+  const { showToast } = useToast();
   const params = useLocalSearchParams<{
     eventId?: string | string[];
     result?: string | string[];
@@ -55,12 +60,16 @@ export default function CheckoutResultScreen() {
   const eventId = normaliseId(params.eventId);
   const result = parseResult(params.result);
   const orderId = normaliseId(params.orderId);
-  const ticketId = normaliseId(params.ticketId);
+  const rawTicketId = normaliseId(params.ticketId);
 
   const orderQuery = useOrderQuery(orderId);
   const detailQuery = useEventDetailQuery(eventId);
 
-  // Strict guard: invalid or missing result parameter must show an error
+  const isSuccess = result === "paid_success" || result === "free_success";
+  const isDeclined = result === "declined";
+  const isFree = result === "free_success";
+
+  // Invalid or missing result parameter
   if (!result) {
     return (
       <Screen safeAreaEdges={["top", "bottom"]} style={styles.screen}>
@@ -86,16 +95,74 @@ export default function CheckoutResultScreen() {
     );
   }
 
-  const isSuccess = result === "paid_success" || result === "free_success";
-  const isDeclined = result === "declined";
-  const isFree = result === "free_success";
+  // Success requires eventId and orderId context
+  if (isSuccess && (!eventId || !orderId)) {
+    return (
+      <Screen safeAreaEdges={["top", "bottom"]} style={styles.screen}>
+        <View style={styles.errorState} testID="result-missing-context">
+          <Icon
+            name="alertCircle"
+            size={48}
+            color={theme.colors.statusDanger}
+          />
+          <AppText variant="heading" style={styles.centered}>
+            Invalid confirmation context
+          </AppText>
+          <AppText variant="body" color={theme.colors.textMuted} align="center">
+            Order or event details are missing from this confirmation.
+          </AppText>
+          <GradientButton
+            label="Go to Wallet"
+            onPress={() => router.replace(ROUTES.consumer.tickets)}
+            testID="result-context-go-wallet"
+          />
+        </View>
+      </Screen>
+    );
+  }
+
+  // Success loading state
+  if (isSuccess && (orderQuery.isLoading || detailQuery.isLoading)) {
+    return (
+      <Screen safeAreaEdges={["top", "bottom"]} style={styles.screen}>
+        <View style={styles.errorState} testID="result-loading">
+          <ActivityIndicator size="large" color={theme.colors.accentStart} />
+          <AppText variant="body" color={theme.colors.textMuted}>
+            Verifying confirmation…
+          </AppText>
+        </View>
+      </Screen>
+    );
+  }
+
+  // Success error state (order or event missing or query error)
+  if (
+    isSuccess &&
+    (orderQuery.isError ||
+      detailQuery.isError ||
+      !orderQuery.data ||
+      !detailQuery.data?.event)
+  ) {
+    return (
+      <Screen safeAreaEdges={["top", "bottom"]} style={styles.screen}>
+        <ErrorState
+          title="Confirmation unavailable"
+          description="The associated prototype order could not be verified."
+          actionLabel="Go to Wallet"
+          onAction={() => router.replace(ROUTES.consumer.tickets)}
+          testID="result-confirmation-unavailable"
+        />
+      </Screen>
+    );
+  }
 
   const event = detailQuery.data?.event;
   const order = orderQuery.data;
+  const resolvedTicketId = rawTicketId ?? order?.ticketIds[0] ?? null;
 
   const handleViewTicket = () => {
-    if (ticketId) {
-      router.replace(routeBuilders.fullTicket(ticketId));
+    if (resolvedTicketId) {
+      router.replace(routeBuilders.fullTicket(resolvedTicketId));
     } else {
       router.replace(ROUTES.consumer.tickets);
     }
@@ -112,9 +179,7 @@ export default function CheckoutResultScreen() {
   };
 
   const handleChangeMethod = () => {
-    if (eventId) {
-      router.push(routeBuilders.checkoutPayment(eventId));
-    }
+    router.push("/(modals)/payment-method" as any);
   };
 
   const handleReturnToEvent = () => {
@@ -126,6 +191,21 @@ export default function CheckoutResultScreen() {
   };
 
   const handleBackToFeed = () => router.replace(ROUTES.consumer.feed);
+
+  const handleShare = async () => {
+    await Share.share({
+      title: event?.title ?? "LIIT Ticket",
+      message: `${event?.title ?? "LIIT Event"}\nLIIT prototype pass — not valid for real entry.`,
+    });
+  };
+
+  const handleAddToCalendar = () => {
+    showToast(
+      "Calendar integration",
+      "Adding this registration to your calendar is simulated in the current prototype.",
+      "info",
+    );
+  };
 
   return (
     <Screen
@@ -262,7 +342,7 @@ export default function CheckoutResultScreen() {
           {result === "paid_success" && (
             <>
               <GradientButton
-                label={ticketId ? "View my ticket" : "View Wallet"}
+                label={resolvedTicketId ? "View my ticket" : "View Wallet"}
                 onPress={handleViewTicket}
                 testID="result-view-ticket"
               />
@@ -273,9 +353,7 @@ export default function CheckoutResultScreen() {
               />
               <SecondaryButton
                 label="Share with Friends"
-                onPress={() => {
-                  /* placeholder — sharing not yet implemented */
-                }}
+                onPress={handleShare}
                 testID="result-share"
               />
               <SecondaryButton
@@ -289,7 +367,9 @@ export default function CheckoutResultScreen() {
           {result === "free_success" && (
             <>
               <GradientButton
-                label={ticketId ? "View Registration Pass" : "View Wallet"}
+                label={
+                  resolvedTicketId ? "View Registration Pass" : "View Wallet"
+                }
                 onPress={handleViewTicket}
                 testID="result-view-ticket"
               />
@@ -300,16 +380,12 @@ export default function CheckoutResultScreen() {
               />
               <SecondaryButton
                 label="Add to Calendar"
-                onPress={() => {
-                  /* placeholder — calendar not yet implemented */
-                }}
+                onPress={handleAddToCalendar}
                 testID="result-add-to-calendar"
               />
               <SecondaryButton
                 label="Share Event"
-                onPress={() => {
-                  /* placeholder — sharing not yet implemented */
-                }}
+                onPress={handleShare}
                 testID="result-share"
               />
               <SecondaryButton

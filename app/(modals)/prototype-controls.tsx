@@ -85,6 +85,7 @@ export default function PrototypeControlsScreen() {
           icon="close"
           onPress={() => router.back()}
           accessibilityLabel="Close controls"
+          testID="prototype-controls-close"
           variant="surface"
           size="sm"
         />

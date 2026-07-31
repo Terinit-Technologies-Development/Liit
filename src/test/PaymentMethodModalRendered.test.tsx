@@ -36,11 +36,33 @@ describe("PaymentMethodModalRendered Integration", () => {
     expect(screen.getByText("Demo Visa •••• 4242")).toBeTruthy();
   });
 
-  it.todo(
-    "Selecting a method updates local selection but does NOT immediately commit to store",
-  );
+  it("Selecting a method updates local selection but does NOT immediately commit to store", () => {
+    const screen = render(<PaymentMethodModal />);
 
-  it.todo("Apply button commits to store and calls router.back()");
+    // Select alternative method
+    fireEvent.press(screen.getByText("New demo card"));
+
+    // Store is NOT updated yet
+    expect(useCheckoutStore.getState().draft?.paymentMethodId).toBe(
+      "pm-demo-visa-4242",
+    );
+  });
+
+  it("Apply button commits to store and calls router.back()", () => {
+    const screen = render(<PaymentMethodModal />);
+
+    // Select alternative method
+    fireEvent.press(screen.getByText("New demo card"));
+
+    // Press Apply
+    const applyBtn = screen.getByTestId("payment-method-apply");
+    fireEvent.press(applyBtn);
+
+    expect(useCheckoutStore.getState().draft?.paymentMethodId).toBe(
+      "pm-demo-new-card",
+    );
+    expect(mockBack).toHaveBeenCalled();
+  });
 
   it("Cancel (close) calls router.back() without changing the store", () => {
     const screen = render(<PaymentMethodModal />);

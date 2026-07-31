@@ -3,12 +3,63 @@ import { render } from "@testing-library/react-native";
 import CheckoutResultScreen from "../../app/(consumer)/checkout/[eventId]/result";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-let mockParams = { result: "paid_success", ticketId: "t-123" };
+let mockParams: Record<string, string | undefined> = {
+  result: "paid_success",
+  eventId: "evt-midnight-grooves",
+  orderId: "order-liit-seed-0001",
+  ticketId: "t-123",
+};
+
 jest.mock("expo-router", () => ({
   useRouter: () => ({
     replace: jest.fn(),
+    push: jest.fn(),
   }),
   useLocalSearchParams: () => mockParams,
+}));
+
+jest.mock("../hooks/ticketing/useOrderQuery", () => ({
+  useOrderQuery: jest.fn((id?: string) => ({
+    data: id
+      ? {
+          id,
+          eventId: "evt-midnight-grooves",
+          attendeeId: "usr-1",
+          attendeeName: "Keketso",
+          status: "paid",
+          source: "paid",
+          quote: {
+            eventId: "evt-midnight-grooves",
+            totalQuantity: 1,
+            subtotalMinor: 10000,
+            serviceFeeMinor: 500,
+            totalMinor: 10500,
+            currency: "ZAR",
+            lines: [],
+          },
+          createdAt: "2026-07-28T10:00:00.000Z",
+          ticketIds: ["t-123"],
+        }
+      : null,
+    isLoading: false,
+    isError: false,
+  })),
+}));
+
+jest.mock("../hooks/events/useEventDetailQuery", () => ({
+  useEventDetailQuery: jest.fn((id?: string) => ({
+    data: id
+      ? {
+          event: {
+            id,
+            title: "Midnight Grooves",
+            venue: { name: "Braamfontein Rooftop", suburb: "Braamfontein" },
+          },
+        }
+      : null,
+    isLoading: false,
+    isError: false,
+  })),
 }));
 
 jest.mock("react-native-safe-area-context", () => ({
@@ -25,7 +76,12 @@ describe("CheckoutResultScreen Rendered Integration", () => {
   });
 
   it("paid_success: shows 'Tickets confirmed!', View my ticket button, Go to Wallet button", () => {
-    mockParams = { result: "paid_success", ticketId: "t-123" };
+    mockParams = {
+      result: "paid_success",
+      eventId: "evt-midnight-grooves",
+      orderId: "order-liit-seed-0001",
+      ticketId: "t-123",
+    };
     const screen = render(
       <QueryClientProvider client={queryClient}>
         <CheckoutResultScreen />
@@ -36,17 +92,65 @@ describe("CheckoutResultScreen Rendered Integration", () => {
     expect(screen.getByText("Go to Wallet")).toBeTruthy();
   });
 
-  it.todo(
-    "free_success: shows 'Registration confirmed!', View Registration / Go to Wallet",
-  );
+  it("free_success: shows 'Registration confirmed!', View Registration / Go to Wallet", () => {
+    mockParams = {
+      result: "free_success",
+      eventId: "evt-soweto-food-market",
+      orderId: "order-liit-seed-0002",
+      ticketId: "t-456",
+    };
+    const screen = render(
+      <QueryClientProvider client={queryClient}>
+        <CheckoutResultScreen />
+      </QueryClientProvider>,
+    );
+    expect(screen.getByText("Registration confirmed!")).toBeTruthy();
+    expect(screen.getByText("View Registration Pass")).toBeTruthy();
+    expect(screen.getByText("Go to Wallet")).toBeTruthy();
+  });
 
-  it.todo(
-    "declined: shows 'Payment declined', Try again and Change Payment Method buttons",
-  );
+  it("declined: shows 'Payment declined', Try again and Change payment method buttons", () => {
+    mockParams = {
+      result: "declined",
+      eventId: "evt-midnight-grooves",
+    };
+    const screen = render(
+      <QueryClientProvider client={queryClient}>
+        <CheckoutResultScreen />
+      </QueryClientProvider>,
+    );
+    expect(screen.getByText("Payment declined")).toBeTruthy();
+    expect(screen.getByText("Try again")).toBeTruthy();
+    expect(screen.getByText("Change payment method")).toBeTruthy();
+  });
 
-  it.todo(
-    "network_error: shows 'Something went wrong', Retry and Return to Event buttons",
-  );
+  it("network_error: shows 'Something went wrong', Retry and Return to Event buttons", () => {
+    mockParams = {
+      result: "network_error",
+      eventId: "evt-midnight-grooves",
+    };
+    const screen = render(
+      <QueryClientProvider client={queryClient}>
+        <CheckoutResultScreen />
+      </QueryClientProvider>,
+    );
+    expect(screen.getByText("Something went wrong")).toBeTruthy();
+    expect(screen.getByText("Retry")).toBeTruthy();
+    expect(screen.getByText("Return to Event")).toBeTruthy();
+  });
 
-  it.todo("invalid result param (missing/garbage): must NOT show success text");
+  it("invalid result param (missing/garbage): must NOT show success text", () => {
+    mockParams = {
+      result: "garbage_param",
+      eventId: "evt-midnight-grooves",
+    };
+    const screen = render(
+      <QueryClientProvider client={queryClient}>
+        <CheckoutResultScreen />
+      </QueryClientProvider>,
+    );
+    expect(screen.getByText("Invalid confirmation")).toBeTruthy();
+    expect(screen.queryByText("Tickets confirmed!")).toBeNull();
+    expect(screen.queryByText("Registration confirmed!")).toBeNull();
+  });
 });

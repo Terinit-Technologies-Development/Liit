@@ -10,6 +10,9 @@ tags:
 - launchApp:
     clearState: true
 
+- runFlow:
+    file: "flows/authenticated-onboarding.yaml"
+
 - waitForAnimationToEnd:
     timeout: 3000
 
@@ -61,6 +64,9 @@ tags:
 - launchApp:
     clearState: true
 
+- runFlow:
+    file: "flows/authenticated-onboarding.yaml"
+
 - waitForAnimationToEnd:
     timeout: 3000
 
@@ -109,6 +115,9 @@ tags:
 # ── Scenario 3: Wallet Empty State ────────────────────────────────────────────
 - launchApp:
     clearState: true
+
+- runFlow:
+    file: "flows/authenticated-onboarding.yaml"
 
 - waitForAnimationToEnd:
     timeout: 3000

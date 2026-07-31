@@ -50,7 +50,7 @@ describe("CheckoutPaymentScreen Rendered Integration", () => {
   it("renders payment method cards", () => {
     const screen = render(<CheckoutPaymentScreen />);
     expect(screen.getByText("Payment method")).toBeTruthy();
-    expect(screen.getByText("Demo Visa •••• 4242")).toBeTruthy(); // mock payment method
+    expect(screen.getByText("Demo Visa •••• 4242")).toBeTruthy();
   });
 
   it("verifies Pay button has correct total amount", () => {
@@ -59,22 +59,32 @@ describe("CheckoutPaymentScreen Rendered Integration", () => {
     expect(payBtn.props.accessibilityLabel).toContain("Pay R500.00");
   });
 
-  it.todo(
-    "verifies Pay button is disabled when activeAttemptId is already set (duplicate protection)",
-  );
-
-  it("verifies Pay navigates to processing on success", () => {
-    // We mock beginAttempt to avoid the runtime error since it's missing in store
-    const originalStore = useCheckoutStore.getState();
+  it("verifies Pay button is disabled when activeAttemptId is already set (duplicate protection)", () => {
     useCheckoutStore.setState({
-      ...originalStore,
-      beginAttempt: jest.fn(),
-    } as any);
+      draft: {
+        eventId: "evt-midnight-grooves",
+        quantities: {},
+        quote: mockQuote,
+        paymentMethodId: "pm-demo-visa-4242",
+        activeAttemptId: "att-in-flight-999",
+        latestAttempt: null,
+      },
+    });
 
+    const screen = render(<CheckoutPaymentScreen />);
+    const payBtn = screen.getByTestId("checkout-payment-pay");
+    expect(payBtn.props.accessibilityState.disabled).toBe(true);
+
+    fireEvent.press(payBtn);
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it("verifies Pay navigates to processing on success and sets activeAttemptId", () => {
     const screen = render(<CheckoutPaymentScreen />);
     const payBtn = screen.getByTestId("checkout-payment-pay");
     fireEvent.press(payBtn);
 
+    expect(useCheckoutStore.getState().draft?.activeAttemptId).not.toBeNull();
     expect(mockPush).toHaveBeenCalledWith(
       expect.objectContaining({
         pathname: expect.stringContaining("/processing"),
