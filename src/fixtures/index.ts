@@ -169,6 +169,8 @@ export const mockCreatorProfile: CreatorProfile = {
   totalEventsHosted: 12,
   totalTicketsSold: 2450,
   rating: 4.9,
+  followersCount: 3200,
+  isVerified: true,
 };
 
 export const mockCreatorEvents: CreatorEventSummary[] = [
@@ -181,6 +183,7 @@ export const mockCreatorEvents: CreatorEventSummary[] = [
     grossRevenueMinor: 9500000, // R95,000.00
     currency: "ZAR",
     startDate: "2026-08-15",
+    venueName: "Braamfontein Rooftop Social",
   },
 ];
 
