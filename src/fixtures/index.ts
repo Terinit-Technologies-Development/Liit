@@ -9,6 +9,7 @@ import {
 import { ConversationSummary } from "../domain/social";
 
 export * from "./discovery";
+export * from "./social";
 
 export const mockUser: User = {
   id: "usr_jhb_001",
@@ -203,12 +204,16 @@ export const mockConversations: ConversationSummary[] = [
     ],
     lastMessage: {
       id: "msg_001",
+      conversationId: "conv_001",
       senderId: "usr_sibu",
       senderName: "Sibusiso",
       senderAvatarUrl:
         "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80",
+      senderType: "consumer",
       content: "Hey Thabo, see you at Braamfontein tonight!",
       sentAt: "2026-07-29T10:00:00Z",
+      status: "delivered",
+      isIncoming: true,
     },
     unreadCount: 1,
   },

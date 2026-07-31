@@ -52,7 +52,11 @@ export type SemanticIconName =
   | "card"
   | "plus"
   | "minus"
-  | "lock";
+  | "lock"
+  | "chatBubble"
+  | "send"
+  | "slash"
+  | "add";
 
 const iconNameMap: Record<SemanticIconName, keyof typeof Ionicons.glyphMap> = {
   feed: "flame-outline",
@@ -103,6 +107,10 @@ const iconNameMap: Record<SemanticIconName, keyof typeof Ionicons.glyphMap> = {
   plus: "add-outline",
   minus: "remove-outline",
   lock: "lock-closed-outline",
+  chatBubble: "chatbubble-outline",
+  send: "send-outline",
+  slash: "ban-outline",
+  add: "add-outline",
 };
 
 export interface IconProps {

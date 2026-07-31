@@ -50,10 +50,12 @@ export default function FeedScreen() {
       <DiscoveryHeader
         city="Johannesburg"
         unreadCount={unreadCount}
+        unreadInboxCount={3}
         onSearch={() => router.push(ROUTES.consumer.search as any)}
         onNotifications={() =>
           router.push(ROUTES.consumer.notifications as any)
         }
+        onInbox={() => router.push(routeBuilders.inbox())}
       />
 
       {scenario === "offline" ? (

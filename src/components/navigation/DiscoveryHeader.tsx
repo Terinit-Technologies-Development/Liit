@@ -9,17 +9,21 @@ import { Icon } from "../../design-system/icons/Icon";
 export interface DiscoveryHeaderProps {
   city: string;
   unreadCount: number;
+  unreadInboxCount?: number;
   onCityPress?(): void;
   onSearch(): void;
   onNotifications(): void;
+  onInbox?(): void;
 }
 
 export function DiscoveryHeader({
   city,
   unreadCount,
+  unreadInboxCount = 0,
   onCityPress,
   onSearch,
   onNotifications,
+  onInbox,
 }: DiscoveryHeaderProps) {
   return (
     <View style={styles.container}>
@@ -51,6 +55,30 @@ export function DiscoveryHeader({
           variant="surface"
           size="sm"
         />
+
+        {onInbox ? (
+          <View style={styles.notifWrapper}>
+            <IconButton
+              testID="feed-open-inbox"
+              icon="chatBubble"
+              accessibilityLabel={
+                unreadInboxCount > 0
+                  ? `Inbox, ${unreadInboxCount} unread`
+                  : "Inbox"
+              }
+              onPress={onInbox}
+              variant="surface"
+              size="sm"
+            />
+            {unreadInboxCount > 0 ? (
+              <View style={styles.badgeDot}>
+                <AppText variant="caption" style={styles.badgeText}>
+                  {unreadInboxCount > 9 ? "9+" : unreadInboxCount}
+                </AppText>
+              </View>
+            ) : null}
+          </View>
+        ) : null}
 
         <View style={styles.notifWrapper}>
           <IconButton
