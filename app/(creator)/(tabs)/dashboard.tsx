@@ -16,10 +16,14 @@ import {
   CreatorStatCard,
   PayoutSummaryCard,
 } from "../../../src/components/creator";
+import { useRouter } from "expo-router";
+import { ROUTES } from "../../../src/navigation/routes";
+import { Pressable } from "react-native";
 import { formatCurrency } from "../../../src/utils/format";
 import { EmptyState } from "../../../src/components/feedback/EmptyState";
 
 export default function CreatorDashboard() {
+  const router = useRouter();
   const { data: profile, isLoading: isProfileLoading } = useCreatorProfile();
   const {
     data: stats,
@@ -140,13 +144,25 @@ export default function CreatorDashboard() {
 
           {payouts && (
             <View style={styles.section}>
-              <AppText
-                variant="heading"
-                color="textPrimary"
-                style={styles.sectionTitle}
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: theme.spacing.md,
+                }}
               >
-                Payouts Overview
-              </AppText>
+                <AppText variant="heading" color="textPrimary">
+                  Payouts Overview
+                </AppText>
+                <Pressable
+                  onPress={() => router.push(ROUTES.creator.payouts as any)}
+                >
+                  <AppText variant="caption" color="primary">
+                    View all payouts
+                  </AppText>
+                </Pressable>
+              </View>
               <PayoutSummaryCard overview={payouts} />
             </View>
           )}
