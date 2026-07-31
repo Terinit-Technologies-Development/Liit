@@ -63,7 +63,18 @@ export interface HostInquiryConversation {
   lastMessage: Message;
   unreadCount: number;
   updatedAt: string;
+  isBlocked?: boolean;
   isClosed?: boolean;
+}
+
+export interface MessageRecipient {
+  id: string;
+  name: string;
+  handle: string;
+  avatarUrl: string;
+  kind: "direct" | "inquiry";
+  targetConversationId: string;
+  subtitle: string;
 }
 
 export type Conversation = DirectConversation | HostInquiryConversation;

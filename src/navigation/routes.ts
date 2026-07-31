@@ -88,6 +88,7 @@ export const ROUTES = {
     newMessage: "/(modals)/new-message",
     conversationActions: "/(modals)/conversation-actions",
     reportContent: "/(modals)/report-content",
+    eventComments: "/(modals)/event-comments",
   },
 } as const;
 
@@ -233,6 +234,13 @@ export const routeBuilders = {
     return {
       pathname: ROUTES.modals.reportContent,
       params: target,
+    } as const;
+  },
+
+  eventCommentsModal(eventId: string) {
+    return {
+      pathname: ROUTES.modals.eventComments,
+      params: { eventId },
     } as const;
   },
 };

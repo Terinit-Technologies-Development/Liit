@@ -1,0 +1,14 @@
+appId: com.liit.app
+---
+# Instruction 05 — Inquiry & Booking Offer Flow
+- launchApp
+- tapOn: "inbox-button"
+- assertVisible: "inbox-screen"
+- tapOn: "inbox-tab-inquiry"
+- tapOn: "inbox-row-conv-inquiry-vibez"
+- assertVisible: "inquiry-thread-screen"
+- assertVisible: "inquiry-event-context-card"
+- assertVisible: "inquiry-booking-link-card"
+- tapOn: "booking-offer-select-button"
+- assertVisible: "checkout-tickets-screen"
+- assertVisible: "tier-item-tier-vip-tables"

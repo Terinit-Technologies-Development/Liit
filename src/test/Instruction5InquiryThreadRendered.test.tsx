@@ -3,6 +3,7 @@ import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import InquiryThreadScreen from "../../app/(consumer)/inbox/inquiries/[conversationId]";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mockSocialRepository } from "../repositories/mock/MockSocialRepository";
+import { useCheckoutStore } from "../state/useCheckoutStore";
 
 const mockPush = jest.fn();
 const mockBack = jest.fn();
@@ -47,6 +48,7 @@ describe("InquiryThreadScreen Rendered Integration Tests", () => {
     });
     mockConversationId = "conv-inquiry-club-vibez";
     await mockSocialRepository.reset();
+    useCheckoutStore.getState().resetCheckout();
     mockPush.mockClear();
     mockBack.mockClear();
     mockSetOptions.mockClear();
@@ -72,7 +74,7 @@ describe("InquiryThreadScreen Rendered Integration Tests", () => {
     });
   });
 
-  it("Renders BookingLinkCard and tapping CTA navigates to checkout tickets", async () => {
+  it("Initializes checkout session, preselects tier in store, and navigates to checkout tickets", async () => {
     const screen = render(
       <QueryClientProvider client={queryClient}>
         <InquiryThreadScreen />
@@ -87,12 +89,51 @@ describe("InquiryThreadScreen Rendered Integration Tests", () => {
     const cta = screen.getByTestId("booking-offer-cta");
     fireEvent.press(cta);
 
+    // Verify Checkout Store draft exists and has preselected tier
+    const checkoutDraft = useCheckoutStore.getState().draft;
+    expect(checkoutDraft).not.toBeNull();
+    expect(checkoutDraft?.eventId).toBe("evt-midnight-grooves");
+    expect(checkoutDraft?.quantities["tier-vip-tables"]).toBe(1);
+
     expect(mockPush).toHaveBeenCalledWith({
       pathname: "/(consumer)/checkout/[eventId]/tickets",
       params: {
         eventId: "evt-midnight-grooves",
         initialTierId: "tier-vip-tables",
       },
+    });
+  });
+
+  it("Renders closed inquiry banner when inquiry is closed", async () => {
+    await mockSocialRepository.closeInquiry("conv-inquiry-club-vibez");
+
+    const screen = render(
+      <QueryClientProvider client={queryClient}>
+        <InquiryThreadScreen />
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("inquiry-closed-banner")).toBeTruthy();
+      expect(
+        screen.getByText("This inquiry has been closed by the host."),
+      ).toBeTruthy();
+      expect(screen.queryByTestId("inquiry-message-composer")).toBeNull();
+    });
+  });
+
+  it("Renders invalid inquiry ID error state", async () => {
+    mockConversationId = "invalid-inquiry-id";
+
+    const screen = render(
+      <QueryClientProvider client={queryClient}>
+        <InquiryThreadScreen />
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("inquiry-thread-error")).toBeTruthy();
+      expect(screen.getByText("Inquiry not found")).toBeTruthy();
     });
   });
 });

@@ -3,6 +3,7 @@ import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import DirectThreadScreen from "../../app/(consumer)/inbox/direct/[conversationId]";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mockSocialRepository } from "../repositories/mock/MockSocialRepository";
+import { useSocialStore } from "../state/useSocialStore";
 
 const mockPush = jest.fn();
 const mockBack = jest.fn();
@@ -47,12 +48,13 @@ describe("DirectThreadScreen Rendered Integration Tests", () => {
     });
     mockConversationId = "conv-direct-alex";
     await mockSocialRepository.reset();
+    useSocialStore.getState().resetSocial();
     mockPush.mockClear();
     mockBack.mockClear();
     mockSetOptions.mockClear();
   });
 
-  it("Renders Direct Thread screen with messages and participant info", async () => {
+  it("Renders Direct Thread screen with messages, voice/video header actions, and participant info", async () => {
     const screen = render(
       <QueryClientProvider client={queryClient}>
         <DirectThreadScreen />
@@ -62,6 +64,8 @@ describe("DirectThreadScreen Rendered Integration Tests", () => {
     await waitFor(() => {
       expect(screen.getByTestId("direct-thread-screen")).toBeTruthy();
       expect(screen.getByText("Alex Khumalo")).toBeTruthy();
+      expect(screen.getByTestId("direct-thread-voice-call")).toBeTruthy();
+      expect(screen.getByTestId("direct-thread-video-call")).toBeTruthy();
       expect(
         screen.getByText(
           "Are you still pulling up to Braamfontein rooftop tonight?",
@@ -74,7 +78,7 @@ describe("DirectThreadScreen Rendered Integration Tests", () => {
     });
   });
 
-  it("Sends a new message and appends it to the chat list", async () => {
+  it("Sends a new message using social store draft and appends it to chat list", async () => {
     const screen = render(
       <QueryClientProvider client={queryClient}>
         <DirectThreadScreen />
@@ -108,6 +112,21 @@ describe("DirectThreadScreen Rendered Integration Tests", () => {
     await waitFor(() => {
       expect(screen.getByTestId("direct-blocked-banner")).toBeTruthy();
       expect(screen.getByText("You have blocked Sipho Mthethwa.")).toBeTruthy();
+    });
+  });
+
+  it("Renders invalid direct conversation ID error state", async () => {
+    mockConversationId = "invalid-direct-id";
+
+    const screen = render(
+      <QueryClientProvider client={queryClient}>
+        <DirectThreadScreen />
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("direct-thread-error")).toBeTruthy();
+      expect(screen.getByText("Conversation not found")).toBeTruthy();
     });
   });
 });

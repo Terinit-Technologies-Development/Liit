@@ -8,6 +8,7 @@ import { mockSocialRepository } from "../repositories/mock/MockSocialRepository"
 
 const mockPush = jest.fn();
 const mockBack = jest.fn();
+const mockDismiss = jest.fn();
 
 let mockParams: any = {
   conversationId: "conv-direct-alex",
@@ -19,6 +20,7 @@ jest.mock("expo-router", () => ({
   useRouter: () => ({
     push: mockPush,
     back: mockBack,
+    dismiss: mockDismiss,
   }),
   useLocalSearchParams: () => mockParams,
 }));
@@ -42,9 +44,10 @@ describe("Instruction 5 Social Modals Rendered Integration Tests", () => {
     await mockSocialRepository.reset();
     mockPush.mockClear();
     mockBack.mockClear();
+    mockDismiss.mockClear();
   });
 
-  it("NewMessageModal renders recipient list and filtering works", () => {
+  it("NewMessageModal renders recipient list and filtering works", async () => {
     const screen = render(
       <QueryClientProvider client={queryClient}>
         <NewMessageModal />
@@ -52,14 +55,19 @@ describe("Instruction 5 Social Modals Rendered Integration Tests", () => {
     );
 
     expect(screen.getByTestId("new-message-modal")).toBeTruthy();
-    expect(screen.getByText("Alex Khumalo")).toBeTruthy();
-    expect(screen.getByText("Club Vibez JHB")).toBeTruthy();
+
+    await waitFor(() => {
+      expect(screen.getByText("Alex Khumalo")).toBeTruthy();
+      expect(screen.getByText("Club Vibez JHB")).toBeTruthy();
+    });
 
     const searchInput = screen.getByTestId("new-message-search-input");
     fireEvent.changeText(searchInput, "Alex");
 
-    expect(screen.getByText("Alex Khumalo")).toBeTruthy();
-    expect(screen.queryByText("Club Vibez JHB")).toBeNull();
+    await waitFor(() => {
+      expect(screen.getByText("Alex Khumalo")).toBeTruthy();
+      expect(screen.queryByText("Club Vibez JHB")).toBeNull();
+    });
   });
 
   it("ConversationActionsModal renders Mute, Report, and Block options", async () => {
@@ -69,10 +77,12 @@ describe("Instruction 5 Social Modals Rendered Integration Tests", () => {
       </QueryClientProvider>,
     );
 
-    expect(screen.getByTestId("conversation-actions-modal")).toBeTruthy();
-    expect(screen.getByTestId("action-mute")).toBeTruthy();
-    expect(screen.getByTestId("action-report")).toBeTruthy();
-    expect(screen.getByTestId("action-block")).toBeTruthy();
+    await waitFor(() => {
+      expect(screen.getByTestId("conversation-actions-modal")).toBeTruthy();
+      expect(screen.getByTestId("action-mute-button")).toBeTruthy();
+      expect(screen.getByTestId("action-report-button")).toBeTruthy();
+      expect(screen.getByTestId("action-block-button")).toBeTruthy();
+    });
   });
 
   it("ReportContentModal renders reason selection and submits report", async () => {
@@ -91,5 +101,21 @@ describe("Instruction 5 Social Modals Rendered Integration Tests", () => {
     await waitFor(() => {
       expect(mockBack).toHaveBeenCalled();
     });
+  });
+
+  it("ReportContentModal renders invalid state when targetKind is invalid", async () => {
+    mockParams = {
+      targetKind: "invalid-kind",
+      targetId: "usr-001",
+    };
+
+    const screen = render(
+      <QueryClientProvider client={queryClient}>
+        <ReportContentModal />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByTestId("report-invalid-target")).toBeTruthy();
+    expect(screen.getByText("Invalid Report Target")).toBeTruthy();
   });
 });

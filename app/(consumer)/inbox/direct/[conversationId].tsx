@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect } from "react";
 import {
   FlatList,
   KeyboardAvoidingView,
@@ -12,6 +12,7 @@ import {
   useNavigation,
   useRouter,
 } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Screen } from "../../../../src/components/ui/Screen";
 import { AppText } from "../../../../src/components/ui/AppText";
 import { AppImage } from "../../../../src/components/ui/AppImage";
@@ -22,12 +23,17 @@ import { MessageComposer } from "../../../../src/components/social/MessageCompos
 import { TypingIndicator } from "../../../../src/components/social/TypingIndicator";
 import { SecondaryButton } from "../../../../src/components/ui/SecondaryButton";
 import { ErrorState } from "../../../../src/components/ui/ErrorState";
+import { Skeleton } from "../../../../src/components/feedback/Skeleton";
+import { EmptyState } from "../../../../src/components/feedback/EmptyState";
 import {
   useConversationDetailQuery,
+  useMarkReadMutation,
   useMessagesQuery,
+  useRetryMessageMutation,
   useSendMessageMutation,
+  useUnblockUserMutation,
 } from "../../../../src/hooks/social/useSocialQueries";
-import { mockSocialRepository } from "../../../../src/repositories/mock/MockSocialRepository";
+import { useSocialStore } from "../../../../src/state/useSocialStore";
 import { useToast } from "../../../../src/hooks/useToast";
 import { routeBuilders } from "../../../../src/navigation/routes";
 import { VISIBLE_CONSUMER_TAB_BAR_STYLE } from "../../_layout";
@@ -43,18 +49,29 @@ function normaliseId(value: string | string[] | undefined): string | null {
 export default function DirectThreadScreen() {
   const router = useRouter();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const { showToast } = useToast();
   const params = useLocalSearchParams<{ conversationId?: string | string[] }>();
   const conversationId = normaliseId(params.conversationId);
 
-  const [isTyping, setIsTyping] = useState(false);
-
   const conversationQuery = useConversationDetailQuery(conversationId);
   const messagesQuery = useMessagesQuery(conversationId);
   const sendMessageMutation = useSendMessageMutation();
+  const retryMessageMutation = useRetryMessageMutation();
+  const markReadMutation = useMarkReadMutation();
+  const unblockUserMutation = useUnblockUserMutation();
 
   const conversation = conversationQuery.data as DirectConversation | null;
   const messages = messagesQuery.data ?? [];
+
+  const draft = useSocialStore((state) =>
+    conversationId ? (state.drafts[conversationId] ?? "") : "",
+  );
+  const setDraft = useSocialStore((state) => state.setDraft);
+  const clearDraft = useSocialStore((state) => state.clearDraft);
+  const isTypingMap = useSocialStore((state) => state.isTypingMap);
+
+  const isTyping = Boolean(conversationId && isTypingMap[conversationId]);
 
   // Hide tab bar while in thread and restore on blur/unmount
   useFocusEffect(
@@ -70,17 +87,9 @@ export default function DirectThreadScreen() {
   // Mark conversation read on view
   useEffect(() => {
     if (conversationId && conversation && conversation.unreadCount > 0) {
-      mockSocialRepository.markConversationRead(conversationId);
+      markReadMutation.mutate(conversationId);
     }
-  }, [conversationId, conversation]);
-
-  // Simulate typing indicator for Alex
-  useEffect(() => {
-    if (conversationId === "conv-direct-alex") {
-      const timer = setTimeout(() => setIsTyping(true), 2500);
-      return () => clearTimeout(timer);
-    }
-  }, [conversationId]);
+  }, [conversationId, conversation, markReadMutation]);
 
   if (conversationQuery.isLoading || messagesQuery.isLoading) {
     return (
@@ -89,11 +98,33 @@ export default function DirectThreadScreen() {
         gutter={false}
         testID="direct-thread-loading"
       >
-        <View style={styles.loadingContainer}>
-          <AppText variant="body" color={theme.colors.textMuted}>
-            Loading conversation…
-          </AppText>
+        <View style={styles.skeletonHeader}>
+          <Skeleton width={120} height={20} />
         </View>
+        <View style={styles.loadingContainer}>
+          <Skeleton width="70%" height={48} style={{ marginBottom: 12 }} />
+          <Skeleton width="50%" height={48} style={{ alignSelf: "flex-end" }} />
+        </View>
+      </Screen>
+    );
+  }
+
+  if (conversationQuery.isError || messagesQuery.isError) {
+    return (
+      <Screen
+        safeAreaEdges={["top"]}
+        gutter={false}
+        testID="direct-thread-query-error"
+      >
+        <ErrorState
+          title="Could not load messages"
+          description="A network or repository error occurred."
+          onAction={() => {
+            conversationQuery.refetch();
+            messagesQuery.refetch();
+          }}
+          actionLabel="Retry"
+        />
       </Screen>
     );
   }
@@ -117,20 +148,31 @@ export default function DirectThreadScreen() {
 
   const handleSend = (text: string) => {
     if (conversationId) {
-      setIsTyping(false);
-      sendMessageMutation.mutate({ conversationId, content: text });
+      sendMessageMutation.mutate(
+        { conversationId, content: text },
+        {
+          onSuccess: () => {
+            clearDraft(conversationId);
+          },
+          onError: () => {
+            showToast("Send Failed", "Could not send message.", "error");
+          },
+        },
+      );
     }
   };
 
-  const handleUnblock = async () => {
+  const handleUnblock = () => {
     if (conversation) {
-      await mockSocialRepository.unblockUser(conversation.participantId);
-      conversationQuery.refetch();
-      showToast(
-        "User unblocked",
-        `You can now message ${conversation.participantName}.`,
-        "info",
-      );
+      unblockUserMutation.mutate(conversation.participantId, {
+        onSuccess: () => {
+          showToast(
+            "User Unblocked",
+            `You can now message ${conversation.participantName}.`,
+            "info",
+          );
+        },
+      });
     }
   };
 
@@ -177,7 +219,7 @@ export default function DirectThreadScreen() {
 
         <View style={styles.headerActions}>
           <IconButton
-            icon="search"
+            icon="phone"
             accessibilityLabel="Audio call prototype"
             onPress={() =>
               showToast(
@@ -188,10 +230,24 @@ export default function DirectThreadScreen() {
             }
             variant="ghost"
             size="sm"
-            testID="direct-thread-call"
+            testID="direct-thread-voice-call"
           />
           <IconButton
-            icon="settings"
+            icon="video"
+            accessibilityLabel="Video call prototype"
+            onPress={() =>
+              showToast(
+                "Video Call",
+                "Video calls will be available in a later update.",
+                "info",
+              )
+            }
+            variant="ghost"
+            size="sm"
+            testID="direct-thread-video-call"
+          />
+          <IconButton
+            icon="more"
             accessibilityLabel="Conversation actions"
             onPress={() =>
               router.push(
@@ -215,10 +271,21 @@ export default function DirectThreadScreen() {
           renderItem={({ item }) => (
             <MessageBubble
               message={item}
-              onRetry={() => handleSend(item.content)}
+              onRetry={() =>
+                retryMessageMutation.mutate({
+                  conversationId: conversation.id,
+                  messageId: item.id,
+                })
+              }
               testID={`direct-message-${item.id}`}
             />
           )}
+          ListEmptyComponent={
+            <EmptyState
+              title="No messages yet"
+              description="Send a message to start the conversation!"
+            />
+          }
           ListFooterComponent={
             isTyping ? (
               <TypingIndicator
@@ -246,21 +313,35 @@ export default function DirectThreadScreen() {
             />
           </View>
         ) : (
-          <MessageComposer
-            onSend={handleSend}
-            onAttachmentPress={() =>
-              showToast(
-                "Attachments",
-                "Photo attachment will open in prototype release.",
-                "info",
-              )
-            }
-            onEmojiPress={() =>
-              showToast("Reactions", "Quick reaction picker prototype.", "info")
-            }
-            disabled={sendMessageMutation.isPending}
-            testID="direct-message-composer"
-          />
+          <View
+            style={{
+              paddingBottom: Math.max(insets.bottom, theme.spacing.xs),
+            }}
+          >
+            <MessageComposer
+              value={draft}
+              onChangeText={(text) => {
+                if (conversationId) setDraft(conversationId, text);
+              }}
+              onSend={handleSend}
+              onAttachmentPress={() =>
+                showToast(
+                  "Attachments",
+                  "Photo attachment will open in prototype release.",
+                  "info",
+                )
+              }
+              onEmojiPress={() =>
+                showToast(
+                  "Reactions",
+                  "Quick reaction picker prototype.",
+                  "info",
+                )
+              }
+              disabled={sendMessageMutation.isPending}
+              testID="direct-message-composer"
+            />
+          </View>
         )}
       </KeyboardAvoidingView>
     </Screen>
@@ -270,8 +351,12 @@ export default function DirectThreadScreen() {
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
-    alignItems: "center",
+    padding: theme.spacing.gutter,
     justifyContent: "center",
+  },
+  skeletonHeader: {
+    padding: theme.spacing.gutter,
+    backgroundColor: theme.colors.surfacePrimary,
   },
   header: {
     flexDirection: "row",

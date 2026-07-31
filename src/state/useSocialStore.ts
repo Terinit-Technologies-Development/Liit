@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type InboxTab = "all" | "direct" | "inquiry";
+export type InboxTab = "direct" | "inquiry";
 
 interface SocialStoreState {
   inboxTab: InboxTab;
@@ -14,6 +14,7 @@ interface SocialStoreState {
   setTyping(conversationId: string, isTyping: boolean): void;
   clearDraft(conversationId: string): void;
   resetSocialStore(): void;
+  resetSocial(): void;
 }
 
 const initialState = {
@@ -43,4 +44,5 @@ export const useSocialStore = create<SocialStoreState>()((set) => ({
       return { drafts: next };
     }),
   resetSocialStore: () => set({ ...initialState }),
+  resetSocial: () => set({ ...initialState }),
 }));

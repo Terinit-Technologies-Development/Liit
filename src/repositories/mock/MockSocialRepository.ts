@@ -4,6 +4,7 @@ import {
   Conversation,
   ConversationKind,
   Message,
+  MessageRecipient,
   PostCommentInput,
   ReportContentInput,
   SendMessageInput,
@@ -108,8 +109,27 @@ export class MockSocialRepository implements SocialRepository {
 
   async sendMessage(input: SendMessageInput): Promise<Message> {
     return this.runExclusive(async () => {
-      await delayMs(400);
+      await delayMs(300);
       const state = await this.loadState();
+
+      const conv = state.conversations.find(
+        (c) => c.id === input.conversationId,
+      );
+      if (!conv) {
+        throw new Error("Conversation not found");
+      }
+
+      const targetId =
+        conv.kind === "direct" ? conv.participantId : conv.hostId;
+
+      if (state.blockedUserIds.includes(targetId) || conv.isBlocked) {
+        throw new Error("Conversation is blocked");
+      }
+
+      if (conv.kind === "inquiry" && conv.isClosed) {
+        throw new Error("Inquiry is closed");
+      }
+
       const now = new Date().toISOString();
 
       const newMessage: Message = {
@@ -130,16 +150,30 @@ export class MockSocialRepository implements SocialRepository {
       }
       state.messages[input.conversationId].push(newMessage);
 
-      const conv = state.conversations.find(
-        (c) => c.id === input.conversationId,
-      );
-      if (conv) {
-        conv.lastMessage = newMessage;
-        conv.updatedAt = now;
-      }
+      conv.lastMessage = newMessage;
+      conv.updatedAt = now;
 
       await this.saveState(state);
       return structuredClone(newMessage);
+    });
+  }
+
+  async retryMessage(
+    conversationId: string,
+    messageId: string,
+  ): Promise<Message> {
+    return this.runExclusive(async () => {
+      await delayMs(200);
+      const state = await this.loadState();
+      const msgs = state.messages[conversationId] ?? [];
+      const msg = msgs.find((m) => m.id === messageId);
+      if (!msg) {
+        throw new Error("Message not found");
+      }
+
+      msg.status = "delivered";
+      await this.saveState(state);
+      return structuredClone(msg);
     });
   }
 
@@ -160,14 +194,14 @@ export class MockSocialRepository implements SocialRepository {
       if (!state.blockedUserIds.includes(userId)) {
         state.blockedUserIds.push(userId);
       }
-      const conv = state.conversations.find((c) => {
-        if (c.kind === "direct") return c.participantId === userId;
-        if (c.kind === "inquiry") return c.hostId === userId;
-        return false;
+      state.conversations.forEach((c) => {
+        const matches =
+          (c.kind === "direct" && c.participantId === userId) ||
+          (c.kind === "inquiry" && c.hostId === userId);
+        if (matches) {
+          c.isBlocked = true;
+        }
       });
-      if (conv && conv.kind === "direct") {
-        conv.isBlocked = true;
-      }
       await this.saveState(state);
     });
   }
@@ -176,15 +210,26 @@ export class MockSocialRepository implements SocialRepository {
     return this.runExclusive(async () => {
       const state = await this.loadState();
       state.blockedUserIds = state.blockedUserIds.filter((id) => id !== userId);
-      const conv = state.conversations.find((c) => {
-        if (c.kind === "direct") return c.participantId === userId;
-        if (c.kind === "inquiry") return c.hostId === userId;
-        return false;
+      state.conversations.forEach((c) => {
+        const matches =
+          (c.kind === "direct" && c.participantId === userId) ||
+          (c.kind === "inquiry" && c.hostId === userId);
+        if (matches) {
+          c.isBlocked = false;
+        }
       });
-      if (conv && conv.kind === "direct") {
-        conv.isBlocked = false;
-      }
       await this.saveState(state);
+    });
+  }
+
+  async closeInquiry(conversationId: string): Promise<void> {
+    return this.runExclusive(async () => {
+      const state = await this.loadState();
+      const conv = state.conversations.find((c) => c.id === conversationId);
+      if (conv && conv.kind === "inquiry") {
+        conv.isClosed = true;
+        await this.saveState(state);
+      }
     });
   }
 
@@ -242,6 +287,55 @@ export class MockSocialRepository implements SocialRepository {
       await this.saveState(state);
       return structuredClone(comment);
     });
+  }
+
+  async retryComment(commentId: string): Promise<Comment> {
+    return this.runExclusive(async () => {
+      await delayMs(200);
+      const state = await this.loadState();
+      const comment = state.comments.find((c) => c.id === commentId);
+      if (!comment) {
+        throw new Error("Comment not found");
+      }
+      comment.status = "synced";
+      await this.saveState(state);
+      return structuredClone(comment);
+    });
+  }
+
+  async listMessageRecipients(query?: string): Promise<MessageRecipient[]> {
+    await delayMs(150);
+    const state = await this.loadState();
+    const recipients: MessageRecipient[] = state.conversations.map((c) => {
+      if (c.kind === "direct") {
+        return {
+          id: c.participantId,
+          name: c.participantName,
+          handle: c.participantHandle,
+          avatarUrl: c.participantAvatarUrl,
+          kind: "direct",
+          targetConversationId: c.id,
+          subtitle: "Friend",
+        };
+      } else {
+        return {
+          id: c.hostId,
+          name: c.hostName,
+          handle: c.hostHandle,
+          avatarUrl: c.hostAvatarUrl,
+          kind: "inquiry",
+          targetConversationId: c.id,
+          subtitle: `Host · ${c.eventContext.eventTitle}`,
+        };
+      }
+    });
+
+    if (!query || !query.trim()) return recipients;
+    const q = query.toLowerCase().trim();
+    return recipients.filter(
+      (r) =>
+        r.name.toLowerCase().includes(q) || r.handle.toLowerCase().includes(q),
+    );
   }
 
   async reportContent(

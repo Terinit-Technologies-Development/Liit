@@ -16,8 +16,10 @@ import { useSessionStore } from "../../src/state/useSessionStore";
 import { useDiscoveryStore } from "../../src/state/useDiscoveryStore";
 import { useMapDiscoveryStore } from "../../src/state/useMapDiscoveryStore";
 import { useCheckoutStore } from "../../src/state/useCheckoutStore";
+import { useSocialStore } from "../../src/state/useSocialStore";
 import { mockNotificationRepository } from "../../src/repositories/mock/MockNotificationRepository";
 import { mockTicketingRepository } from "../../src/repositories/mock/MockTicketingRepository";
+import { mockSocialRepository } from "../../src/repositories/mock/MockSocialRepository";
 import { envConfig } from "../../src/config/env";
 import { mockUser } from "../../src/fixtures";
 import { theme } from "../../src/design-system/theme";
@@ -40,6 +42,7 @@ export default function PrototypeControlsScreen() {
   const resetDiscovery = useDiscoveryStore((s) => s.resetDiscovery);
   const resetMapDiscovery = useMapDiscoveryStore((s) => s.resetMapDiscovery);
   const resetCheckout = useCheckoutStore((s) => s.resetCheckout);
+  const resetSocial = useSocialStore((s) => s.resetSocial);
 
   const handleModeSwitch = (mode: "consumer" | "creator") => {
     setActiveMode(mode);
@@ -56,8 +59,10 @@ export default function PrototypeControlsScreen() {
     resetDiscovery();
     resetMapDiscovery();
     resetCheckout();
+    resetSocial();
     mockNotificationRepository.reset();
     await mockTicketingRepository.reset();
+    await mockSocialRepository.reset();
     queryClient.clear();
   };
 

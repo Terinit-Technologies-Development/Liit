@@ -1,0 +1,18 @@
+appId: com.liit.app
+---
+# Instruction 05 — Inbox & Direct Chat Flow
+- launchApp
+- tapOn: "inbox-button"
+- assertVisible: "inbox-screen"
+- assertVisible: "inbox-tab-direct"
+- tapOn: "inbox-row-conv-direct-alex"
+- assertVisible: "direct-thread-screen"
+- assertVisible: "direct-thread-header"
+- assertVisible: "direct-thread-voice-call"
+- assertVisible: "direct-thread-video-call"
+- tapOn: "direct-message-composer"
+- inputText: "See you at 9pm!"
+- tapOn: "send-button"
+- assertVisible: "direct-message-msg-alex-001"
+- tapOn: "direct-thread-back"
+- assertVisible: "inbox-screen"

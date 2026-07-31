@@ -3,6 +3,7 @@ import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import InboxScreen from "../../app/(consumer)/inbox/index";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mockSocialRepository } from "../repositories/mock/MockSocialRepository";
+import { useSocialStore } from "../state/useSocialStore";
 
 const mockPush = jest.fn();
 const mockBack = jest.fn();
@@ -26,6 +27,7 @@ describe("InboxScreen Rendered Integration Tests", () => {
       defaultOptions: { queries: { retry: false } },
     });
     await mockSocialRepository.reset();
+    useSocialStore.getState().resetSocial();
     mockPush.mockClear();
     mockBack.mockClear();
   });
@@ -62,6 +64,21 @@ describe("InboxScreen Rendered Integration Tests", () => {
     await waitFor(() => {
       expect(screen.getByText("Club Vibez JHB")).toBeTruthy();
     });
+  });
+
+  it("Clears unread state when marking conversation read", async () => {
+    // Initial direct conversations list has unread count on Alex
+    let conversations = await mockSocialRepository.listConversations("direct");
+    const alexConv = conversations.find((c) => c.id === "conv-direct-alex");
+    expect(alexConv?.unreadCount).toBeGreaterThan(0);
+
+    // Mark read
+    await mockSocialRepository.markConversationRead("conv-direct-alex");
+
+    // Re-fetch
+    conversations = await mockSocialRepository.listConversations("direct");
+    const updatedAlex = conversations.find((c) => c.id === "conv-direct-alex");
+    expect(updatedAlex?.unreadCount).toBe(0);
   });
 
   it("Filters conversations via search field", async () => {

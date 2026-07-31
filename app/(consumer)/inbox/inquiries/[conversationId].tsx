@@ -12,6 +12,7 @@ import {
   useNavigation,
   useRouter,
 } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Screen } from "../../../../src/components/ui/Screen";
 import { AppText } from "../../../../src/components/ui/AppText";
 import { AppImage } from "../../../../src/components/ui/AppImage";
@@ -22,14 +23,17 @@ import { BookingLinkCard } from "../../../../src/components/social/BookingLinkCa
 import { MessageBubble } from "../../../../src/components/social/MessageBubble";
 import { MessageComposer } from "../../../../src/components/social/MessageComposer";
 import { ErrorState } from "../../../../src/components/ui/ErrorState";
+import { Skeleton } from "../../../../src/components/feedback/Skeleton";
 import {
   useConversationDetailQuery,
+  useMarkReadMutation,
   useMessagesQuery,
   useSendMessageMutation,
 } from "../../../../src/hooks/social/useSocialQueries";
-import { mockSocialRepository } from "../../../../src/repositories/mock/MockSocialRepository";
+import { useSocialStore } from "../../../../src/state/useSocialStore";
 import { useToast } from "../../../../src/hooks/useToast";
 import { routeBuilders } from "../../../../src/navigation/routes";
+import { useCheckoutStore } from "../../../../src/state/useCheckoutStore";
 import { VISIBLE_CONSUMER_TAB_BAR_STYLE } from "../../_layout";
 import { HostInquiryConversation } from "../../../../src/domain/social";
 import { theme } from "../../../../src/design-system/theme";
@@ -43,6 +47,7 @@ function normaliseId(value: string | string[] | undefined): string | null {
 export default function InquiryThreadScreen() {
   const router = useRouter();
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const { showToast } = useToast();
   const params = useLocalSearchParams<{ conversationId?: string | string[] }>();
   const conversationId = normaliseId(params.conversationId);
@@ -50,9 +55,17 @@ export default function InquiryThreadScreen() {
   const conversationQuery = useConversationDetailQuery(conversationId);
   const messagesQuery = useMessagesQuery(conversationId);
   const sendMessageMutation = useSendMessageMutation();
+  const markReadMutation = useMarkReadMutation();
+  const beginCheckout = useCheckoutStore((state) => state.beginCheckout);
 
   const conversation = conversationQuery.data as HostInquiryConversation | null;
   const messages = messagesQuery.data ?? [];
+
+  const draft = useSocialStore((state) =>
+    conversationId ? (state.drafts[conversationId] ?? "") : "",
+  );
+  const setDraft = useSocialStore((state) => state.setDraft);
+  const clearDraft = useSocialStore((state) => state.clearDraft);
 
   // Hide tab bar while in thread and restore on blur/unmount
   useFocusEffect(
@@ -68,9 +81,9 @@ export default function InquiryThreadScreen() {
   // Mark conversation read on view
   useEffect(() => {
     if (conversationId && conversation && conversation.unreadCount > 0) {
-      mockSocialRepository.markConversationRead(conversationId);
+      markReadMutation.mutate(conversationId);
     }
-  }, [conversationId, conversation]);
+  }, [conversationId, conversation, markReadMutation]);
 
   if (conversationQuery.isLoading || messagesQuery.isLoading) {
     return (
@@ -80,10 +93,29 @@ export default function InquiryThreadScreen() {
         testID="inquiry-thread-loading"
       >
         <View style={styles.loadingContainer}>
-          <AppText variant="body" color={theme.colors.textMuted}>
-            Loading inquiry…
-          </AppText>
+          <Skeleton width="80%" height={24} style={{ marginBottom: 12 }} />
+          <Skeleton width="100%" height={64} />
         </View>
+      </Screen>
+    );
+  }
+
+  if (conversationQuery.isError || messagesQuery.isError) {
+    return (
+      <Screen
+        safeAreaEdges={["top"]}
+        gutter={false}
+        testID="inquiry-thread-query-error"
+      >
+        <ErrorState
+          title="Could not load inquiry"
+          description="A network or repository error occurred."
+          onAction={() => {
+            conversationQuery.refetch();
+            messagesQuery.refetch();
+          }}
+          actionLabel="Retry"
+        />
       </Screen>
     );
   }
@@ -107,22 +139,40 @@ export default function InquiryThreadScreen() {
 
   const handleSend = (text: string) => {
     if (conversationId) {
-      sendMessageMutation.mutate({ conversationId, content: text });
+      sendMessageMutation.mutate(
+        { conversationId, content: text },
+        {
+          onSuccess: () => {
+            clearDraft(conversationId);
+          },
+          onError: () => {
+            showToast(
+              "Send Failed",
+              "Could not send inquiry message.",
+              "error",
+            );
+          },
+        },
+      );
     }
   };
 
   const handleBookingOfferSelect = () => {
-    if (conversation.eventContext.bookingOffer) {
+    const offer = conversation.eventContext.bookingOffer;
+    if (offer) {
+      beginCheckout(conversation.eventContext.eventId, offer.tierId);
       router.push(
         routeBuilders.checkoutTickets(
           conversation.eventContext.eventId,
-          conversation.eventContext.bookingOffer.tierId,
+          offer.tierId,
         ),
       );
     }
   };
 
   const bookingOffer = conversation.eventContext.bookingOffer;
+  const isClosed = conversation.isClosed;
+  const isBlocked = conversation.isBlocked;
 
   return (
     <Screen
@@ -171,7 +221,7 @@ export default function InquiryThreadScreen() {
         </View>
 
         <IconButton
-          icon="settings"
+          icon="more"
           accessibilityLabel="Inquiry options"
           onPress={() =>
             router.push(routeBuilders.conversationActionsModal(conversation.id))
@@ -219,15 +269,47 @@ export default function InquiryThreadScreen() {
           contentContainerStyle={styles.messagesList}
         />
 
-        <MessageComposer
-          onSend={handleSend}
-          onAttachmentPress={() =>
-            showToast("Attachment", "File attachment prototype.", "info")
-          }
-          disabled={sendMessageMutation.isPending}
-          placeholder="Ask host a question…"
-          testID="inquiry-message-composer"
-        />
+        {isClosed ? (
+          <View style={styles.closedBanner} testID="inquiry-closed-banner">
+            <AppText
+              variant="body"
+              color={theme.colors.textMuted}
+              style={styles.bannerText}
+            >
+              This inquiry has been closed by the host.
+            </AppText>
+          </View>
+        ) : isBlocked ? (
+          <View style={styles.closedBanner} testID="inquiry-blocked-banner">
+            <AppText
+              variant="body"
+              color={theme.colors.textMuted}
+              style={styles.bannerText}
+            >
+              You have blocked this host.
+            </AppText>
+          </View>
+        ) : (
+          <View
+            style={{
+              paddingBottom: Math.max(insets.bottom, theme.spacing.xs),
+            }}
+          >
+            <MessageComposer
+              value={draft}
+              onChangeText={(text) => {
+                if (conversationId) setDraft(conversationId, text);
+              }}
+              onSend={handleSend}
+              onAttachmentPress={() =>
+                showToast("Attachment", "File attachment prototype.", "info")
+              }
+              disabled={sendMessageMutation.isPending}
+              placeholder="Ask host a question…"
+              testID="inquiry-message-composer"
+            />
+          </View>
+        )}
       </KeyboardAvoidingView>
     </Screen>
   );
@@ -236,7 +318,7 @@ export default function InquiryThreadScreen() {
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
-    alignItems: "center",
+    padding: theme.spacing.gutter,
     justifyContent: "center",
   },
   header: {
@@ -291,5 +373,15 @@ const styles = StyleSheet.create({
   messagesList: {
     paddingHorizontal: theme.spacing.gutter,
     paddingVertical: theme.spacing.md,
+  },
+  closedBanner: {
+    padding: theme.spacing.md,
+    backgroundColor: theme.colors.surfaceElevated,
+    alignItems: "center",
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: theme.colors.borderSubtle,
+  },
+  bannerText: {
+    fontSize: 13,
   },
 });

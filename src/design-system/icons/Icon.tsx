@@ -56,7 +56,9 @@ export type SemanticIconName =
   | "chatBubble"
   | "send"
   | "slash"
-  | "add";
+  | "add"
+  | "phone"
+  | "video";
 
 const iconNameMap: Record<SemanticIconName, keyof typeof Ionicons.glyphMap> = {
   feed: "flame-outline",
@@ -111,6 +113,8 @@ const iconNameMap: Record<SemanticIconName, keyof typeof Ionicons.glyphMap> = {
   send: "send-outline",
   slash: "ban-outline",
   add: "add-outline",
+  phone: "call-outline",
+  video: "videocam-outline",
 };
 
 export interface IconProps {

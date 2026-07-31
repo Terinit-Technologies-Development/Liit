@@ -4,9 +4,13 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { Screen } from "../../src/components/ui/Screen";
 import { AppHeader } from "../../src/components/navigation/AppHeader";
 import { AppText } from "../../src/components/ui/AppText";
-import { Icon } from "../../src/design-system/icons/Icon";
-import { useConversationDetailQuery } from "../../src/hooks/social/useSocialQueries";
-import { mockSocialRepository } from "../../src/repositories/mock/MockSocialRepository";
+import { Icon, SemanticIconName } from "../../src/design-system/icons/Icon";
+import {
+  useBlockUserMutation,
+  useCloseInquiryMutation,
+  useConversationDetailQuery,
+  useUnblockUserMutation,
+} from "../../src/hooks/social/useSocialQueries";
 import { useToast } from "../../src/hooks/useToast";
 import { routeBuilders } from "../../src/navigation/routes";
 import { theme } from "../../src/design-system/theme";
@@ -24,49 +28,83 @@ export default function ConversationActionsModal() {
   const conversationId = normaliseId(params.conversationId);
 
   const conversationQuery = useConversationDetailQuery(conversationId);
+  const blockMutation = useBlockUserMutation();
+  const unblockMutation = useUnblockUserMutation();
+  const closeInquiryMutation = useCloseInquiryMutation();
+
   const conversation = conversationQuery.data;
 
-  const handleMute = () => {
-    showToast(
-      "Notifications Muted",
-      "Notifications for this conversation have been muted.",
-      "info",
+  if (!conversationId || !conversation) {
+    return (
+      <Screen safeAreaEdges={["top"]} gutter={false}>
+        <AppHeader
+          title="Conversation Actions"
+          showBack={false}
+          rightAction={{
+            icon: "close",
+            accessibilityLabel: "Close",
+            onPress: () => router.back(),
+          }}
+        />
+        <View style={styles.content}>
+          <AppText variant="body" color={theme.colors.textMuted}>
+            Conversation details unavailable.
+          </AppText>
+        </View>
+      </Screen>
     );
+  }
+
+  const isBlocked = conversation.isBlocked;
+  const isDirect = conversation.kind === "direct";
+  const targetId = isDirect ? conversation.participantId : conversation.hostId;
+  const targetName = isDirect
+    ? conversation.participantName
+    : conversation.hostName;
+
+  const handleMute = () => {
     router.back();
+    showToast("Muted", `Notifications muted for ${targetName}.`, "info");
   };
 
-  const handleBlock = async () => {
-    if (conversation) {
-      const targetId =
-        conversation.kind === "direct"
-          ? conversation.participantId
-          : conversation.hostId;
-      await mockSocialRepository.blockUser(targetId);
-      showToast(
-        "User Blocked",
-        "You will no longer receive messages from this user.",
-        "info",
-      );
-      router.back();
+  const handleToggleBlock = () => {
+    router.back();
+    if (isBlocked) {
+      unblockMutation.mutate(targetId, {
+        onSuccess: () => {
+          showToast("Unblocked", `${targetName} has been unblocked.`, "info");
+        },
+      });
+    } else {
+      blockMutation.mutate(targetId, {
+        onSuccess: () => {
+          showToast("Blocked", `${targetName} has been blocked.`, "info");
+        },
+      });
     }
   };
 
-  const handleReport = () => {
+  const handleCloseInquiry = () => {
     router.back();
-    setTimeout(() => {
-      if (conversation) {
-        const targetId =
-          conversation.kind === "direct"
-            ? conversation.participantId
-            : conversation.hostId;
-        router.push(
-          routeBuilders.reportContentModal({
-            targetKind: "user",
-            targetId,
-          }),
+    closeInquiryMutation.mutate(conversation.id, {
+      onSuccess: () => {
+        showToast(
+          "Inquiry Closed",
+          "This host inquiry has been closed.",
+          "info",
         );
-      }
-    }, 100);
+      },
+    });
+  };
+
+  const handleReport = () => {
+    router.dismiss();
+    router.push(
+      routeBuilders.reportContentModal({
+        targetKind: isDirect ? "user" : "host",
+        targetId,
+      }),
+    );
   };
 
   return (
@@ -76,93 +114,123 @@ export default function ConversationActionsModal() {
       testID="conversation-actions-modal"
     >
       <AppHeader
-        title="Conversation Actions"
+        title="Options"
         showBack={false}
         rightAction={{
           icon: "close",
-          accessibilityLabel: "Close modal",
+          accessibilityLabel: "Close options",
           onPress: () => router.back(),
           testID: "conversation-actions-close",
         }}
       />
 
       <View style={styles.content}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Mute notifications"
+        <ActionButton
+          icon="bell"
+          label="Mute Notifications"
+          description="Silence alerts for this conversation"
           onPress={handleMute}
-          style={({ pressed }) => [styles.actionRow, pressed && styles.pressed]}
-          testID="action-mute"
-        >
-          <Icon name="bell" size={20} color={theme.colors.textPrimary} />
-          <AppText variant="body" style={styles.actionLabel}>
-            Mute Notifications
-          </AppText>
-        </Pressable>
+          testID="action-mute-button"
+        />
 
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Report content or user"
-          onPress={handleReport}
-          style={({ pressed }) => [styles.actionRow, pressed && styles.pressed]}
-          testID="action-report"
-        >
-          <Icon
-            name="alertCircle"
-            size={20}
-            color={theme.colors.statusWarning}
+        {!isDirect && !conversation.isClosed ? (
+          <ActionButton
+            icon="close"
+            label="Close Inquiry"
+            description="Archive and mark this inquiry as closed"
+            onPress={handleCloseInquiry}
+            testID="action-close-inquiry-button"
           />
-          <AppText
-            variant="body"
-            color={theme.colors.statusWarning}
-            style={styles.actionLabel}
-          >
-            Report Conversation or User
-          </AppText>
-        </Pressable>
+        ) : null}
 
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Block user"
-          onPress={handleBlock}
-          style={({ pressed }) => [styles.actionRow, pressed && styles.pressed]}
-          testID="action-block"
-        >
-          <Icon name="slash" size={20} color={theme.colors.statusDanger} />
-          <AppText
-            variant="body"
-            color={theme.colors.statusDanger}
-            style={styles.actionLabel}
-          >
-            Block User
-          </AppText>
-        </Pressable>
+        <ActionButton
+          icon="slash"
+          label={isBlocked ? "Unblock User" : "Block User"}
+          description={
+            isBlocked
+              ? "Allow messages and inquiries"
+              : "Prevent this user from messaging you"
+          }
+          danger={!isBlocked}
+          onPress={handleToggleBlock}
+          testID="action-block-button"
+        />
+
+        <ActionButton
+          icon="alertCircle"
+          label="Report Conversation"
+          description="Flag inappropriate messages to moderation"
+          danger
+          onPress={handleReport}
+          testID="action-report-button"
+        />
       </View>
     </Screen>
   );
 }
 
+function ActionButton({
+  icon,
+  label,
+  description,
+  danger = false,
+  onPress,
+  testID,
+}: {
+  icon: SemanticIconName;
+  label: string;
+  description: string;
+  danger?: boolean;
+  onPress: () => void;
+  testID?: string;
+}) {
+  return (
+    <Pressable
+      style={({ pressed }) => [styles.actionRow, pressed && styles.rowPressed]}
+      onPress={onPress}
+      testID={testID}
+    >
+      <Icon
+        name={icon}
+        size={24}
+        color={danger ? theme.colors.statusDanger : theme.colors.textPrimary}
+      />
+      <View style={styles.actionTextCol}>
+        <AppText
+          variant="subheading"
+          color={danger ? theme.colors.statusDanger : theme.colors.textPrimary}
+          style={styles.actionLabel}
+        >
+          {label}
+        </AppText>
+        <AppText variant="caption" color={theme.colors.textMuted}>
+          {description}
+        </AppText>
+      </View>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   content: {
-    paddingHorizontal: theme.spacing.gutter,
-    paddingVertical: theme.spacing.md,
-    gap: theme.spacing.sm,
+    paddingVertical: theme.spacing.sm,
   },
   actionRow: {
     flexDirection: "row",
     alignItems: "center",
-    padding: theme.spacing.md,
-    backgroundColor: theme.colors.surfacePrimary,
-    borderRadius: theme.radii.lg,
+    paddingHorizontal: theme.spacing.gutter,
+    paddingVertical: theme.spacing.md,
     gap: theme.spacing.md,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: theme.colors.borderSubtle,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: theme.colors.borderSubtle,
+  },
+  rowPressed: {
+    backgroundColor: theme.colors.surfaceElevated,
+  },
+  actionTextCol: {
+    flex: 1,
   },
   actionLabel: {
-    fontWeight: "600",
-    fontSize: 15,
-  },
-  pressed: {
-    opacity: 0.7,
+    fontWeight: "700",
   },
 });

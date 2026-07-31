@@ -22,6 +22,17 @@ export const midnightGroovesTiers: TicketTier[] = [
     maxPerOrder: 4,
     premiumLabel: "Premium",
   },
+  {
+    id: "tier-vip-tables",
+    name: "VIP Table Reservation (4 Guests)",
+    description: "Reserved booth with complimentary bottle service.",
+    priceMinor: 150000,
+    currency: "ZAR",
+    remaining: 2,
+    state: "selling_fast",
+    maxPerOrder: 2,
+    premiumLabel: "VIP Table",
+  },
 ];
 
 export const deepHouseTiers: TicketTier[] = [

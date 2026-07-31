@@ -17,6 +17,8 @@ import { EventPostPreviewList } from "../../../src/components/events/EventPostPr
 import { RelatedEventRail } from "../../../src/components/events/RelatedEventRail";
 import { StickyActionBar } from "../../../src/components/events/StickyActionBar";
 import { StatusPill } from "../../../src/components/ui/StatusPill";
+import { ReactionBar } from "../../../src/components/social/ReactionBar";
+import { useCommentsQuery } from "../../../src/hooks/social/useSocialQueries";
 import {
   useEventDetailQuery,
   useRelatedEventsQuery,
@@ -58,6 +60,10 @@ export default function EventDetailScreen() {
   const beginCheckout = useCheckoutStore((state) => state.beginCheckout);
 
   const [selectedTierId, setSelectedTierId] = useState<string | null>(null);
+  const [userReacted, setUserReacted] = useState(false);
+  const [reactionsCount, setReactionsCount] = useState(24);
+  const commentsQuery = useCommentsQuery(eventId);
+  const commentsCount = (commentsQuery.data ?? []).length;
 
   if (!eventId) {
     return (
@@ -186,6 +192,20 @@ export default function EventDetailScreen() {
         <EventMetadataGrid event={detail.event} />
 
         <ExpandableDescription text={detail.longDescription} />
+
+        <ReactionBar
+          reactionsCount={reactionsCount}
+          commentsCount={commentsCount}
+          userReacted={userReacted}
+          onToggleReaction={() => {
+            setUserReacted(!userReacted);
+            setReactionsCount((prev) => (userReacted ? prev - 1 : prev + 1));
+          }}
+          onOpenComments={() =>
+            router.push(routeBuilders.eventCommentsModal(detail.event.id))
+          }
+          testID="event-detail-reaction-bar"
+        />
 
         <HostSummaryCard
           host={detail.event.host}

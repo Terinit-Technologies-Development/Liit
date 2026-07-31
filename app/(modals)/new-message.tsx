@@ -6,80 +6,27 @@ import { AppHeader } from "../../src/components/navigation/AppHeader";
 import { SearchField } from "../../src/components/forms/SearchField";
 import { AppText } from "../../src/components/ui/AppText";
 import { AppImage } from "../../src/components/ui/AppImage";
+import { EmptyState } from "../../src/components/feedback/EmptyState";
 import { getImageSource } from "../../src/assets/image-registry";
+import { useMessageRecipientsQuery } from "../../src/hooks/social/useSocialQueries";
 import { routeBuilders } from "../../src/navigation/routes";
+import { MessageRecipient } from "../../src/domain/social";
 import { theme } from "../../src/design-system/theme";
-
-interface RecipientOption {
-  id: string;
-  name: string;
-  handle: string;
-  avatarKey: string;
-  kind: "direct" | "inquiry";
-  targetConversationId: string;
-  subtitle: string;
-}
-
-const mockRecipients: RecipientOption[] = [
-  {
-    id: "usr-alex-khumalo",
-    name: "Alex Khumalo",
-    handle: "@alex_k",
-    avatarKey: "hostGrooveCo",
-    kind: "direct",
-    targetConversationId: "conv-direct-alex",
-    subtitle: "Friend · Johannesburg",
-  },
-  {
-    id: "usr-thandi-biko",
-    name: "Thandi Biko",
-    handle: "@thandi_b",
-    avatarKey: "hostAmapianoSunsets",
-    kind: "direct",
-    targetConversationId: "conv-direct-thandi",
-    subtitle: "Friend · Rosebank",
-  },
-  {
-    id: "host-club-vibez",
-    name: "Club Vibez JHB",
-    handle: "@clubvibez_jhb",
-    avatarKey: "hostGrooveCo",
-    kind: "inquiry",
-    targetConversationId: "conv-inquiry-club-vibez",
-    subtitle: "Verified Organizer · Midnight Kinetic Grooves",
-  },
-  {
-    id: "host-soweto-collective",
-    name: "Soweto Food & Craft Collective",
-    handle: "@sowetocraft",
-    avatarKey: "eventSowetoFoodMarket",
-    kind: "inquiry",
-    targetConversationId: "conv-inquiry-soweto-market",
-    subtitle: "Verified Organizer · Soweto Street Food Market",
-  },
-];
 
 export default function NewMessageModal() {
   const router = useRouter();
-  const [query, setQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredRecipients = mockRecipients.filter(
-    (r) =>
-      r.name.toLowerCase().includes(query.toLowerCase()) ||
-      r.handle.toLowerCase().includes(query.toLowerCase()),
-  );
+  const recipientsQuery = useMessageRecipientsQuery(searchQuery);
+  const recipients = recipientsQuery.data ?? [];
 
-  const handleSelectRecipient = (recipient: RecipientOption) => {
-    router.back();
-    setTimeout(() => {
-      if (recipient.kind === "direct") {
-        router.push(routeBuilders.directThread(recipient.targetConversationId));
-      } else {
-        router.push(
-          routeBuilders.inquiryThread(recipient.targetConversationId),
-        );
-      }
-    }, 100);
+  const handleSelectRecipient = (recipient: MessageRecipient) => {
+    router.dismiss();
+    if (recipient.kind === "direct") {
+      router.push(routeBuilders.directThread(recipient.targetConversationId));
+    } else {
+      router.push(routeBuilders.inquiryThread(recipient.targetConversationId));
+    }
   };
 
   return (
@@ -91,54 +38,50 @@ export default function NewMessageModal() {
           icon: "close",
           accessibilityLabel: "Close modal",
           onPress: () => router.back(),
-          testID: "new-message-close",
+          testID: "new-message-close-button",
         }}
       />
 
       <View style={styles.searchSection}>
         <SearchField
-          value={query}
-          onChangeText={setQuery}
-          onClear={() => setQuery("")}
-          placeholder="Search name, handle, or host…"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          onClear={() => setSearchQuery("")}
+          placeholder="Search people or hosts…"
           testID="new-message-search-input"
         />
       </View>
 
       <FlatList
-        data={filteredRecipients}
-        keyExtractor={(item) => item.id}
+        data={recipients}
+        keyExtractor={(item) => `${item.kind}-${item.id}`}
         renderItem={({ item }) => (
           <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Send message to ${item.name}`}
+            style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
             onPress={() => handleSelectRecipient(item)}
-            style={({ pressed }) => [
-              styles.recipientRow,
-              pressed && styles.pressed,
-            ]}
             testID={`recipient-row-${item.id}`}
           >
             <AppImage
-              source={getImageSource(item.avatarKey)}
+              source={getImageSource(item.avatarUrl)}
               style={styles.avatar}
               contentFit="cover"
             />
-            <View style={styles.infoCol}>
-              <View style={styles.nameRow}>
-                <AppText variant="subheading" style={styles.nameText}>
-                  {item.name}
-                </AppText>
-                <AppText variant="caption" color={theme.colors.textMuted}>
-                  {item.handle}
-                </AppText>
-              </View>
+            <View style={styles.rowContent}>
+              <AppText variant="subheading" style={styles.name}>
+                {item.name}
+              </AppText>
               <AppText variant="caption" color={theme.colors.textMuted}>
-                {item.subtitle}
+                {item.handle} · {item.subtitle}
               </AppText>
             </View>
           </Pressable>
         )}
+        ListEmptyComponent={
+          <EmptyState
+            title="No recipients found"
+            description="Try searching for a friend's name or handle."
+          />
+        }
         contentContainerStyle={styles.listContent}
       />
     </Screen>
@@ -149,22 +92,24 @@ const styles = StyleSheet.create({
   searchSection: {
     paddingHorizontal: theme.spacing.gutter,
     paddingVertical: theme.spacing.sm,
-    backgroundColor: theme.colors.canvas,
+    backgroundColor: theme.colors.surfacePrimary,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: theme.colors.borderSubtle,
   },
-  recipientRow: {
+  listContent: {
+    paddingVertical: theme.spacing.xs,
+  },
+  row: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: theme.spacing.gutter,
     paddingVertical: theme.spacing.md,
-    backgroundColor: theme.colors.canvas,
+    gap: theme.spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: theme.colors.borderSubtle,
-    gap: theme.spacing.md,
   },
-  pressed: {
-    opacity: 0.7,
+  rowPressed: {
+    backgroundColor: theme.colors.surfaceElevated,
   },
   avatar: {
     width: 44,
@@ -172,20 +117,11 @@ const styles = StyleSheet.create({
     borderRadius: 22,
     backgroundColor: theme.colors.surfaceElevated,
   },
-  infoCol: {
+  rowContent: {
     flex: 1,
   },
-  nameRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing.xs,
-    marginBottom: 2,
-  },
-  nameText: {
+  name: {
     fontWeight: "700",
     color: theme.colors.textPrimary,
-  },
-  listContent: {
-    paddingBottom: theme.spacing.xl,
   },
 });

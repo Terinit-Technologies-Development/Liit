@@ -1,0 +1,17 @@
+appId: com.liit.app
+---
+# Instruction 05 — Social States, Blocking & Reporting Flow
+- launchApp
+- tapOn: "inbox-button"
+- assertVisible: "inbox-screen"
+- tapOn: "inbox-row-conv-direct-alex"
+- tapOn: "direct-thread-actions"
+- assertVisible: "conversation-actions-modal"
+- tapOn: "action-block-button"
+- assertVisible: "direct-blocked-banner"
+- tapOn: "direct-unblock-button"
+- tapOn: "direct-thread-actions"
+- tapOn: "action-report-button"
+- assertVisible: "report-content-modal"
+- tapOn: "report-reason-spam-or-unsolicited-promotion"
+- tapOn: "report-submit-button"

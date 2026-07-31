@@ -83,8 +83,10 @@ export const queryKeys = {
   },
   social: {
     all: ["social"] as const,
+    conversationsRoot: () =>
+      [...queryKeys.social.all, "conversations"] as const,
     conversations: (kind?: string) =>
-      [...queryKeys.social.all, "conversations", kind ?? "all"] as const,
+      [...queryKeys.social.conversationsRoot(), kind ?? "all"] as const,
     conversationDetail: (id: string) =>
       [...queryKeys.social.all, "conversation-detail", id] as const,
     messages: (conversationId: string) =>

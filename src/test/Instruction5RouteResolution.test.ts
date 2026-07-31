@@ -64,5 +64,10 @@ describe("Instruction 5 Messaging Routes & Tab Visibility Configuration", () => 
         targetId: "usr-001",
       },
     });
+
+    expect(routeBuilders.eventCommentsModal("evt-123")).toEqual({
+      pathname: "/(modals)/event-comments",
+      params: { eventId: "evt-123" },
+    });
   });
 });

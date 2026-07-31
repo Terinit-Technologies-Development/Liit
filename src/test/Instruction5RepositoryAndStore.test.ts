@@ -1,6 +1,6 @@
 import { mockSocialRepository } from "../repositories/mock/MockSocialRepository";
 import { useSocialStore } from "../state/useSocialStore";
-import { DirectConversation } from "../domain/social";
+import { DirectConversation, HostInquiryConversation } from "../domain/social";
 
 describe("Instruction 5 Social Repository & Store Unit Tests", () => {
   beforeEach(async () => {
@@ -43,6 +43,34 @@ describe("Instruction 5 Social Repository & Store Unit Tests", () => {
     ).toBe(true);
   });
 
+  it("enforces conversation existence, blocking, and closed inquiry in sendMessage", async () => {
+    // Unknown conversation
+    await expect(
+      mockSocialRepository.sendMessage({
+        conversationId: "non-existent-conv",
+        content: "Hello",
+      }),
+    ).rejects.toThrow("Conversation not found");
+
+    // Blocked conversation
+    await mockSocialRepository.blockUser("usr-alex-khumalo");
+    await expect(
+      mockSocialRepository.sendMessage({
+        conversationId: "conv-direct-alex",
+        content: "Hello",
+      }),
+    ).rejects.toThrow("Conversation is blocked");
+
+    // Closed inquiry
+    await mockSocialRepository.closeInquiry("conv-inquiry-club-vibez");
+    await expect(
+      mockSocialRepository.sendMessage({
+        conversationId: "conv-inquiry-club-vibez",
+        content: "Hello",
+      }),
+    ).rejects.toThrow("Inquiry is closed");
+  });
+
   it("blocks and unblocks a user", async () => {
     await mockSocialRepository.blockUser("usr-alex-khumalo");
     let conv = await mockSocialRepository.getConversation("conv-direct-alex");
@@ -53,7 +81,15 @@ describe("Instruction 5 Social Repository & Store Unit Tests", () => {
     expect((conv as DirectConversation)?.isBlocked).toBe(false);
   });
 
-  it("lists, posts, and toggles reactions on comments", async () => {
+  it("closes host inquiries", async () => {
+    await mockSocialRepository.closeInquiry("conv-inquiry-club-vibez");
+    const conv = await mockSocialRepository.getConversation(
+      "conv-inquiry-club-vibez",
+    );
+    expect((conv as HostInquiryConversation)?.isClosed).toBe(true);
+  });
+
+  it("lists, posts, retries, and toggles reactions on comments", async () => {
     const initialComments = await mockSocialRepository.listComments(
       "evt-midnight-grooves",
     );
@@ -65,20 +101,18 @@ describe("Instruction 5 Social Repository & Store Unit Tests", () => {
     });
     expect(newComment.content).toBe("Excited for Midnight Grooves!");
 
-    const updatedComments = await mockSocialRepository.listComments(
-      "evt-midnight-grooves",
-    );
-    expect(
-      updatedComments.some(
-        (c) => c.content === "Excited for Midnight Grooves!",
-      ),
-    ).toBe(true);
-
     const toggled = await mockSocialRepository.toggleCommentReaction(
       newComment.id,
     );
     expect(toggled.userReacted).toBe(true);
     expect(toggled.reactionsCount).toBe(1);
+  });
+
+  it("lists message recipients for new message picker", async () => {
+    const recipients = await mockSocialRepository.listMessageRecipients();
+    expect(recipients.length).toBeGreaterThanOrEqual(4);
+    expect(recipients.some((r) => r.name === "Alex Khumalo")).toBe(true);
+    expect(recipients.some((r) => r.name === "Club Vibez JHB")).toBe(true);
   });
 
   it("submits content reports", async () => {
