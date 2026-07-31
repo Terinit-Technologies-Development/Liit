@@ -7,12 +7,17 @@ import { theme } from "../../design-system/theme";
 export interface QrPlaceholderProps {
   ticketId: string;
   enabled: boolean;
+  testID?: string;
 }
 
-export function QrPlaceholder({ ticketId, enabled }: QrPlaceholderProps) {
+export function QrPlaceholder({
+  ticketId,
+  enabled,
+  testID,
+}: QrPlaceholderProps) {
   return (
     <View
-      testID="full-ticket-qr-placeholder"
+      testID={testID ?? "full-ticket-qr-placeholder"}
       accessibilityLabel={
         enabled
           ? "Simulated QR placeholder. Not scannable and not valid for entry."

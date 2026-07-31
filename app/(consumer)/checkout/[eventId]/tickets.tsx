@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from "react";
 import { Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { Screen } from "../../../../src/components/ui/Screen";
 import { AppText } from "../../../../src/components/ui/AppText";
 import { GradientButton } from "../../../../src/components/ui/GradientButton";
@@ -12,8 +13,12 @@ import { CheckoutProgress } from "../../../../src/components/ticketing/CheckoutP
 import { PrototypeBadge } from "../../../../src/components/ui/PrototypeBadge";
 import { useEventDetailQuery } from "../../../../src/hooks/events/useEventDetailQuery";
 import { useCheckoutStore } from "../../../../src/state/useCheckoutStore";
+import { useSessionStore } from "../../../../src/state/useSessionStore";
 import { buildCheckoutQuote } from "../../../../src/domain/ticketing/quote";
+import { mockTicketingRepository } from "../../../../src/repositories/mock/MockTicketingRepository";
 import { routeBuilders, ROUTES } from "../../../../src/navigation/routes";
+import { queryKeys } from "../../../../src/state/query-keys";
+import { nanoid } from "../../../../src/utils/nanoid";
 import { theme } from "../../../../src/design-system/theme";
 
 function normaliseId(value: string | string[] | undefined): string | null {
@@ -22,8 +27,11 @@ function normaliseId(value: string | string[] | undefined): string | null {
   return null;
 }
 
+const EMPTY_MAP: Record<string, number> = {};
+
 export default function CheckoutTicketsScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const params = useLocalSearchParams<{
     eventId?: string | string[];
     initialTierId?: string | string[];
@@ -35,7 +43,9 @@ export default function CheckoutTicketsScreen() {
   const detailQuery = useEventDetailQuery(eventId);
   const detail = detailQuery.data;
 
-  const storeQuantities = useCheckoutStore((s) => s.draft?.quantities ?? {});
+  const user = useSessionStore((s) => s.user);
+  const draftQuantities = useCheckoutStore((s) => s.draft?.quantities);
+  const storeQuantities = draftQuantities ?? EMPTY_MAP;
   const setQuantity = useCheckoutStore((s) => s.setQuantity);
   const setQuote = useCheckoutStore((s) => s.setQuote);
   const clearCheckout = useCheckoutStore((s) => s.clearCheckout);
@@ -47,6 +57,9 @@ export default function CheckoutTicketsScreen() {
       return {};
     },
   );
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const handleChange = useCallback(
     (tierId: string, qty: number) => {
@@ -65,7 +78,7 @@ export default function CheckoutTicketsScreen() {
     }
   }, [detail, eventId, quantities]);
 
-  const isFreeFlow = detail?.event.startingPriceMinor === 0;
+  const isFreeFlow = detail?.event?.startingPriceMinor === 0;
   const hasSelection = (quote?.totalQuantity ?? 0) > 0;
 
   const handleCancel = () => {
@@ -73,17 +86,46 @@ export default function CheckoutTicketsScreen() {
     router.back();
   };
 
-  const handleContinue = () => {
-    if (!quote || !eventId) return;
+  const handleContinue = async () => {
+    if (!quote || !eventId || !detail || quote.totalQuantity === 0) return;
+
     setQuote(quote);
+    setSubmitError(null);
 
     if (isFreeFlow) {
-      router.push(
-        routeBuilders.checkoutResult({ eventId, result: "free_success" }),
-      );
-    } else {
-      router.push(routeBuilders.checkoutPayment(eventId));
+      setIsSubmitting(true);
+      try {
+        const registrationId = `registration-${eventId}-${nanoid()}`;
+        const result = await mockTicketingRepository.createFreeRegistration({
+          registrationId,
+          eventId,
+          attendeeId: user?.id ?? "usr-anonymous",
+          attendeeName: user?.profile.displayName ?? "Guest",
+          quote,
+        });
+
+        await queryClient.invalidateQueries({
+          queryKey: queryKeys.ticketing.all,
+        });
+
+        clearCheckout();
+
+        router.replace(
+          routeBuilders.checkoutResult({
+            eventId,
+            result: "free_success",
+            orderId: result.order.id,
+            ticketId: result.tickets[0]?.id,
+          }),
+        );
+      } catch {
+        setSubmitError("Registration failed. Please try again.");
+        setIsSubmitting(false);
+      }
+      return;
     }
+
+    router.push(routeBuilders.checkoutPayment(eventId));
   };
 
   if (!eventId || (!detailQuery.isLoading && !detail)) {
@@ -163,17 +205,30 @@ export default function CheckoutTicketsScreen() {
         ))}
 
         {quote && hasSelection && <OrderSummary quote={quote} />}
+
+        {submitError ? (
+          <AppText
+            variant="caption"
+            color={theme.colors.statusDanger}
+            align="center"
+            testID="checkout-tickets-error"
+          >
+            {submitError}
+          </AppText>
+        ) : null}
       </ScrollView>
 
       <View style={styles.footer}>
         <GradientButton
           label={
-            isFreeFlow
-              ? "Confirm Registration"
-              : `Continue — ${quote && hasSelection ? `R${(quote.totalMinor / 100).toFixed(2)}` : "Select tickets"}`
+            isSubmitting
+              ? "Registering…"
+              : isFreeFlow
+                ? "Confirm Registration"
+                : `Continue — ${quote && hasSelection ? `R${(quote.totalMinor / 100).toFixed(2)}` : "Select tickets"}`
           }
           onPress={handleContinue}
-          disabled={!hasSelection}
+          disabled={!hasSelection || isSubmitting}
           testID="checkout-tickets-continue"
         />
       </View>

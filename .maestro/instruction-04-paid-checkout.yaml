@@ -1,0 +1,92 @@
+appId: com.liit.app
+tags:
+  - instruction-04
+---
+# Instruction 4 — Paid Checkout Journey
+# UNEXECUTED: Maestro runner and device emulator not available in this environment.
+# This file is structurally valid and targets the correct appId and test IDs.
+
+- launchApp:
+    clearState: true
+
+# Wait for the consumer shell to be ready
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Navigate to Explore tab
+- tapOn:
+    id: "tab-explore"
+
+- waitForAnimationToEnd
+
+# Tap Midnight Kinetic Grooves
+- tapOn:
+    text: "Midnight Kinetic Grooves"
+
+- waitForAnimationToEnd
+
+- assertVisible:
+    text: "Get Tickets"
+
+# Tap the primary CTA (sticky-action-bar)
+- tapOn:
+    id: "sticky-action-bar-primary"
+
+- waitForAnimationToEnd
+
+# — Ticket Selection screen —
+- assertVisible:
+    text: "Select Tickets"
+
+- assertVisible:
+    text: "General Access"
+
+# Increment General Access quantity
+- tapOn:
+    id: "ticket-tier-tier-general-increment"
+
+- assertVisible:
+    id: "checkout-tickets-continue"
+
+- tapOn:
+    id: "checkout-tickets-continue"
+
+- waitForAnimationToEnd
+
+# — Payment screen —
+- assertVisible:
+    text: "Payment"
+
+- assertVisible:
+    id: "checkout-payment-applied-method"
+
+- assertVisible:
+    id: "checkout-payment-pay"
+
+- tapOn:
+    id: "checkout-payment-pay"
+
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# — Result screen — paid success —
+- assertVisible:
+    id: "result-headline"
+
+- assertVisible:
+    text: "Tickets confirmed!"
+
+- assertVisible:
+    id: "result-view-ticket"
+
+- tapOn:
+    id: "result-view-ticket"
+
+- waitForAnimationToEnd
+
+# — Full Ticket screen —
+- assertVisible:
+    id: "full-ticket-qr"
+
+- assertVisible:
+    id: "full-ticket-high-brightness"

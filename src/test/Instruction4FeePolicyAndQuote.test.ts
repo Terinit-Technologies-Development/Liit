@@ -101,15 +101,11 @@ describe("buildCheckoutQuote", () => {
   });
 
   it("throws when quantity exceeds maxPerOrder", () => {
-    expect(() =>
-      buildCheckoutQuote("evt-6", [paidTier], { t1: 99 }),
-    ).toThrow();
+    expect(() => buildCheckoutQuote("evt-6", [paidTier], { t1: 99 })).toThrow();
   });
 
   it("throws when sold_out tier is selected", () => {
     const soldOut = makeTier({ id: "t4", state: "sold_out" });
-    expect(() =>
-      buildCheckoutQuote("evt-7", [soldOut], { t4: 1 }),
-    ).toThrow();
+    expect(() => buildCheckoutQuote("evt-7", [soldOut], { t4: 1 })).toThrow();
   });
 });

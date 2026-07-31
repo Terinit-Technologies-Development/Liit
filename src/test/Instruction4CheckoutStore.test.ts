@@ -5,7 +5,7 @@
  * quantities, records payment attempts, and resets on demand.
  */
 
-import { act, renderHook } from "@testing-library/react-native";
+import { act } from "@testing-library/react-native";
 import { useCheckoutStore } from "../../src/state/useCheckoutStore";
 
 beforeEach(() => {

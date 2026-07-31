@@ -1,0 +1,132 @@
+appId: com.liit.app
+tags:
+  - instruction-04
+---
+# Instruction 4 — Decline, Network Error, and Wallet State Journeys
+# UNEXECUTED: Maestro runner and device emulator not available in this environment.
+# This file is structurally valid and targets the correct appId and test IDs.
+
+# ── Scenario 1: Payment Decline ──────────────────────────────────────────────
+- launchApp:
+    clearState: true
+
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Set payment_decline scenario via Prototype Controls
+- tapOn:
+    id: "tab-profile"
+
+- tapOn:
+    id: "prototype-controls-button"
+
+- tapOn:
+    text: "Payment Decline"
+
+- tapOn:
+    id: "prototype-controls-close"
+
+# Standard paid flow
+- tapOn:
+    id: "tab-explore"
+
+- tapOn:
+    text: "Midnight Kinetic Grooves"
+
+- tapOn:
+    id: "sticky-action-bar-primary"
+
+- tapOn:
+    id: "ticket-tier-tier-general-increment"
+
+- tapOn:
+    id: "checkout-tickets-continue"
+
+- tapOn:
+    id: "checkout-payment-pay"
+
+- waitForAnimationToEnd:
+    timeout: 5000
+
+- assertVisible:
+    text: "Payment declined"
+
+- assertVisible:
+    id: "result-try-again"
+
+- assertVisible:
+    id: "result-change-method"
+
+# ── Scenario 2: Network Error ─────────────────────────────────────────────────
+- launchApp:
+    clearState: true
+
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- tapOn:
+    id: "tab-profile"
+
+- tapOn:
+    id: "prototype-controls-button"
+
+- tapOn:
+    text: "Payment Network Error"
+
+- tapOn:
+    id: "prototype-controls-close"
+
+- tapOn:
+    id: "tab-explore"
+
+- tapOn:
+    text: "Midnight Kinetic Grooves"
+
+- tapOn:
+    id: "sticky-action-bar-primary"
+
+- tapOn:
+    id: "ticket-tier-tier-general-increment"
+
+- tapOn:
+    id: "checkout-tickets-continue"
+
+- tapOn:
+    id: "checkout-payment-pay"
+
+- waitForAnimationToEnd:
+    timeout: 5000
+
+- assertVisible:
+    text: "Something went wrong"
+
+- assertVisible:
+    id: "result-try-again"
+
+- assertVisible:
+    id: "result-return-to-event"
+
+# ── Scenario 3: Wallet Empty State ────────────────────────────────────────────
+- launchApp:
+    clearState: true
+
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- tapOn:
+    id: "tab-profile"
+
+- tapOn:
+    id: "prototype-controls-button"
+
+- tapOn:
+    text: "Wallet Empty"
+
+- tapOn:
+    id: "prototype-controls-close"
+
+- tapOn:
+    id: "tab-tickets"
+
+- assertVisible:
+    id: "wallet-empty-state"

@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { ScrollView, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Screen } from "../../src/components/ui/Screen";
 import { AppText } from "../../src/components/ui/AppText";
+import { AppButton } from "../../src/components/ui/AppButton";
 import { IconButton } from "../../src/components/ui/IconButton";
 import { PaymentMethodCard } from "../../src/components/ticketing/PaymentMethodCard";
 import { useCheckoutStore } from "../../src/state/useCheckoutStore";
@@ -11,13 +12,23 @@ import { theme } from "../../src/design-system/theme";
 
 export default function PaymentMethodModal() {
   const router = useRouter();
-  const selectedId = useCheckoutStore(
-    (s) => s.draft?.paymentMethodId ?? "pm-demo-visa-4242",
-  );
+
+  /** Source of truth from the store — what is currently applied. */
+  const appliedMethodId =
+    useCheckoutStore((s) => s.draft?.paymentMethodId) ?? "pm-demo-visa-4242";
+
   const setPaymentMethod = useCheckoutStore((s) => s.setPaymentMethod);
 
-  const handleSelect = (id: string) => {
-    setPaymentMethod(id);
+  /** Local draft — changes to this do NOT mutate the store until Apply is pressed. */
+  const [localSelectedId, setLocalSelectedId] = useState(appliedMethodId);
+
+  const handleApply = () => {
+    setPaymentMethod(localSelectedId);
+    router.back();
+  };
+
+  const handleCancel = () => {
+    // Do NOT call setPaymentMethod — local selection is discarded
     router.back();
   };
 
@@ -33,8 +44,8 @@ export default function PaymentMethodModal() {
         </AppText>
         <IconButton
           icon="close"
-          accessibilityLabel="Close payment method selection"
-          onPress={() => router.back()}
+          accessibilityLabel="Cancel payment method selection"
+          onPress={handleCancel}
           variant="ghost"
           testID="payment-method-close"
         />
@@ -48,11 +59,27 @@ export default function PaymentMethodModal() {
           <PaymentMethodCard
             key={method.id}
             method={method}
-            selected={selectedId === method.id}
-            onSelect={() => method.enabled && handleSelect(method.id)}
+            selected={localSelectedId === method.id}
+            onSelect={() => {
+              if (method.enabled) {
+                setLocalSelectedId(method.id);
+              }
+            }}
+            testID={`payment-method-option-${method.id}`}
           />
         ))}
       </ScrollView>
+
+      <View style={styles.footer}>
+        <AppButton
+          label="Apply"
+          onPress={handleApply}
+          variant="primary"
+          fullWidth
+          disabled={localSelectedId === appliedMethodId}
+          testID="payment-method-apply"
+        />
+      </View>
     </Screen>
   );
 }
@@ -78,5 +105,11 @@ const styles = StyleSheet.create({
   content: {
     padding: theme.spacing.lg,
     gap: theme.spacing.md,
+  },
+  footer: {
+    padding: theme.spacing.lg,
+    paddingBottom: theme.spacing.xl,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: theme.colors.borderSubtle,
   },
 });

@@ -1,21 +1,32 @@
-appId: za.co.liit.prototype
+appId: com.liit.app
+tags:
+  - instruction-04
 ---
 # Instruction 4 — Free Registration Journey
 # UNEXECUTED: Maestro runner and device emulator not available in this environment.
+# This file is structurally valid and targets the correct appId and test IDs.
 
 - launchApp:
     clearState: true
 
-# Navigate to Soweto Food Market (free event)
+- waitForAnimationToEnd:
+    timeout: 3000
+
 - tapOn:
     id: "tab-explore"
 
+- waitForAnimationToEnd
+
+# Soweto Street Food & Craft Market is a free event
 - scrollUntilVisible:
     element:
       text: "Soweto Street Food & Craft Market"
+    direction: DOWN
 
 - tapOn:
     text: "Soweto Street Food & Craft Market"
+
+- waitForAnimationToEnd
 
 - assertVisible:
     text: "Register Free"
@@ -23,7 +34,9 @@ appId: za.co.liit.prototype
 - tapOn:
     id: "sticky-action-bar-primary"
 
-# Ticket Selection — free flow
+- waitForAnimationToEnd
+
+# — Ticket Selection (free flow) —
 - assertVisible:
     text: "Register"
 
@@ -36,14 +49,28 @@ appId: za.co.liit.prototype
 - tapOn:
     id: "checkout-tickets-continue"
 
-# Free result — no payment screen
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# — Result screen — free success —
+- assertVisible:
+    id: "result-headline"
+
 - assertVisible:
     text: "Registration confirmed!"
+
+- assertVisible:
+    id: "result-entry-requirement"
+
+- assertVisible:
+    id: "result-view-ticket"
 
 - tapOn:
     id: "result-go-to-wallet"
 
-# Wallet — ticket appears under Upcoming
+- waitForAnimationToEnd
+
+# — Wallet —
 - assertVisible:
     text: "My Wallet"
 

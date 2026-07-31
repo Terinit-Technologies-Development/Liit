@@ -9,12 +9,14 @@ export interface PaymentMethodCardProps {
   method: PaymentMethod;
   selected: boolean;
   onSelect(): void;
+  testID?: string;
 }
 
 export function PaymentMethodCard({
   method,
   selected,
   onSelect,
+  testID,
 }: PaymentMethodCardProps) {
   return (
     <Pressable
@@ -34,7 +36,7 @@ export function PaymentMethodCard({
         selected && styles.selectedCard,
         !method.enabled && styles.disabledCard,
       ]}
-      testID={`payment-method-${method.id}`}
+      testID={testID ?? `payment-method-${method.id}`}
     >
       <View style={styles.radioIndicator}>
         <View style={[styles.outerCircle, selected && styles.selectedCircle]}>
