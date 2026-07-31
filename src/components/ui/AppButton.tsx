@@ -24,6 +24,7 @@ export interface AppButtonProps {
   rightIcon?: SemanticIconName;
   fullWidth?: boolean;
   accessibilityLabel?: string;
+  testID?: string;
   style?: StyleProp<ViewStyle>;
 }
 
@@ -38,6 +39,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
   rightIcon,
   fullWidth = false,
   accessibilityLabel,
+  testID,
   style,
 }) => {
   const isInteractive = !disabled && !loading;
@@ -58,6 +60,7 @@ export const AppButton: React.FC<AppButtonProps> = ({
       accessibilityRole="button"
       accessibilityState={{ disabled: !isInteractive, busy: loading }}
       accessibilityLabel={accessibilityLabel || label}
+      testID={testID}
       style={({ pressed }) => [
         styles.base,
         {

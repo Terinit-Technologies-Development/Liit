@@ -58,6 +58,17 @@ export const queryKeys = {
     upcomingEvents: (hostId: string) =>
       [...queryKeys.hosts.all, "upcoming-events", hostId] as const,
   },
+  ticketing: {
+    all: ["ticketing"] as const,
+    wallet: (scenario: string) =>
+      [...queryKeys.ticketing.all, "wallet", scenario] as const,
+    ticket: (ticketId: string) =>
+      [...queryKeys.ticketing.all, "ticket", ticketId] as const,
+    order: (orderId: string) =>
+      [...queryKeys.ticketing.all, "order", orderId] as const,
+    paymentMethods: () =>
+      [...queryKeys.ticketing.all, "payment-methods"] as const,
+  },
   commerce: {
     all: ["commerce"] as const,
     products: (eventId: string) =>

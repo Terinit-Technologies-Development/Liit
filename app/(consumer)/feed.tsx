@@ -20,7 +20,7 @@ import { useDiscoveryStore } from "../../src/state/useDiscoveryStore";
 import { useAppStore } from "../../src/state/useAppStore";
 import { useToast } from "../../src/hooks/useToast";
 import { DEMO_NOW_ISO, discoveryHosts } from "../../src/fixtures/discovery";
-import { ROUTES } from "../../src/navigation/routes";
+import { routeBuilders, ROUTES } from "../../src/navigation/routes";
 import { theme } from "../../src/design-system/theme";
 
 export default function FeedScreen() {
@@ -36,19 +36,11 @@ export default function FeedScreen() {
   ).length;
 
   const handleEventPress = (eventId: string) => {
-    showToast(
-      "Event details",
-      `Event ${eventId} will open in the later Event Detail instruction.`,
-      "info",
-    );
+    router.push(routeBuilders.eventDetail(eventId));
   };
 
   const handleHostPress = (hostId: string) => {
-    showToast(
-      "Host Profile",
-      `Host profile ${hostId} will open in a later instruction.`,
-      "info",
-    );
+    router.push(routeBuilders.hostProfile(hostId));
   };
 
   const feedItems = feedQuery.data?.items ?? [];

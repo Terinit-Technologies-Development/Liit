@@ -28,6 +28,8 @@ export interface TicketTier {
   currency: "ZAR";
   remaining: number | null;
   state: "available" | "selling_fast" | "sold_out";
+  maxPerOrder: number;
+  premiumLabel?: string;
 }
 
 export interface EventPostPreview {

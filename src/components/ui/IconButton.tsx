@@ -10,6 +10,7 @@ export interface IconButtonProps {
   accessibilityState?: { selected?: boolean; disabled?: boolean };
   size?: "sm" | "md" | "lg";
   variant?: "surface" | "ghost" | "gradient" | "glass";
+  iconColor?: string;
   disabled?: boolean;
   style?: StyleProp<ViewStyle>;
   testID?: string;
@@ -22,6 +23,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
   accessibilityState,
   size = "md",
   variant = "surface",
+  iconColor,
   disabled = false,
   style,
   testID,
@@ -64,7 +66,10 @@ export const IconButton: React.FC<IconButtonProps> = ({
       <Icon
         name={icon}
         size={iconSize}
-        color={variant === "gradient" ? "#000000" : theme.colors.textPrimary}
+        color={
+          iconColor ??
+          (variant === "gradient" ? "#000000" : theme.colors.textPrimary)
+        }
       />
     </Pressable>
   );

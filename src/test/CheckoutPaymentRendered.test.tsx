@@ -1,0 +1,98 @@
+import React from "react";
+import { render, fireEvent } from "@testing-library/react-native";
+import CheckoutPaymentScreen from "../../app/(consumer)/checkout/[eventId]/payment";
+import { useCheckoutStore } from "../state/useCheckoutStore";
+import { CheckoutQuote } from "../domain/ticketing";
+
+const mockBack = jest.fn();
+const mockPush = jest.fn();
+
+jest.mock("expo-router", () => ({
+  useRouter: () => ({
+    back: mockBack,
+    push: mockPush,
+  }),
+  useLocalSearchParams: () => ({
+    eventId: "evt-midnight-grooves",
+  }),
+}));
+
+jest.mock("react-native-safe-area-context", () => ({
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+}));
+
+describe("CheckoutPaymentScreen Rendered Integration", () => {
+  const mockQuote: CheckoutQuote = {
+    eventId: "evt-midnight-grooves",
+    totalQuantity: 2,
+    subtotalMinor: 47619,
+    serviceFeeMinor: 2381,
+    totalMinor: 50000,
+    currency: "ZAR",
+    lines: [],
+  };
+
+  beforeEach(() => {
+    mockBack.mockClear();
+    mockPush.mockClear();
+    useCheckoutStore.setState({
+      draft: {
+        eventId: "evt-midnight-grooves",
+        quantities: {},
+        quote: mockQuote,
+        paymentMethodId: "pm-demo-visa-4242",
+        activeAttemptId: null,
+        latestAttempt: null,
+        freeRegistrationId: null,
+        freeRegistrationInFlight: false,
+      },
+    });
+  });
+
+  it("renders payment method cards", () => {
+    const screen = render(<CheckoutPaymentScreen />);
+    expect(screen.getByText("Payment method")).toBeTruthy();
+    expect(screen.getByText("Demo Visa •••• 4242")).toBeTruthy();
+  });
+
+  it("verifies Pay button has correct total amount", () => {
+    const screen = render(<CheckoutPaymentScreen />);
+    const payBtn = screen.getByTestId("checkout-payment-pay");
+    expect(payBtn.props.accessibilityLabel).toContain("Pay R500.00");
+  });
+
+  it("verifies Pay button is disabled when activeAttemptId is already set (duplicate protection)", () => {
+    useCheckoutStore.setState({
+      draft: {
+        eventId: "evt-midnight-grooves",
+        quantities: {},
+        quote: mockQuote,
+        paymentMethodId: "pm-demo-visa-4242",
+        activeAttemptId: "att-in-flight-999",
+        latestAttempt: null,
+        freeRegistrationId: null,
+        freeRegistrationInFlight: false,
+      },
+    });
+
+    const screen = render(<CheckoutPaymentScreen />);
+    const payBtn = screen.getByTestId("checkout-payment-pay");
+    expect(payBtn.props.accessibilityState.disabled).toBe(true);
+
+    fireEvent.press(payBtn);
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it("verifies Pay navigates to processing on success and sets activeAttemptId", () => {
+    const screen = render(<CheckoutPaymentScreen />);
+    const payBtn = screen.getByTestId("checkout-payment-pay");
+    fireEvent.press(payBtn);
+
+    expect(useCheckoutStore.getState().draft?.activeAttemptId).not.toBeNull();
+    expect(mockPush).toHaveBeenCalledWith(
+      expect.objectContaining({
+        pathname: expect.stringContaining("/processing"),
+      }),
+    );
+  });
+});

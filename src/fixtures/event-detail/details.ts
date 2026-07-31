@@ -1,6 +1,10 @@
 import { EventDetailPayload } from "../../domain/event-detail";
 import { deepHouseLineup, midnightGroovesLineup } from "./lineups";
-import { deepHouseTiers, midnightGroovesTiers } from "./ticket-tiers";
+import {
+  deepHouseTiers,
+  freeRegistrationTiers,
+  midnightGroovesTiers,
+} from "./ticket-tiers";
 import { amapianoSunsetPosts } from "./posts";
 
 export const eventDetailById: Record<
@@ -32,13 +36,13 @@ export const eventDetailById: Record<
     conversionMode: "free_registration",
     modules: {
       lineup: false,
-      ticketTiers: false,
+      ticketTiers: true,
       attendeeProof: true,
       eventPosts: false,
       relatedEvents: true,
     },
     lineup: [],
-    ticketTiers: [],
+    ticketTiers: freeRegistrationTiers,
     attendeeAvatarKeys: ["avatar2", "avatar4"],
     attendeeCount: 650,
     posts: [],
