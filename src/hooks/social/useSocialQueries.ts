@@ -144,25 +144,26 @@ export function useCommentsQuery(eventId: string | null) {
   });
 }
 
+interface PostCommentContext {
+  previous: Comment[];
+  optimisticId: string;
+}
+
 export function usePostCommentMutation() {
   const queryClient = useQueryClient();
-  return useMutation<
-    Comment,
-    Error,
-    PostCommentInput,
-    { previous?: Comment[] }
-  >({
+  return useMutation<Comment, Error, PostCommentInput, PostCommentContext>({
     mutationFn: (input) => mockSocialRepository.postComment(input),
     onMutate: async (input) => {
-      await queryClient.cancelQueries({
-        queryKey: queryKeys.social.comments(input.eventId),
-      });
-      const previous = queryClient.getQueryData<Comment[]>(
-        queryKeys.social.comments(input.eventId),
-      );
+      const key = queryKeys.social.comments(input.eventId);
+      await queryClient.cancelQueries({ queryKey: key });
+
+      const previous = queryClient.getQueryData<Comment[]>(key) ?? [];
+      const optimisticId = input.clientMutationId
+        ? `optimistic-${input.clientMutationId}`
+        : `optimistic-${Date.now()}`;
 
       const optimistic: Comment = {
-        id: `optimistic-${Date.now()}`,
+        id: optimisticId,
         eventId: input.eventId,
         authorId: "usr-001",
         authorName: "Keketso",
@@ -174,25 +175,31 @@ export function usePostCommentMutation() {
         status: "optimistic",
       };
 
-      queryClient.setQueryData(queryKeys.social.comments(input.eventId), [
+      queryClient.setQueryData<Comment[]>(key, (current = []) => [
         optimistic,
-        ...(previous ?? []),
+        ...current.filter((c) => c.id !== optimisticId),
       ]);
 
-      return { previous };
+      return { previous, optimisticId };
     },
     onError: (_err, variables, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(
-          queryKeys.social.comments(variables.eventId),
-          context.previous,
-        );
-      }
+      if (!context) return;
+      const key = queryKeys.social.comments(variables.eventId);
+      queryClient.setQueryData<Comment[]>(key, (current = []) =>
+        current.map((comment) =>
+          comment.id === context.optimisticId
+            ? { ...comment, status: "failed" }
+            : comment,
+        ),
+      );
     },
-    onSettled: (_, __, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.social.comments(variables.eventId),
-      });
+    onSuccess: (newComment, variables, context) => {
+      const key = queryKeys.social.comments(variables.eventId);
+      queryClient.setQueryData<Comment[]>(key, (current = []) =>
+        current.map((comment) =>
+          comment.id === context.optimisticId ? newComment : comment,
+        ),
+      );
     },
   });
 }

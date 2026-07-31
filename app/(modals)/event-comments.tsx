@@ -58,6 +58,23 @@ export default function EventCommentsModal() {
     );
   }
 
+  if (commentsQuery.isError) {
+    return (
+      <Screen
+        safeAreaEdges={["top"]}
+        gutter={false}
+        testID="event-comments-query-error"
+      >
+        <ErrorState
+          title="Could not load discussion"
+          description="The comments could not be loaded."
+          actionLabel="Retry"
+          onAction={() => commentsQuery.refetch()}
+        />
+      </Screen>
+    );
+  }
+
   const handlePost = (text: string) => {
     postCommentMutation.mutate(
       { eventId, content: text },

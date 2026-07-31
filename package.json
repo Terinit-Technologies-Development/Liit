@@ -62,7 +62,7 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"app/**/*.{ts,tsx}\"",
     "format:write": "prettier --write \"src/**/*.{ts,tsx}\" \"app/**/*.{ts,tsx}\"",
     "test": "jest",
-    "test:e2e": "maestro test .maestro --include-tags=instruction-01,instruction-02,instruction-03,instruction-04",
+    "test:e2e": "maestro test .maestro --include-tags=instruction-01,instruction-02,instruction-03,instruction-04,instruction-05",
     "test:e2e:instruction-01": "maestro test .maestro --include-tags=instruction-01",
     "test:e2e:instruction-01:main": "maestro test .maestro/instruction-01-main.yaml",
     "test:e2e:instruction-01:signout": "maestro test .maestro/instruction-01-signout.yaml",
@@ -75,7 +75,11 @@
     "test:e2e:instruction-04": "maestro test .maestro --include-tags=instruction-04",
     "test:e2e:instruction-04:paid": "maestro test .maestro/instruction-04-paid-checkout.yaml",
     "test:e2e:instruction-04:free": "maestro test .maestro/instruction-04-free-registration.yaml",
-    "test:e2e:instruction-04:states": "maestro test .maestro/instruction-04-failures-wallet.yaml"
+    "test:e2e:instruction-04:states": "maestro test .maestro/instruction-04-failures-wallet.yaml",
+    "test:e2e:instruction-05": "maestro test .maestro --include-tags=instruction-05",
+    "test:e2e:instruction-05:direct": "maestro test .maestro/instruction-05-inbox-direct.yaml",
+    "test:e2e:instruction-05:inquiry": "maestro test .maestro/instruction-05-inquiry-booking.yaml",
+    "test:e2e:instruction-05:states": "maestro test .maestro/instruction-05-social-states.yaml"
   },
   "private": true
 }

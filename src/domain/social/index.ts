@@ -100,6 +100,7 @@ export interface SendMessageInput {
 export interface PostCommentInput {
   eventId: string;
   content: string;
+  clientMutationId?: string;
 }
 
 export interface ReportContentInput {

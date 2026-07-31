@@ -61,6 +61,7 @@ export const DeliveryStatus: React.FC<DeliveryStatusProps> = ({
               color={theme.colors.accentStart}
               style={styles.retryText}
               onPress={onRetry}
+              testID="delivery-status-retry"
             >
               Retry
             </AppText>

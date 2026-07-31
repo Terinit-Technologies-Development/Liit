@@ -43,6 +43,20 @@ describe("Instruction 5 Social Repository & Store Unit Tests", () => {
     ).toBe(true);
   });
 
+  it("hardens retryMessage to allow retrying only failed outgoing messages", async () => {
+    // Attempting to retry a non-failed message throws
+    await expect(
+      mockSocialRepository.retryMessage("conv-direct-alex", "msg-alex-001"),
+    ).rejects.toThrow("Only failed outgoing messages can be retried.");
+
+    // Retrying a genuine failed outgoing message transitions it to delivered
+    const retriedMsg = await mockSocialRepository.retryMessage(
+      "conv-direct-alex",
+      "msg-alex-failed",
+    );
+    expect(retriedMsg.status).toBe("delivered");
+  });
+
   it("enforces conversation existence, blocking, and closed inquiry in sendMessage", async () => {
     // Unknown conversation
     await expect(

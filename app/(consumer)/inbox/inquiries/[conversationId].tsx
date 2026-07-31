@@ -28,6 +28,7 @@ import {
   useConversationDetailQuery,
   useMarkReadMutation,
   useMessagesQuery,
+  useRetryMessageMutation,
   useSendMessageMutation,
 } from "../../../../src/hooks/social/useSocialQueries";
 import { useSocialStore } from "../../../../src/state/useSocialStore";
@@ -55,6 +56,7 @@ export default function InquiryThreadScreen() {
   const conversationQuery = useConversationDetailQuery(conversationId);
   const messagesQuery = useMessagesQuery(conversationId);
   const sendMessageMutation = useSendMessageMutation();
+  const retryMessageMutation = useRetryMessageMutation();
   const markReadMutation = useMarkReadMutation();
   const beginCheckout = useCheckoutStore((state) => state.beginCheckout);
 
@@ -173,6 +175,7 @@ export default function InquiryThreadScreen() {
   const bookingOffer = conversation.eventContext.bookingOffer;
   const isClosed = conversation.isClosed;
   const isBlocked = conversation.isBlocked;
+  const canUseBookingOffer = Boolean(bookingOffer) && !isClosed && !isBlocked;
 
   return (
     <Screen
@@ -250,15 +253,21 @@ export default function InquiryThreadScreen() {
         <FlatList
           data={messages}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
             <MessageBubble
               message={item}
-              onRetry={() => handleSend(item.content)}
+              dateHeader={index === 0 ? "Today" : undefined}
+              onRetry={() =>
+                retryMessageMutation.mutate({
+                  conversationId: conversation.id,
+                  messageId: item.id,
+                })
+              }
               testID={`inquiry-message-${item.id}`}
             />
           )}
           ListFooterComponent={
-            bookingOffer ? (
+            canUseBookingOffer && bookingOffer ? (
               <BookingLinkCard
                 offer={bookingOffer}
                 onSelectOffer={handleBookingOfferSelect}
@@ -276,7 +285,7 @@ export default function InquiryThreadScreen() {
               color={theme.colors.textMuted}
               style={styles.bannerText}
             >
-              This inquiry has been closed by the host.
+              You closed this inquiry.
             </AppText>
           </View>
         ) : isBlocked ? (

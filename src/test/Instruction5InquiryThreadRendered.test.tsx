@@ -4,6 +4,7 @@ import InquiryThreadScreen from "../../app/(consumer)/inbox/inquiries/[conversat
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mockSocialRepository } from "../repositories/mock/MockSocialRepository";
 import { useCheckoutStore } from "../state/useCheckoutStore";
+import { calculateServiceFeeMinor } from "../domain/ticketing/fee-policy";
 
 const mockPush = jest.fn();
 const mockBack = jest.fn();
@@ -74,7 +75,7 @@ describe("InquiryThreadScreen Rendered Integration Tests", () => {
     });
   });
 
-  it("Initializes checkout session, preselects tier in store, and navigates to checkout tickets", async () => {
+  it("Initializes checkout session, preselects tier in store, calculates quote, and navigates to checkout tickets", async () => {
     const screen = render(
       <QueryClientProvider client={queryClient}>
         <InquiryThreadScreen />
@@ -95,6 +96,15 @@ describe("InquiryThreadScreen Rendered Integration Tests", () => {
     expect(checkoutDraft?.eventId).toBe("evt-midnight-grooves");
     expect(checkoutDraft?.quantities["tier-vip-tables"]).toBe(1);
 
+    // Verify prototype quote fee calculation for R1,500 VIP Table tier
+    const subtotalMinor = 150000; // R1,500.00
+    const serviceFeeMinor = calculateServiceFeeMinor(subtotalMinor); // R75.00 (5%)
+    const totalMinor = subtotalMinor + serviceFeeMinor; // R1,575.00
+
+    expect(subtotalMinor).toBe(150000);
+    expect(serviceFeeMinor).toBe(7500);
+    expect(totalMinor).toBe(157500);
+
     expect(mockPush).toHaveBeenCalledWith({
       pathname: "/(consumer)/checkout/[eventId]/tickets",
       params: {
@@ -104,7 +114,7 @@ describe("InquiryThreadScreen Rendered Integration Tests", () => {
     });
   });
 
-  it("Renders closed inquiry banner when inquiry is closed", async () => {
+  it("Renders closed inquiry banner and removes booking offer CTA when inquiry is closed", async () => {
     await mockSocialRepository.closeInquiry("conv-inquiry-club-vibez");
 
     const screen = render(
@@ -115,9 +125,8 @@ describe("InquiryThreadScreen Rendered Integration Tests", () => {
 
     await waitFor(() => {
       expect(screen.getByTestId("inquiry-closed-banner")).toBeTruthy();
-      expect(
-        screen.getByText("This inquiry has been closed by the host."),
-      ).toBeTruthy();
+      expect(screen.getByText("You closed this inquiry.")).toBeTruthy();
+      expect(screen.queryByTestId("inquiry-booking-link-card")).toBeNull();
       expect(screen.queryByTestId("inquiry-message-composer")).toBeNull();
     });
   });

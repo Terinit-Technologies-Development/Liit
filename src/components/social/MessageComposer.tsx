@@ -36,10 +36,16 @@ export const MessageComposer: React.FC<MessageComposerProps> = ({
     }
   };
 
+  const isControlled = value !== undefined;
+
   const handleSend = () => {
-    if (currentText.trim() && !disabled) {
-      onSend(currentText.trim());
-      handleChangeText("");
+    const trimmed = currentText.trim();
+    if (!trimmed || disabled) {
+      return;
+    }
+    onSend(trimmed);
+    if (!isControlled) {
+      setInternalText("");
     }
   };
 

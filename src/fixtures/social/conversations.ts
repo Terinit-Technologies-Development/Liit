@@ -206,6 +206,18 @@ export const seedMessagesMap: Record<string, Message[]> = {
       status: "delivered",
       isIncoming: true,
     },
+    {
+      id: "msg-alex-failed",
+      conversationId: "conv-direct-alex",
+      senderId: "usr-001",
+      senderName: "Keketso",
+      senderAvatarUrl: "userAvatarDefault",
+      senderType: "consumer",
+      content: "Save a spot for me near the front deck! (Network Error)",
+      sentAt: "2026-07-31T10:15:00.000Z",
+      status: "failed",
+      isIncoming: false,
+    },
   ],
   "conv-inquiry-club-vibez": [
     {

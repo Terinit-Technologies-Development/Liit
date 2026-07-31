@@ -3,6 +3,7 @@ import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import NewMessageModal from "../../app/(modals)/new-message";
 import ConversationActionsModal from "../../app/(modals)/conversation-actions";
 import ReportContentModal from "../../app/(modals)/report-content";
+import EventCommentsModal from "../../app/(modals)/event-comments";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mockSocialRepository } from "../repositories/mock/MockSocialRepository";
 
@@ -14,6 +15,7 @@ let mockParams: any = {
   conversationId: "conv-direct-alex",
   targetKind: "user",
   targetId: "usr-001",
+  eventId: "evt-midnight-grooves",
 };
 
 jest.mock("expo-router", () => ({
@@ -40,6 +42,7 @@ describe("Instruction 5 Social Modals Rendered Integration Tests", () => {
       conversationId: "conv-direct-alex",
       targetKind: "user",
       targetId: "usr-001",
+      eventId: "evt-midnight-grooves",
     };
     await mockSocialRepository.reset();
     mockPush.mockClear();
@@ -70,7 +73,9 @@ describe("Instruction 5 Social Modals Rendered Integration Tests", () => {
     });
   });
 
-  it("ConversationActionsModal renders Mute, Report, and Block options", async () => {
+  it("ConversationActionsModal renders Mute, Close Inquiry, Report, and Block options", async () => {
+    mockParams = { conversationId: "conv-inquiry-club-vibez" };
+
     const screen = render(
       <QueryClientProvider client={queryClient}>
         <ConversationActionsModal />
@@ -80,6 +85,7 @@ describe("Instruction 5 Social Modals Rendered Integration Tests", () => {
     await waitFor(() => {
       expect(screen.getByTestId("conversation-actions-modal")).toBeTruthy();
       expect(screen.getByTestId("action-mute-button")).toBeTruthy();
+      expect(screen.getByTestId("action-close-inquiry-button")).toBeTruthy();
       expect(screen.getByTestId("action-report-button")).toBeTruthy();
       expect(screen.getByTestId("action-block-button")).toBeTruthy();
     });
@@ -117,5 +123,37 @@ describe("Instruction 5 Social Modals Rendered Integration Tests", () => {
 
     expect(screen.getByTestId("report-invalid-target")).toBeTruthy();
     expect(screen.getByText("Invalid Report Target")).toBeTruthy();
+  });
+
+  it("EventCommentsModal renders comments list and handles optimistic comment and retry failure state", async () => {
+    mockParams = { eventId: "evt-midnight-grooves" };
+
+    const screen = render(
+      <QueryClientProvider client={queryClient}>
+        <EventCommentsModal />
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("event-comments-modal")).toBeTruthy();
+      expect(
+        screen.getByText(
+          "The lineup for tonight is crazy! Who's performing at 11 PM?",
+        ),
+      ).toBeTruthy();
+    });
+
+    // Submit a comment configured to fail ("FAIL")
+    const input = screen.getByTestId("composer-input");
+    fireEvent.changeText(input, "This post will FAIL!");
+
+    const sendBtn = screen.getByTestId("composer-send-button");
+    fireEvent.press(sendBtn);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Failed to post comment. Tap to retry."),
+      ).toBeTruthy();
+    });
   });
 });

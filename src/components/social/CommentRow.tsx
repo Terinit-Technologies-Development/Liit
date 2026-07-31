@@ -12,6 +12,7 @@ export interface CommentRowProps {
   comment: Comment;
   onToggleReaction(): void;
   onReport(): void;
+  onRetry?(): void;
   testID?: string;
 }
 
@@ -19,6 +20,7 @@ export const CommentRow: React.FC<CommentRowProps> = ({
   comment,
   onToggleReaction,
   onReport,
+  onRetry,
   testID,
 }) => {
   const isPending = comment.status === "optimistic";
@@ -68,13 +70,21 @@ export const CommentRow: React.FC<CommentRowProps> = ({
         ) : null}
 
         {isFailed ? (
-          <AppText
-            variant="caption"
-            color={theme.colors.statusDanger}
-            style={styles.statusText}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Retry comment"
+            disabled={!onRetry}
+            onPress={onRetry}
+            testID={`comment-retry-${comment.id}`}
           >
-            Failed to post comment. Tap to retry.
-          </AppText>
+            <AppText
+              variant="caption"
+              color={theme.colors.statusDanger}
+              style={styles.statusText}
+            >
+              Failed to post comment. Tap to retry.
+            </AppText>
+          </Pressable>
         ) : null}
 
         <View style={styles.footerRow}>

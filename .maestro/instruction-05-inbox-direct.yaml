@@ -1,18 +1,35 @@
 appId: com.liit.app
+tags:
+  - instruction-05
 ---
-# Instruction 05 — Inbox & Direct Chat Flow
-- launchApp
-- tapOn: "inbox-button"
-- assertVisible: "inbox-screen"
-- assertVisible: "inbox-tab-direct"
-- tapOn: "inbox-row-conv-direct-alex"
-- assertVisible: "direct-thread-screen"
-- assertVisible: "direct-thread-header"
-- assertVisible: "direct-thread-voice-call"
-- assertVisible: "direct-thread-video-call"
-- tapOn: "direct-message-composer"
+- launchApp:
+    clearState: true
+- runFlow:
+    file: flows/authenticated-onboarding.yaml
+- tapOn:
+    id: feed-open-inbox
+- assertVisible:
+    id: inbox-screen
+- tapOn:
+    id: inbox-tab-direct
+- tapOn:
+    id: inbox-row-conv-direct-alex
+- assertVisible:
+    id: direct-thread-screen
+- assertVisible:
+    id: direct-thread-header
+- assertVisible:
+    id: direct-thread-voice-call
+- assertVisible:
+    id: direct-thread-video-call
+- tapOn:
+    id: composer-input
 - inputText: "See you at 9pm!"
-- tapOn: "send-button"
-- assertVisible: "direct-message-msg-alex-001"
-- tapOn: "direct-thread-back"
-- assertVisible: "inbox-screen"
+- tapOn:
+    id: composer-send-button
+- assertVisible:
+    id: direct-thread-back
+- tapOn:
+    id: direct-thread-back
+- assertVisible:
+    id: inbox-screen

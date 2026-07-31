@@ -71,6 +71,8 @@ export default function DirectThreadScreen() {
   const clearDraft = useSocialStore((state) => state.clearDraft);
   const isTypingMap = useSocialStore((state) => state.isTypingMap);
 
+  const setTyping = useSocialStore((state) => state.setTyping);
+
   const isTyping = Boolean(conversationId && isTypingMap[conversationId]);
 
   // Hide tab bar while in thread and restore on blur/unmount
@@ -84,12 +86,34 @@ export default function DirectThreadScreen() {
     }, [navigation]),
   );
 
-  // Mark conversation read on view
+  // Deterministic typing indicator for Alex Khumalo walkthrough
   useEffect(() => {
-    if (conversationId && conversation && conversation.unreadCount > 0) {
-      markReadMutation.mutate(conversationId);
+    if (!conversationId || conversationId !== "conv-direct-alex") return;
+
+    const showTimer = setTimeout(() => {
+      setTyping(conversationId, true);
+    }, 1200);
+
+    const hideTimer = setTimeout(() => {
+      setTyping(conversationId, false);
+    }, 4200);
+
+    return () => {
+      clearTimeout(showTimer);
+      clearTimeout(hideTimer);
+      setTyping(conversationId, false);
+    };
+  }, [conversationId, setTyping]);
+
+  // Mark conversation read on view
+  const unreadCount = conversation?.unreadCount ?? 0;
+  const markReadMutate = markReadMutation.mutate;
+
+  useEffect(() => {
+    if (conversationId && unreadCount > 0) {
+      markReadMutate(conversationId);
     }
-  }, [conversationId, conversation, markReadMutation]);
+  }, [conversationId, unreadCount, markReadMutate]);
 
   if (conversationQuery.isLoading || messagesQuery.isLoading) {
     return (
@@ -268,9 +292,10 @@ export default function DirectThreadScreen() {
         <FlatList
           data={messages}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
             <MessageBubble
               message={item}
+              dateHeader={index === 0 ? "Today" : undefined}
               onRetry={() =>
                 retryMessageMutation.mutate({
                   conversationId: conversation.id,

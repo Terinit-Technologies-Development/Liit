@@ -163,16 +163,24 @@ export class MockSocialRepository implements SocialRepository {
     messageId: string,
   ): Promise<Message> {
     return this.runExclusive(async () => {
-      await delayMs(200);
       const state = await this.loadState();
       const msgs = state.messages[conversationId] ?? [];
       const msg = msgs.find((m) => m.id === messageId);
       if (!msg) {
         throw new Error("Message not found");
       }
+      if (msg.isIncoming || msg.status !== "failed") {
+        throw new Error("Only failed outgoing messages can be retried.");
+      }
+
+      msg.status = "sent";
+      await this.saveState(state);
+
+      await delayMs(300);
 
       msg.status = "delivered";
       await this.saveState(state);
+
       return structuredClone(msg);
     });
   }
@@ -246,6 +254,9 @@ export class MockSocialRepository implements SocialRepository {
   async postComment(input: PostCommentInput): Promise<Comment> {
     return this.runExclusive(async () => {
       await delayMs(400);
+      if (input.content.includes("FAIL")) {
+        throw new Error("Simulated post comment failure");
+      }
       const state = await this.loadState();
 
       const newComment: Comment = {
