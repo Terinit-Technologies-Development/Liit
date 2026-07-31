@@ -11,6 +11,7 @@ import { EventCreatorRow } from "../../../src/components/creator";
 import { EventStatus } from "../../../src/domain/creator";
 import { EmptyState } from "../../../src/components/feedback/EmptyState";
 import { Chip } from "../../../src/components/ui/Chip";
+import { routeBuilders } from "../../../src/navigation/routes";
 
 const STATUS_FILTERS: { label: string; value: EventStatus | "all" }[] = [
   { label: "All", value: "all" },
@@ -69,7 +70,9 @@ export default function CreatorEvents() {
                 <EventCreatorRow
                   key={evt.eventId}
                   event={evt}
-                  onPress={() => router.push(`/events/${evt.eventId}`)}
+                  onPress={() =>
+                    router.push(routeBuilders.creatorEventOpsHub(evt.eventId))
+                  }
                 />
               ))
             : !isLoading && (
