@@ -94,7 +94,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
             )
           ) : null}
           <Chip
-            label={activeMode.toUpperCase()}
+            label={(activeMode ?? "consumer").toUpperCase()}
             selected={activeMode === "creator"}
             onPress={
               showDevControls
