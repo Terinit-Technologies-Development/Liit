@@ -1,6 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { Share, ScrollView, StyleSheet, Switch, View } from "react-native";
-import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
+import {
+  useFocusEffect,
+  useLocalSearchParams,
+  useNavigation,
+  useRouter,
+} from "expo-router";
+import { VISIBLE_CONSUMER_TAB_BAR_STYLE } from "../_layout";
 import { Screen } from "../../../src/components/ui/Screen";
 import { AppText } from "../../../src/components/ui/AppText";
 import { AppImage } from "../../../src/components/ui/AppImage";
@@ -70,18 +76,16 @@ export default function FullTicketScreen() {
 
   const [highBrightness, setHighBrightness] = useState(false);
 
-  // Hide bottom tab bar when Full Ticket is presented
-  useEffect(() => {
-    const parent = navigation.getParent();
-    if (parent) {
-      parent.setOptions({ tabBarStyle: { display: "none" } });
-    }
-    return () => {
-      if (parent) {
-        parent.setOptions({ tabBarStyle: undefined });
-      }
-    };
-  }, [navigation]);
+  // Hide bottom tab bar when Full Ticket is focused and restore exact style on blur/unmount
+  useFocusEffect(
+    useCallback(() => {
+      const parent = navigation.getParent();
+      parent?.setOptions({ tabBarStyle: { display: "none" } });
+      return () => {
+        parent?.setOptions({ tabBarStyle: VISIBLE_CONSUMER_TAB_BAR_STYLE });
+      };
+    }, [navigation]),
+  );
 
   if (ticketQuery.isLoading) {
     return (
@@ -138,6 +142,7 @@ export default function FullTicketScreen() {
 
   return (
     <Screen
+      statusBarStyle={highBrightness ? "dark" : "light"}
       safeAreaEdges={["top"]}
       gutter={false}
       style={StyleSheet.flatten([
@@ -162,6 +167,8 @@ export default function FullTicketScreen() {
           accessibilityLabel="Back to wallet"
           onPress={() => router.back()}
           variant="ghost"
+          iconColor={passPalette.text}
+          testID="full-ticket-back"
         />
         <AppText
           variant="subheading"
@@ -175,6 +182,7 @@ export default function FullTicketScreen() {
           accessibilityLabel="Share this ticket"
           onPress={handleShare}
           variant="ghost"
+          iconColor={passPalette.text}
           testID="full-ticket-share"
         />
       </View>

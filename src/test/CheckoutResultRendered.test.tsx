@@ -20,27 +20,68 @@ jest.mock("expo-router", () => ({
 
 jest.mock("../hooks/ticketing/useOrderQuery", () => ({
   useOrderQuery: jest.fn((id?: string) => ({
-    data: id
-      ? {
-          id,
-          eventId: "evt-midnight-grooves",
-          attendeeId: "usr-1",
-          attendeeName: "Keketso",
-          status: "paid",
-          source: "paid",
-          quote: {
-            eventId: "evt-midnight-grooves",
-            totalQuantity: 1,
-            subtotalMinor: 10000,
-            serviceFeeMinor: 500,
-            totalMinor: 10500,
-            currency: "ZAR",
-            lines: [],
-          },
-          createdAt: "2026-07-28T10:00:00.000Z",
-          ticketIds: ["t-123"],
-        }
-      : null,
+    data:
+      id === "order-liit-seed-0002"
+        ? {
+            id,
+            eventId: "evt-soweto-food-market",
+            attendeeId: "usr-1",
+            attendeeName: "Keketso",
+            status: "free_confirmed",
+            source: "free_registration",
+            quote: {
+              eventId: "evt-soweto-food-market",
+              totalQuantity: 1,
+              subtotalMinor: 0,
+              serviceFeeMinor: 0,
+              totalMinor: 0,
+              currency: "ZAR",
+              lines: [],
+            },
+            createdAt: "2026-07-28T10:00:00.000Z",
+            ticketIds: ["t-456"],
+          }
+        : id === "order-mismatched"
+          ? {
+              id,
+              eventId: "evt-different-event",
+              attendeeId: "usr-1",
+              attendeeName: "Keketso",
+              status: "paid",
+              source: "paid",
+              quote: {
+                eventId: "evt-different-event",
+                totalQuantity: 1,
+                subtotalMinor: 10000,
+                serviceFeeMinor: 500,
+                totalMinor: 10500,
+                currency: "ZAR",
+                lines: [],
+              },
+              createdAt: "2026-07-28T10:00:00.000Z",
+              ticketIds: ["t-999"],
+            }
+          : id
+            ? {
+                id,
+                eventId: "evt-midnight-grooves",
+                attendeeId: "usr-1",
+                attendeeName: "Keketso",
+                status: "paid",
+                source: "paid",
+                quote: {
+                  eventId: "evt-midnight-grooves",
+                  totalQuantity: 1,
+                  subtotalMinor: 10000,
+                  serviceFeeMinor: 500,
+                  totalMinor: 10500,
+                  currency: "ZAR",
+                  lines: [],
+                },
+                createdAt: "2026-07-28T10:00:00.000Z",
+                ticketIds: ["t-123"],
+              }
+            : null,
     isLoading: false,
     isError: false,
   })),
@@ -52,7 +93,10 @@ jest.mock("../hooks/events/useEventDetailQuery", () => ({
       ? {
           event: {
             id,
-            title: "Midnight Grooves",
+            title:
+              id === "evt-soweto-food-market"
+                ? "Soweto Street Food Market"
+                : "Midnight Grooves",
             venue: { name: "Braamfontein Rooftop", suburb: "Braamfontein" },
           },
         }
@@ -152,5 +196,25 @@ describe("CheckoutResultScreen Rendered Integration", () => {
     expect(screen.getByText("Invalid confirmation")).toBeTruthy();
     expect(screen.queryByText("Tickets confirmed!")).toBeNull();
     expect(screen.queryByText("Registration confirmed!")).toBeNull();
+  });
+
+  it("mismatched order and event ID: rejects confirmation and displays error state", () => {
+    mockParams = {
+      result: "paid_success",
+      eventId: "evt-midnight-grooves",
+      orderId: "order-mismatched",
+    };
+    const screen = render(
+      <QueryClientProvider client={queryClient}>
+        <CheckoutResultScreen />
+      </QueryClientProvider>,
+    );
+    expect(screen.getByTestId("result-order-mismatch")).toBeTruthy();
+    expect(screen.getByText("Confirmation unavailable")).toBeTruthy();
+    expect(
+      screen.getByText(
+        "This order does not match the requested event or confirmation type.",
+      ),
+    ).toBeTruthy();
   });
 });

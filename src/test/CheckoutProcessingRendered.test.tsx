@@ -46,9 +46,11 @@ describe("CheckoutProcessingRendered Integration", () => {
           currency: "ZAR",
           lines: [],
         },
-        paymentMethodId: "pm-1",
-        activeAttemptId: "att-123",
+        paymentMethodId: "pm-demo-visa-4242",
+        activeAttemptId: "att-in-flight-123",
         latestAttempt: null,
+        freeRegistrationId: null,
+        freeRegistrationInFlight: false,
       },
     });
 

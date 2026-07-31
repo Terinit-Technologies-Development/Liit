@@ -260,6 +260,76 @@ describe("MockTicketingRepository — createFreeRegistration", () => {
     const finalWallet = await repo.listWalletTickets();
     expect(finalWallet).toHaveLength(seedCount + first.tickets.length);
   });
+
+  it("handles concurrent calls with the same registration ID via Promise.all", async () => {
+    const repo = makeRepo();
+    const tier = freeRegistrationTiers[0];
+    if (!tier) return;
+
+    const quote = buildCheckoutQuote("evt-soweto-food-market", [tier], {
+      [tier.id]: 1,
+    });
+
+    const initialWallet = await repo.listWalletTickets();
+    const seedCount = initialWallet.length;
+
+    const input = {
+      registrationId: "reg-concurrent-same-001",
+      eventId: "evt-soweto-food-market",
+      attendeeId: "usr-001",
+      attendeeName: "Test User",
+      quote,
+    };
+
+    const [first, second] = await Promise.all([
+      repo.createFreeRegistration(input),
+      repo.createFreeRegistration(input),
+    ]);
+
+    expect(second.order.id).toBe(first.order.id);
+    expect(second.tickets.map((t) => t.id)).toEqual(
+      first.tickets.map((t) => t.id),
+    );
+
+    const finalWallet = await repo.listWalletTickets();
+    expect(finalWallet).toHaveLength(seedCount + first.tickets.length);
+  });
+
+  it("handles concurrent calls with different registration IDs via Promise.all safely", async () => {
+    const repo = makeRepo();
+    const tier = freeRegistrationTiers[0];
+    if (!tier) return;
+
+    const quote = buildCheckoutQuote("evt-soweto-food-market", [tier], {
+      [tier.id]: 1,
+    });
+
+    const initialWallet = await repo.listWalletTickets();
+    const seedCount = initialWallet.length;
+
+    const [resA, resB] = await Promise.all([
+      repo.createFreeRegistration({
+        registrationId: "reg-concurrent-diff-A",
+        eventId: "evt-soweto-food-market",
+        attendeeId: "usr-001",
+        attendeeName: "User A",
+        quote,
+      }),
+      repo.createFreeRegistration({
+        registrationId: "reg-concurrent-diff-B",
+        eventId: "evt-soweto-food-market",
+        attendeeId: "usr-002",
+        attendeeName: "User B",
+        quote,
+      }),
+    ]);
+
+    expect(resA.order.id).not.toBe(resB.order.id);
+    const finalWallet = await repo.listWalletTickets();
+    expect(finalWallet).toHaveLength(
+      seedCount + resA.tickets.length + resB.tickets.length,
+    );
+  });
 });
 
 describe("MockTicketingRepository — getOrder and getTicket", () => {

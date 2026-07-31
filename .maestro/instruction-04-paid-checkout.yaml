@@ -21,18 +21,18 @@ tags:
 
 - waitForAnimationToEnd
 
-# Tap Midnight Kinetic Grooves
+# Tap Midnight Kinetic Grooves card to navigate to Event Detail
 - tapOn:
     text: "Midnight Kinetic Grooves"
 
 - waitForAnimationToEnd
 
 - assertVisible:
-    text: "Get Tickets"
+    text: "Choose tickets"
 
-# Tap the primary CTA (sticky-action-bar)
+# Tap the primary CTA button on Event Detail
 - tapOn:
-    id: "sticky-action-bar-primary"
+    id: "event-primary-action"
 
 - waitForAnimationToEnd
 

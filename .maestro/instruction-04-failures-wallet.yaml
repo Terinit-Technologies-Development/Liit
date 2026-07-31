@@ -4,7 +4,6 @@ tags:
 ---
 # Instruction 4 — Decline, Network Error, and Wallet State Journeys
 # UNEXECUTED: Maestro runner and device emulator not available in this environment.
-# This file is structurally valid and targets the correct appId and test IDs.
 
 # ── Scenario 1: Payment Decline ──────────────────────────────────────────────
 - launchApp:
@@ -37,7 +36,7 @@ tags:
     text: "Midnight Kinetic Grooves"
 
 - tapOn:
-    id: "sticky-action-bar-primary"
+    id: "event-primary-action"
 
 - tapOn:
     id: "ticket-tier-tier-general-increment"
@@ -89,7 +88,7 @@ tags:
     text: "Midnight Kinetic Grooves"
 
 - tapOn:
-    id: "sticky-action-bar-primary"
+    id: "event-primary-action"
 
 - tapOn:
     id: "ticket-tier-tier-general-increment"

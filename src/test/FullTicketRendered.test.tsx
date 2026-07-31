@@ -20,6 +20,15 @@ jest.mock("expo-router", () => ({
       setOptions: jest.fn(),
     }),
   }),
+  useFocusEffect: (cb: any) => {
+    const React = require("react");
+    React.useEffect(() => {
+      const cleanup = cb();
+      return () => {
+        if (cleanup) cleanup();
+      };
+    }, [cb]);
+  },
   useLocalSearchParams: () => ({
     ticketId: mockTicketId,
   }),
@@ -145,7 +154,7 @@ describe("FullTicketRendered Integration", () => {
     expect(screen.queryByTestId("full-ticket-profile-verification")).toBeNull();
   });
 
-  it("High-brightness toggle renders and updates screen and pass container styles to high-contrast palette", () => {
+  it("High-brightness toggle renders and updates screen, header, card, border, and entry pass styles to high-contrast palette", () => {
     mockTicketId = "ticket-liit-seed-0001";
     const screen = render(
       <QueryClientProvider client={queryClient}>
@@ -163,12 +172,46 @@ describe("FullTicketRendered Integration", () => {
       ]),
     );
 
+    const headerBefore = screen.getByTestId("full-ticket-header");
+    expect(headerBefore.props.style).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ backgroundColor: "#0F0D16" }),
+      ]),
+    );
+
     fireEvent(switchToggle, "onValueChange", true);
 
     const screenViewAfter = screen.getByTestId("full-ticket-screen");
     expect(screenViewAfter.props.style).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ backgroundColor: "#FFFFFF" }),
+      ]),
+    );
+
+    const headerAfter = screen.getByTestId("full-ticket-header");
+    expect(headerAfter.props.style).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ backgroundColor: "#FFFFFF" }),
+      ]),
+    );
+
+    const cardTitle = screen.getByTestId("full-ticket-card-title");
+    expect(cardTitle.props.style).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          backgroundColor: "#FFFFFF",
+          borderColor: "#0F0D16",
+        }),
+      ]),
+    );
+
+    const passContainer = screen.getByTestId("full-ticket-pass-container");
+    expect(passContainer.props.style).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          backgroundColor: "#FFFFFF",
+          borderColor: "#0F0D16",
+        }),
       ]),
     );
   });

@@ -26,6 +26,8 @@ describe("PaymentMethodModalRendered Integration", () => {
         paymentMethodId: "pm-demo-visa-4242",
         activeAttemptId: null,
         latestAttempt: null,
+        freeRegistrationId: null,
+        freeRegistrationInFlight: false,
       },
     });
   });

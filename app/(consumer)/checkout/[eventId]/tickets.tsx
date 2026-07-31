@@ -49,6 +49,12 @@ export default function CheckoutTicketsScreen() {
   const setQuantity = useCheckoutStore((s) => s.setQuantity);
   const setQuote = useCheckoutStore((s) => s.setQuote);
   const clearCheckout = useCheckoutStore((s) => s.clearCheckout);
+  const tryBeginFreeRegistration = useCheckoutStore(
+    (s) => s.tryBeginFreeRegistration,
+  );
+  const releaseFreeRegistration = useCheckoutStore(
+    (s) => s.releaseFreeRegistration,
+  );
 
   const [quantities, setLocalQuantities] = useState<Record<string, number>>(
     () => {
@@ -93,9 +99,16 @@ export default function CheckoutTicketsScreen() {
     setSubmitError(null);
 
     if (isFreeFlow) {
+      const registrationId = tryBeginFreeRegistration(
+        `registration-${eventId}-${nanoid()}`,
+      );
+
+      if (!registrationId) {
+        return;
+      }
+
       setIsSubmitting(true);
       try {
-        const registrationId = `registration-${eventId}-${nanoid()}`;
         const result = await mockTicketingRepository.createFreeRegistration({
           registrationId,
           eventId,
@@ -119,6 +132,7 @@ export default function CheckoutTicketsScreen() {
           }),
         );
       } catch {
+        releaseFreeRegistration();
         setSubmitError("Registration failed. Please try again.");
         setIsSubmitting(false);
       }

@@ -7,15 +7,17 @@ import { CONSUMER_TAB_ROUTES } from "../../src/navigation/routes";
 
 export { CONSUMER_TAB_ROUTES };
 
+export const VISIBLE_CONSUMER_TAB_BAR_STYLE = {
+  backgroundColor: theme.colors.surfacePrimary,
+  borderTopColor: theme.colors.borderSubtle,
+  borderTopWidth: StyleSheet.hairlineWidth,
+  height: 64,
+  paddingBottom: 10,
+  paddingTop: 6,
+} as const;
+
 export default function ConsumerLayout() {
-  const visibleTabBarStyle = {
-    backgroundColor: theme.colors.surfacePrimary,
-    borderTopColor: theme.colors.borderSubtle,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    height: 64,
-    paddingBottom: 10,
-    paddingTop: 6,
-  };
+  const visibleTabBarStyle = VISIBLE_CONSUMER_TAB_BAR_STYLE;
 
   return (
     <Tabs

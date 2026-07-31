@@ -18,6 +18,7 @@ import { OrderSummary } from "../../../../src/components/ticketing/OrderSummary"
 import { useOrderQuery } from "../../../../src/hooks/ticketing/useOrderQuery";
 import { useEventDetailQuery } from "../../../../src/hooks/events/useEventDetailQuery";
 import { useToast } from "../../../../src/hooks/useToast";
+import { TicketOrder } from "../../../../src/domain/ticketing";
 import {
   CheckoutResultKind,
   routeBuilders,
@@ -44,6 +45,24 @@ function parseResult(
     return v;
   }
   return null;
+}
+
+function isMatchingSuccessOrder(
+  result: "paid_success" | "free_success",
+  eventId: string,
+  order: TicketOrder,
+): boolean {
+  if (order.eventId !== eventId || order.quote.eventId !== eventId) {
+    return false;
+  }
+
+  if (result === "paid_success") {
+    return order.status === "paid" && order.source === "paid";
+  }
+
+  return (
+    order.status === "free_confirmed" && order.source === "free_registration"
+  );
 }
 
 export default function CheckoutResultScreen() {
@@ -156,9 +175,36 @@ export default function CheckoutResultScreen() {
     );
   }
 
+  // Success error state (order/event mismatch)
+  if (
+    isSuccess &&
+    eventId &&
+    orderQuery.data &&
+    !isMatchingSuccessOrder(
+      result as "paid_success" | "free_success",
+      eventId,
+      orderQuery.data,
+    )
+  ) {
+    return (
+      <Screen safeAreaEdges={["top", "bottom"]} style={styles.screen}>
+        <ErrorState
+          title="Confirmation unavailable"
+          description="This order does not match the requested event or confirmation type."
+          actionLabel="Go to Wallet"
+          onAction={() => router.replace(ROUTES.consumer.tickets)}
+          testID="result-order-mismatch"
+        />
+      </Screen>
+    );
+  }
+
   const event = detailQuery.data?.event;
   const order = orderQuery.data;
-  const resolvedTicketId = rawTicketId ?? order?.ticketIds[0] ?? null;
+  const resolvedTicketId =
+    rawTicketId && order?.ticketIds.includes(rawTicketId)
+      ? rawTicketId
+      : (order?.ticketIds[0] ?? null);
 
   const handleViewTicket = () => {
     if (resolvedTicketId) {

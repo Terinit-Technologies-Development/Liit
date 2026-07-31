@@ -26,7 +26,7 @@ import {
   discoveryCategories,
 } from "../../src/fixtures/discovery";
 import { EventCategory } from "../../src/domain/events";
-import { ROUTES } from "../../src/navigation/routes";
+import { routeBuilders, ROUTES } from "../../src/navigation/routes";
 import { theme } from "../../src/design-system/theme";
 import { Icon } from "../../src/design-system/icons/Icon";
 
@@ -48,11 +48,7 @@ export default function ExploreScreen() {
   const { filters, setFilters } = useDiscoveryStore();
 
   const handleEventPress = (eventId: string) => {
-    showToast(
-      "Event details",
-      `Event ${eventId} will open in the later Event Detail instruction.`,
-      "info",
-    );
+    router.push(routeBuilders.eventDetail(eventId));
   };
 
   const handleVenuePress = (venueId: string) => {

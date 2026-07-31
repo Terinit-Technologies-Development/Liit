@@ -32,10 +32,10 @@ tags:
 - waitForAnimationToEnd
 
 - assertVisible:
-    text: "Register Free"
+    text: "Register free"
 
 - tapOn:
-    id: "sticky-action-bar-primary"
+    id: "event-primary-action"
 
 - waitForAnimationToEnd
 
@@ -78,4 +78,4 @@ tags:
     text: "My Wallet"
 
 - assertVisible:
-    text: "Soweto Street Food"
+    text: "Soweto Street Food & Craft Market"

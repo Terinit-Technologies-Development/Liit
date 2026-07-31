@@ -28,7 +28,7 @@ import {
   SearchResultTab,
   filtersFromRoute,
 } from "../../src/domain/discovery";
-import { ROUTES } from "../../src/navigation/routes";
+import { routeBuilders, ROUTES } from "../../src/navigation/routes";
 import { theme } from "../../src/design-system/theme";
 import { Icon } from "../../src/design-system/icons/Icon";
 
@@ -70,15 +70,26 @@ export default function SearchScreen() {
   } = useDiscoveryStore();
 
   useEffect(() => {
-    if (params.tab && ["events", "hosts", "venues"].includes(params.tab)) {
-      setResultTab(params.tab as SearchResultTab);
-    }
     if (params.category || params.collection) {
       setFilters(
         filtersFromRoute(params as DiscoverySearchRouteParams, filters),
       );
     }
-  }, [params.tab, params.category, params.collection]);
+    if (
+      params.tab === "all" ||
+      params.tab === "events" ||
+      params.tab === "hosts" ||
+      params.tab === "venues"
+    ) {
+      setResultTab(params.tab as SearchResultTab);
+    }
+  }, [
+    params.tab,
+    params.category,
+    params.collection,
+    setFilters,
+    setResultTab,
+  ]);
 
   const searchQuery = useDiscoverySearchQuery(
     debouncedQuery,
@@ -95,19 +106,11 @@ export default function SearchScreen() {
   };
 
   const handleEventPress = (eventId: string) => {
-    showToast(
-      "Event details",
-      `Event ${eventId} will open in the later Event Detail instruction.`,
-      "info",
-    );
+    router.push(routeBuilders.eventDetail(eventId));
   };
 
   const handleHostPress = (hostId: string) => {
-    showToast(
-      "Host Profile",
-      `Host profile ${hostId} will open in a later instruction.`,
-      "info",
-    );
+    router.push(routeBuilders.hostProfile(hostId));
   };
 
   const handleVenuePress = (venueId: string) => {

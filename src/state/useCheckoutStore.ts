@@ -11,6 +11,8 @@ interface CheckoutDraft {
   /** Set atomically by tryBeginAttempt; cleared by releaseAttempt or clearCheckout. */
   activeAttemptId: string | null;
   latestAttempt: PaymentAttempt | null;
+  freeRegistrationId: string | null;
+  freeRegistrationInFlight: boolean;
 }
 
 interface CheckoutState {
@@ -32,6 +34,16 @@ interface CheckoutState {
   /** Clear the active attempt (called on declined / network_error so the user can retry). */
   releaseAttempt(): void;
 
+  /**
+   * Atomically begin a free registration submission with a stable registrationId.
+   * Reuses an existing freeRegistrationId if present, or accepts candidateId.
+   * Returns acceptedId if successful, null if an attempt is already in flight.
+   */
+  tryBeginFreeRegistration(candidateId: string): string | null;
+
+  /** Release free registration in-flight flag (on failure/error). */
+  releaseFreeRegistration(): void;
+
   setLatestAttempt(attempt: PaymentAttempt): void;
   clearCheckout(): void;
   resetCheckout(): void;
@@ -44,7 +56,7 @@ const initialState = {
 
 export const useCheckoutStore = create<CheckoutState>()(
   persist(
-    (set, get) => ({
+    (set, _get) => ({
       ...initialState,
 
       beginCheckout: (eventId, initialTierId) =>
@@ -56,6 +68,8 @@ export const useCheckoutStore = create<CheckoutState>()(
             paymentMethodId: "pm-demo-visa-4242",
             activeAttemptId: null,
             latestAttempt: null,
+            freeRegistrationId: null,
+            freeRegistrationInFlight: false,
           },
         }),
 
@@ -104,6 +118,36 @@ export const useCheckoutStore = create<CheckoutState>()(
         set((state) =>
           state.draft
             ? { draft: { ...state.draft, activeAttemptId: null } }
+            : state,
+        ),
+
+      tryBeginFreeRegistration: (candidateId) => {
+        let acceptedId: string | null = null;
+        set((state) => {
+          if (!state.draft || state.draft.freeRegistrationInFlight) {
+            return state;
+          }
+          acceptedId = state.draft.freeRegistrationId ?? candidateId;
+          return {
+            draft: {
+              ...state.draft,
+              freeRegistrationId: acceptedId,
+              freeRegistrationInFlight: true,
+            },
+          };
+        });
+        return acceptedId;
+      },
+
+      releaseFreeRegistration: () =>
+        set((state) =>
+          state.draft
+            ? {
+                draft: {
+                  ...state.draft,
+                  freeRegistrationInFlight: false,
+                },
+              }
             : state,
         ),
 

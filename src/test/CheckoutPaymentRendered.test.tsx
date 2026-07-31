@@ -43,6 +43,8 @@ describe("CheckoutPaymentScreen Rendered Integration", () => {
         paymentMethodId: "pm-demo-visa-4242",
         activeAttemptId: null,
         latestAttempt: null,
+        freeRegistrationId: null,
+        freeRegistrationInFlight: false,
       },
     });
   });
@@ -68,6 +70,8 @@ describe("CheckoutPaymentScreen Rendered Integration", () => {
         paymentMethodId: "pm-demo-visa-4242",
         activeAttemptId: "att-in-flight-999",
         latestAttempt: null,
+        freeRegistrationId: null,
+        freeRegistrationInFlight: false,
       },
     });
 

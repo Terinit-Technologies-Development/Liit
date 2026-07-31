@@ -61,9 +61,19 @@ function delayMs(ms: number): Promise<void> {
 
 export class MockTicketingRepository implements TicketingRepository {
   private storage: TicketingStorage;
+  private mutationQueue: Promise<void> = Promise.resolve();
 
   constructor(storage?: TicketingStorage) {
     this.storage = storage ?? new AsyncStorageTicketingStorage();
+  }
+
+  private runExclusive<T>(operation: () => Promise<T>): Promise<T> {
+    const result = this.mutationQueue.then(operation, operation);
+    this.mutationQueue = result.then(
+      () => undefined,
+      () => undefined,
+    );
+    return result;
   }
 
   private async loadState(): Promise<TicketingRepositoryState> {
@@ -82,31 +92,118 @@ export class MockTicketingRepository implements TicketingRepository {
   }
 
   async simulatePayment(input: SimulatePaymentInput): Promise<PaymentAttempt> {
-    await delayMs(1800);
+    return this.runExclusive(async () => {
+      await delayMs(1800);
 
-    const state = await this.loadState();
+      const state = await this.loadState();
 
-    if (state.attempts[input.attemptId]) {
-      return structuredClone(state.attempts[input.attemptId]);
-    }
+      if (state.attempts[input.attemptId]) {
+        return structuredClone(state.attempts[input.attemptId]);
+      }
 
-    const status =
-      input.scenario === "payment_decline"
-        ? "declined"
-        : input.scenario === "payment_network_error"
-          ? "network_error"
-          : "paid";
+      const status =
+        input.scenario === "payment_decline"
+          ? "declined"
+          : input.scenario === "payment_network_error"
+            ? "network_error"
+            : "paid";
 
-    const attempt: PaymentAttempt = {
-      id: input.attemptId,
-      eventId: input.eventId,
-      quote: input.quote,
-      paymentMethodId: input.paymentMethodId,
-      status,
-      createdAt: DEMO_NOW_ISO,
-    };
+      const attempt: PaymentAttempt = {
+        id: input.attemptId,
+        eventId: input.eventId,
+        quote: input.quote,
+        paymentMethodId: input.paymentMethodId,
+        status,
+        createdAt: DEMO_NOW_ISO,
+      };
 
-    if (status === "paid") {
+      if (status === "paid") {
+        const orderId = createOrderId(state.nextOrderSequence++);
+        const event = discoveryEvents.find((e) => e.id === input.eventId);
+        const paymentMethod = mockPaymentMethods.find(
+          (method) => method.id === input.paymentMethodId,
+        );
+
+        const newTickets: WalletTicket[] = [];
+
+        for (const line of input.quote.lines) {
+          for (let i = 0; i < line.quantity; i++) {
+            const ticketId = createTicketId(state.nextTicketSequence++);
+            newTickets.push({
+              id: ticketId,
+              orderId,
+              eventId: input.eventId,
+              attendeeId: input.attendeeId,
+              attendeeName: input.attendeeName,
+              tierId: line.tierId,
+              tierName: line.tierName,
+              status: "valid",
+              source: "paid",
+              entryMode: "qr_placeholder",
+              issuedAt: DEMO_NOW_ISO,
+              eventSnapshot: {
+                title: event?.title ?? "LIIT Event",
+                imageKey: event?.heroImageKey ?? "eventMidnightGrooves",
+                venueName: event?.venue.name ?? "Braamfontein Rooftop",
+                venueSuburb: event?.venue.suburb ?? "Braamfontein",
+                city: "Johannesburg",
+                startTime: event?.occurrence.startTime ?? DEMO_NOW_ISO,
+                endTime: event?.occurrence.endTime ?? DEMO_NOW_ISO,
+              },
+            });
+          }
+        }
+
+        const newOrder: TicketOrder = {
+          id: orderId,
+          eventId: input.eventId,
+          attendeeId: input.attendeeId,
+          attendeeName: input.attendeeName,
+          status: "paid",
+          source: "paid",
+          quote: input.quote,
+          paymentMethodLabel: paymentMethod?.label ?? "Demo payment method",
+          createdAt: DEMO_NOW_ISO,
+          ticketIds: newTickets.map((t) => t.id),
+        };
+
+        state.orders.unshift(newOrder);
+        state.tickets.unshift(...newTickets);
+
+        attempt.orderId = orderId;
+        attempt.ticketIds = newTickets.map((t) => t.id);
+      }
+
+      state.attempts[input.attemptId] = attempt;
+      await this.storage.save(state);
+
+      return structuredClone(attempt);
+    });
+  }
+
+  async createFreeRegistration(
+    input: CreateFreeRegistrationInput,
+  ): Promise<{ order: TicketOrder; tickets: WalletTicket[] }> {
+    return this.runExclusive(async () => {
+      await delayMs(800);
+
+      const state = await this.loadState();
+
+      const existing = state.freeRegistrations[input.registrationId];
+      if (existing) {
+        const order = state.orders.find((item) => item.id === existing.orderId);
+        const tickets = existing.ticketIds
+          .map((ticketId) => state.tickets.find((item) => item.id === ticketId))
+          .filter((ticket): ticket is WalletTicket => Boolean(ticket));
+
+        if (order) {
+          return {
+            order: structuredClone(order),
+            tickets: structuredClone(tickets),
+          };
+        }
+      }
+
       const orderId = createOrderId(state.nextOrderSequence++);
       const event = discoveryEvents.find((e) => e.id === input.eventId);
 
@@ -124,14 +221,14 @@ export class MockTicketingRepository implements TicketingRepository {
             tierId: line.tierId,
             tierName: line.tierName,
             status: "valid",
-            source: "paid",
-            entryMode: "qr_placeholder",
+            source: "free_registration",
+            entryMode: "profile_verification",
             issuedAt: DEMO_NOW_ISO,
             eventSnapshot: {
               title: event?.title ?? "LIIT Event",
-              imageKey: event?.heroImageKey ?? "eventMidnightGrooves",
-              venueName: event?.venue.name ?? "Braamfontein Rooftop",
-              venueSuburb: event?.venue.suburb ?? "Braamfontein",
+              imageKey: event?.heroImageKey ?? "eventSowetoFoodMarket",
+              venueName: event?.venue.name ?? "Johannesburg Venue",
+              venueSuburb: event?.venue.suburb ?? "Johannesburg",
               city: "Johannesburg",
               startTime: event?.occurrence.startTime ?? DEMO_NOW_ISO,
               endTime: event?.occurrence.endTime ?? DEMO_NOW_ISO,
@@ -145,107 +242,27 @@ export class MockTicketingRepository implements TicketingRepository {
         eventId: input.eventId,
         attendeeId: input.attendeeId,
         attendeeName: input.attendeeName,
-        status: "paid",
-        source: "paid",
+        status: "free_confirmed",
+        source: "free_registration",
         quote: input.quote,
-        paymentMethodLabel: "Demo Visa ending 4242",
         createdAt: DEMO_NOW_ISO,
         ticketIds: newTickets.map((t) => t.id),
       };
 
       state.orders.unshift(newOrder);
       state.tickets.unshift(...newTickets);
+      state.freeRegistrations[input.registrationId] = {
+        orderId: newOrder.id,
+        ticketIds: newTickets.map((t) => t.id),
+      };
 
-      attempt.orderId = orderId;
-      attempt.ticketIds = newTickets.map((t) => t.id);
-    }
+      await this.storage.save(state);
 
-    state.attempts[input.attemptId] = attempt;
-    await this.storage.save(state);
-
-    return structuredClone(attempt);
-  }
-
-  async createFreeRegistration(
-    input: CreateFreeRegistrationInput,
-  ): Promise<{ order: TicketOrder; tickets: WalletTicket[] }> {
-    await delayMs(800);
-
-    const state = await this.loadState();
-
-    const existing = state.freeRegistrations[input.registrationId];
-    if (existing) {
-      const order = state.orders.find((item) => item.id === existing.orderId);
-      const tickets = existing.ticketIds
-        .map((ticketId) => state.tickets.find((item) => item.id === ticketId))
-        .filter((ticket): ticket is WalletTicket => Boolean(ticket));
-
-      if (order) {
-        return {
-          order: structuredClone(order),
-          tickets: structuredClone(tickets),
-        };
-      }
-    }
-
-    const orderId = createOrderId(state.nextOrderSequence++);
-    const event = discoveryEvents.find((e) => e.id === input.eventId);
-
-    const newTickets: WalletTicket[] = [];
-
-    for (const line of input.quote.lines) {
-      for (let i = 0; i < line.quantity; i++) {
-        const ticketId = createTicketId(state.nextTicketSequence++);
-        newTickets.push({
-          id: ticketId,
-          orderId,
-          eventId: input.eventId,
-          attendeeId: input.attendeeId,
-          attendeeName: input.attendeeName,
-          tierId: line.tierId,
-          tierName: line.tierName,
-          status: "valid",
-          source: "free_registration",
-          entryMode: "profile_verification",
-          issuedAt: DEMO_NOW_ISO,
-          eventSnapshot: {
-            title: event?.title ?? "LIIT Event",
-            imageKey: event?.heroImageKey ?? "eventSowetoFoodMarket",
-            venueName: event?.venue.name ?? "Johannesburg Venue",
-            venueSuburb: event?.venue.suburb ?? "Johannesburg",
-            city: "Johannesburg",
-            startTime: event?.occurrence.startTime ?? DEMO_NOW_ISO,
-            endTime: event?.occurrence.endTime ?? DEMO_NOW_ISO,
-          },
-        });
-      }
-    }
-
-    const newOrder: TicketOrder = {
-      id: orderId,
-      eventId: input.eventId,
-      attendeeId: input.attendeeId,
-      attendeeName: input.attendeeName,
-      status: "free_confirmed",
-      source: "free_registration",
-      quote: input.quote,
-      createdAt: DEMO_NOW_ISO,
-      ticketIds: newTickets.map((t) => t.id),
-    };
-
-    state.orders.unshift(newOrder);
-    state.tickets.unshift(...newTickets);
-    state.freeRegistrations[input.registrationId] = {
-      orderId: newOrder.id,
-      ticketIds: newTickets.map((t) => t.id),
-    };
-
-    await this.storage.save(state);
-
-    return {
-      order: structuredClone(newOrder),
-      tickets: structuredClone(newTickets),
-    };
+      return {
+        order: structuredClone(newOrder),
+        tickets: structuredClone(newTickets),
+      };
+    });
   }
 
   async getOrder(orderId: string): Promise<TicketOrder | null> {
@@ -269,8 +286,10 @@ export class MockTicketingRepository implements TicketingRepository {
   }
 
   async reset(): Promise<void> {
-    await this.storage.clear();
-    await this.storage.save(createSeedTicketingState());
+    await this.runExclusive(async () => {
+      await this.storage.clear();
+      await this.storage.save(createSeedTicketingState());
+    });
   }
 }
 
