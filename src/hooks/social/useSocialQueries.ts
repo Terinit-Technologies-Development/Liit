@@ -175,10 +175,15 @@ export function usePostCommentMutation() {
         status: "optimistic",
       };
 
-      queryClient.setQueryData<Comment[]>(key, (current = []) => [
-        optimistic,
-        ...current.filter((c) => c.id !== optimisticId),
-      ]);
+      queryClient.setQueryData<Comment[]>(key, (current = []) => {
+        const exists = current.some((c) => c.id === optimisticId);
+        if (exists) {
+          return current.map((c) =>
+            c.id === optimisticId ? { ...c, status: "optimistic" } : c,
+          );
+        }
+        return [optimistic, ...current];
+      });
 
       return { previous, optimisticId };
     },

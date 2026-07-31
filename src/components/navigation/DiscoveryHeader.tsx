@@ -71,7 +71,7 @@ export function DiscoveryHeader({
               size="sm"
             />
             {unreadInboxCount > 0 ? (
-              <View style={styles.badgeDot}>
+              <View style={styles.badgeDot} testID="unread-inbox-badge">
                 <AppText variant="caption" style={styles.badgeText}>
                   {unreadInboxCount > 9 ? "9+" : unreadInboxCount}
                 </AppText>

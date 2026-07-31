@@ -14,6 +14,7 @@ export interface SocialRepositoryState {
   messages: Record<string, Message[]>;
   comments: Comment[];
   blockedUserIds: string[];
+  failedCommentAttempts?: Record<string, boolean>;
 }
 
 export interface SocialRepository {

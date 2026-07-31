@@ -1,35 +1,57 @@
 import React from "react";
 import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import InboxScreen from "../../app/(consumer)/inbox/index";
+import FeedScreen from "../../app/(consumer)/feed";
+import DirectThreadScreen from "../../app/(consumer)/inbox/direct/[conversationId]";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mockSocialRepository } from "../repositories/mock/MockSocialRepository";
 import { useSocialStore } from "../state/useSocialStore";
 
 const mockPush = jest.fn();
 const mockBack = jest.fn();
+const mockSetOptions = jest.fn();
+
+let mockParams: any = { conversationId: "conv-direct-alex" };
 
 jest.mock("expo-router", () => ({
   useRouter: () => ({
     push: mockPush,
     back: mockBack,
   }),
+  useNavigation: () => ({
+    getParent: () => ({
+      setOptions: mockSetOptions,
+    }),
+  }),
+  useFocusEffect: (cb: any) => {
+    const React = require("react");
+    React.useEffect(() => {
+      const cleanup = cb();
+      return () => {
+        if (cleanup) cleanup();
+      };
+    }, [cb]);
+  },
+  useLocalSearchParams: () => mockParams,
 }));
 
 jest.mock("react-native-safe-area-context", () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 
-describe("InboxScreen Rendered Integration Tests", () => {
+describe("InboxScreen & Social Feed Rendered Integration Tests", () => {
   let queryClient: QueryClient;
 
   beforeEach(async () => {
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
+    mockParams = { conversationId: "conv-direct-alex" };
     await mockSocialRepository.reset();
     useSocialStore.getState().resetSocial();
     mockPush.mockClear();
     mockBack.mockClear();
+    mockSetOptions.mockClear();
   });
 
   it("Renders Inbox screen with conversation list and segmented tabs", async () => {
@@ -66,19 +88,41 @@ describe("InboxScreen Rendered Integration Tests", () => {
     });
   });
 
-  it("Clears unread state when marking conversation read", async () => {
-    // Initial direct conversations list has unread count on Alex
-    let conversations = await mockSocialRepository.listConversations("direct");
-    const alexConv = conversations.find((c) => c.id === "conv-direct-alex");
-    expect(alexConv?.unreadCount).toBeGreaterThan(0);
+  it("Renders Feed screen, opens Direct thread, marks conversation read, and updates Feed header inbox badge from 3 to 1", async () => {
+    // 1. Render Feed screen
+    const feedScreen = render(
+      <QueryClientProvider client={queryClient}>
+        <FeedScreen />
+      </QueryClientProvider>,
+    );
 
-    // Mark read
-    await mockSocialRepository.markConversationRead("conv-direct-alex");
+    await waitFor(() => {
+      expect(feedScreen.getByTestId("feed-open-inbox")).toBeTruthy();
+      expect(feedScreen.getByTestId("unread-inbox-badge")).toBeTruthy();
+      expect(feedScreen.getByText("3")).toBeTruthy();
+    });
 
-    // Re-fetch
-    conversations = await mockSocialRepository.listConversations("direct");
-    const updatedAlex = conversations.find((c) => c.id === "conv-direct-alex");
-    expect(updatedAlex?.unreadCount).toBe(0);
+    // 2. Render DirectThreadScreen (which runs markRead on conv-direct-alex)
+    const threadScreen = render(
+      <QueryClientProvider client={queryClient}>
+        <DirectThreadScreen />
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => {
+      expect(threadScreen.getByTestId("direct-thread-screen")).toBeTruthy();
+    });
+
+    // 3. Re-render Feed screen to assert updated badge count (3 -> 1)
+    const updatedFeed = render(
+      <QueryClientProvider client={queryClient}>
+        <FeedScreen />
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => {
+      expect(updatedFeed.getByText("1")).toBeTruthy();
+    });
   });
 
   it("Filters conversations via search field", async () => {

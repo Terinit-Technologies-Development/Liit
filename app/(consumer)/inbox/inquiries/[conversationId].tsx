@@ -81,11 +81,14 @@ export default function InquiryThreadScreen() {
   );
 
   // Mark conversation read on view
+  const unreadCount = conversation?.unreadCount ?? 0;
+  const markRead = markReadMutation.mutate;
+
   useEffect(() => {
-    if (conversationId && conversation && conversation.unreadCount > 0) {
-      markReadMutation.mutate(conversationId);
+    if (conversationId && unreadCount > 0) {
+      markRead(conversationId);
     }
-  }, [conversationId, conversation, markReadMutation]);
+  }, [conversationId, unreadCount, markRead]);
 
   if (conversationQuery.isLoading || messagesQuery.isLoading) {
     return (

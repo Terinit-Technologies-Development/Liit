@@ -31,6 +31,7 @@ function createSeedSocialState(): SocialRepositoryState {
     messages: structuredClone(seedMessagesMap),
     comments: structuredClone(seedComments),
     blockedUserIds: ["usr-sipho-mthethwa"],
+    failedCommentAttempts: {},
   };
 }
 
@@ -60,6 +61,7 @@ export class MockSocialRepository implements SocialRepository {
           messages: parsed.messages ?? {},
           comments: parsed.comments ?? [],
           blockedUserIds: parsed.blockedUserIds ?? [],
+          failedCommentAttempts: parsed.failedCommentAttempts ?? {},
         };
       }
     } catch {
@@ -253,14 +255,24 @@ export class MockSocialRepository implements SocialRepository {
 
   async postComment(input: PostCommentInput): Promise<Comment> {
     return this.runExclusive(async () => {
-      await delayMs(400);
-      if (input.content.includes("FAIL")) {
+      await delayMs(300);
+      const state = await this.loadState();
+      state.failedCommentAttempts = state.failedCommentAttempts ?? {};
+
+      if (
+        input.clientMutationId &&
+        !state.failedCommentAttempts[input.clientMutationId] &&
+        input.content.includes("FAIL")
+      ) {
+        state.failedCommentAttempts[input.clientMutationId] = true;
+        await this.saveState(state);
         throw new Error("Simulated post comment failure");
       }
-      const state = await this.loadState();
 
       const newComment: Comment = {
-        id: `cmt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        id: input.clientMutationId
+          ? `cmt-${input.clientMutationId}`
+          : `cmt-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
         eventId: input.eventId,
         authorId: "usr-001",
         authorName: "Keketso",

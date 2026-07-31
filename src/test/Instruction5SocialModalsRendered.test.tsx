@@ -1,11 +1,13 @@
 import React from "react";
-import { render, fireEvent, waitFor } from "@testing-library/react-native";
+import { render, fireEvent, waitFor, act } from "@testing-library/react-native";
 import NewMessageModal from "../../app/(modals)/new-message";
 import ConversationActionsModal from "../../app/(modals)/conversation-actions";
 import ReportContentModal from "../../app/(modals)/report-content";
 import EventCommentsModal from "../../app/(modals)/event-comments";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mockSocialRepository } from "../repositories/mock/MockSocialRepository";
+import { queryKeys } from "../state/query-keys";
+import { Comment } from "../domain/social";
 
 const mockPush = jest.fn();
 const mockBack = jest.fn();
@@ -125,7 +127,7 @@ describe("Instruction 5 Social Modals Rendered Integration Tests", () => {
     expect(screen.getByText("Invalid Report Target")).toBeTruthy();
   });
 
-  it("EventCommentsModal renders comments list and handles optimistic comment and retry failure state", async () => {
+  it("EventCommentsModal handles optimistic comment, failure state, and retry journey using stable clientMutationId", async () => {
     mockParams = { eventId: "evt-midnight-grooves" };
 
     const screen = render(
@@ -143,17 +145,49 @@ describe("Instruction 5 Social Modals Rendered Integration Tests", () => {
       ).toBeTruthy();
     });
 
-    // Submit a comment configured to fail ("FAIL")
+    // 1. Submit a comment configured to fail ("FAIL")
     const input = screen.getByTestId("composer-input");
-    fireEvent.changeText(input, "This post will FAIL!");
+    fireEvent.changeText(input, "This comment will FAIL!");
 
     const sendBtn = screen.getByTestId("composer-send-button");
-    fireEvent.press(sendBtn);
+    await act(async () => {
+      fireEvent.press(sendBtn);
+    });
 
+    // 2. Confirm failed cached row rendered and status label shown
     await waitFor(() => {
       expect(
         screen.getByText("Failed to post comment. Tap to retry."),
       ).toBeTruthy();
     });
+
+    // Verify cache has single optimistic comment row with status 'failed'
+    let commentsCache = queryClient.getQueryData<Comment[]>(
+      queryKeys.social.comments("evt-midnight-grooves"),
+    );
+    const failedItem = commentsCache?.find(
+      (c) => c.content === "This comment will FAIL!",
+    );
+    expect(failedItem).toBeDefined();
+    expect(failedItem?.status).toBe("failed");
+
+    // 3. Press retry on the failed comment
+    const retryBtn = screen.getByText("Failed to post comment. Tap to retry.");
+    await act(async () => {
+      fireEvent.press(retryBtn);
+      await new Promise((r) => setTimeout(r, 600));
+    });
+
+    // 4. Confirm retry succeeds and comment transitions to synced (no duplicates)
+    await waitFor(() => {
+      expect(
+        screen.queryByText("Failed to post comment. Tap to retry."),
+      ).toBeNull();
+    });
+
+    // 5. Confirm only one final comment exists in repository storage
+    const storedComments = await mockSocialRepository.listComments("evt-midnight-grooves");
+    const storedFailItems = storedComments.filter((c) => c.content === "This comment will FAIL!");
+    expect(storedFailItems.length).toBe(1);
   });
 });

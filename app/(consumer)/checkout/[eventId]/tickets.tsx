@@ -159,7 +159,12 @@ export default function CheckoutTicketsScreen() {
   }
 
   return (
-    <Screen safeAreaEdges={["top"]} gutter={false} style={styles.screen}>
+    <Screen
+      safeAreaEdges={["top"]}
+      gutter={false}
+      style={styles.screen}
+      testID="checkout-tickets-screen"
+    >
       {/* Header */}
       <View style={styles.header}>
         <IconButton

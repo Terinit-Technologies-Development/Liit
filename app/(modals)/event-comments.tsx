@@ -12,10 +12,10 @@ import { CommentRow } from "../../src/components/social/CommentRow";
 import { MessageComposer } from "../../src/components/social/MessageComposer";
 import { EmptyState } from "../../src/components/feedback/EmptyState";
 import { ErrorState } from "../../src/components/ui/ErrorState";
+import { Comment } from "../../src/domain/social";
 import {
   useCommentsQuery,
   usePostCommentMutation,
-  useRetryCommentMutation,
   useToggleReactionMutation,
 } from "../../src/hooks/social/useSocialQueries";
 import { routeBuilders } from "../../src/navigation/routes";
@@ -36,7 +36,6 @@ export default function EventCommentsModal() {
 
   const commentsQuery = useCommentsQuery(eventId);
   const postCommentMutation = usePostCommentMutation();
-  const retryCommentMutation = useRetryCommentMutation();
   const toggleReactionMutation = useToggleReactionMutation();
 
   const comments = commentsQuery.data ?? [];
@@ -76,8 +75,9 @@ export default function EventCommentsModal() {
   }
 
   const handlePost = (text: string) => {
+    const clientMutationId = `${Date.now()}`;
     postCommentMutation.mutate(
-      { eventId, content: text },
+      { eventId, content: text, clientMutationId },
       {
         onSuccess: () => {
           setCommentText("");
@@ -86,8 +86,15 @@ export default function EventCommentsModal() {
     );
   };
 
-  const handleRetry = (commentId: string) => {
-    retryCommentMutation.mutate({ commentId, eventId });
+  const handleRetry = (comment: Comment) => {
+    const clientMutationId = comment.id.startsWith("optimistic-")
+      ? comment.id.replace("optimistic-", "")
+      : comment.id;
+    postCommentMutation.mutate({
+      eventId,
+      content: comment.content,
+      clientMutationId,
+    });
   };
 
   const handleToggleReaction = (commentId: string) => {
@@ -131,7 +138,7 @@ export default function EventCommentsModal() {
             <CommentRow
               comment={item}
               onToggleReaction={() => handleToggleReaction(item.id)}
-              onRetry={() => handleRetry(item.id)}
+              onRetry={() => handleRetry(item)}
               onReport={() => handleReport(item.id)}
               testID={`comment-row-${item.id}`}
             />

@@ -1,16 +1,23 @@
 import React from "react";
 import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import InquiryThreadScreen from "../../app/(consumer)/inbox/inquiries/[conversationId]";
+import CheckoutTicketsScreen from "../../app/(consumer)/checkout/[eventId]/tickets";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mockSocialRepository } from "../repositories/mock/MockSocialRepository";
 import { useCheckoutStore } from "../state/useCheckoutStore";
 import { calculateServiceFeeMinor } from "../domain/ticketing/fee-policy";
+import { formatCurrency } from "../utils/format";
+import { HostInquiryConversation } from "../domain/social";
 
 const mockPush = jest.fn();
 const mockBack = jest.fn();
 const mockSetOptions = jest.fn();
 
-let mockConversationId = "conv-inquiry-club-vibez";
+let mockParams: any = {
+  conversationId: "conv-inquiry-club-vibez",
+  eventId: "evt-midnight-grooves",
+  initialTierId: "tier-vip-tables",
+};
 
 jest.mock("expo-router", () => ({
   useRouter: () => ({
@@ -31,9 +38,7 @@ jest.mock("expo-router", () => ({
       };
     }, [cb]);
   },
-  useLocalSearchParams: () => ({
-    conversationId: mockConversationId,
-  }),
+  useLocalSearchParams: () => mockParams,
 }));
 
 jest.mock("react-native-safe-area-context", () => ({
@@ -47,7 +52,11 @@ describe("InquiryThreadScreen Rendered Integration Tests", () => {
     queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     });
-    mockConversationId = "conv-inquiry-club-vibez";
+    mockParams = {
+      conversationId: "conv-inquiry-club-vibez",
+      eventId: "evt-midnight-grooves",
+      initialTierId: "tier-vip-tables",
+    };
     await mockSocialRepository.reset();
     useCheckoutStore.getState().resetCheckout();
     mockPush.mockClear();
@@ -75,7 +84,13 @@ describe("InquiryThreadScreen Rendered Integration Tests", () => {
     });
   });
 
-  it("Initializes checkout session, preselects tier in store, calculates quote, and navigates to checkout tickets", async () => {
+  it("Runs markRead effect on mount exactly once and updates cached inquiry conversation state", async () => {
+    // Initially conv-inquiry-club-vibez has unreadCount = 1
+    const initialConv = (await mockSocialRepository.getConversation(
+      "conv-inquiry-club-vibez",
+    )) as HostInquiryConversation;
+    expect(initialConv.unreadCount).toBe(1);
+
     const screen = render(
       <QueryClientProvider client={queryClient}>
         <InquiryThreadScreen />
@@ -83,11 +98,34 @@ describe("InquiryThreadScreen Rendered Integration Tests", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId("inquiry-booking-link-card")).toBeTruthy();
-      expect(screen.getByText("VIP Table Reservation (4 Guests)")).toBeTruthy();
+      expect(screen.getByTestId("inquiry-thread-screen")).toBeTruthy();
     });
 
-    const cta = screen.getByTestId("booking-offer-cta");
+    await waitFor(async () => {
+      const updatedConv = (await mockSocialRepository.getConversation(
+        "conv-inquiry-club-vibez",
+      )) as HostInquiryConversation;
+      expect(updatedConv.unreadCount).toBe(0);
+    });
+  });
+
+  it("Initializes checkout session, preselects tier, renders CheckoutTickets quote, and navigates to Payment", async () => {
+    const inquiryScreen = render(
+      <QueryClientProvider client={queryClient}>
+        <InquiryThreadScreen />
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => {
+      expect(
+        inquiryScreen.getByTestId("inquiry-booking-link-card"),
+      ).toBeTruthy();
+      expect(
+        inquiryScreen.getByText("VIP Table Reservation (4 Guests)"),
+      ).toBeTruthy();
+    });
+
+    const cta = inquiryScreen.getByTestId("booking-offer-cta");
     fireEvent.press(cta);
 
     // Verify Checkout Store draft exists and has preselected tier
@@ -96,21 +134,42 @@ describe("InquiryThreadScreen Rendered Integration Tests", () => {
     expect(checkoutDraft?.eventId).toBe("evt-midnight-grooves");
     expect(checkoutDraft?.quantities["tier-vip-tables"]).toBe(1);
 
-    // Verify prototype quote fee calculation for R1,500 VIP Table tier
-    const subtotalMinor = 150000; // R1,500.00
-    const serviceFeeMinor = calculateServiceFeeMinor(subtotalMinor); // R75.00 (5%)
-    const totalMinor = subtotalMinor + serviceFeeMinor; // R1,575.00
-
-    expect(subtotalMinor).toBe(150000);
-    expect(serviceFeeMinor).toBe(7500);
-    expect(totalMinor).toBe(157500);
-
     expect(mockPush).toHaveBeenCalledWith({
       pathname: "/(consumer)/checkout/[eventId]/tickets",
       params: {
         eventId: "evt-midnight-grooves",
         initialTierId: "tier-vip-tables",
       },
+    });
+
+    // 2. Render CheckoutTicketsScreen to verify rendered quote & payment navigation
+    const checkoutScreen = render(
+      <QueryClientProvider client={queryClient}>
+        <CheckoutTicketsScreen />
+      </QueryClientProvider>,
+    );
+
+    await waitFor(() => {
+      expect(
+        checkoutScreen.getByTestId("checkout-tickets-screen"),
+      ).toBeTruthy();
+      expect(
+        checkoutScreen.getByText("VIP Table Reservation (4 Guests)"),
+      ).toBeTruthy();
+      // Rendered order summary quote amounts
+      expect(
+        checkoutScreen.getAllByText(formatCurrency(150000)).length,
+      ).toBeGreaterThanOrEqual(1); // Subtotal
+      expect(checkoutScreen.getByText(formatCurrency(7500))).toBeTruthy(); // 5% fee
+      expect(checkoutScreen.getByText(formatCurrency(157500))).toBeTruthy(); // Total
+    });
+
+    const continueBtn = checkoutScreen.getByTestId("checkout-tickets-continue");
+    fireEvent.press(continueBtn);
+
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: "/(consumer)/checkout/[eventId]/payment",
+      params: { eventId: "evt-midnight-grooves" },
     });
   });
 
@@ -132,7 +191,7 @@ describe("InquiryThreadScreen Rendered Integration Tests", () => {
   });
 
   it("Renders invalid inquiry ID error state", async () => {
-    mockConversationId = "invalid-inquiry-id";
+    mockParams = { conversationId: "invalid-inquiry-id" };
 
     const screen = render(
       <QueryClientProvider client={queryClient}>

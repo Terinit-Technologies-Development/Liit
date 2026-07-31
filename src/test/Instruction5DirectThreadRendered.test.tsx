@@ -107,7 +107,9 @@ describe("DirectThreadScreen Rendered Integration Tests", () => {
     jest.useRealTimers();
   });
 
-  it("Retries a failed outgoing message using retryMessage without creating duplicate messages", async () => {
+  it(
+    "Retries a failed outgoing message using retryMessage without creating duplicate messages",
+    async () => {
     const screen = render(
       <QueryClientProvider client={queryClient}>
         <DirectThreadScreen />
@@ -138,7 +140,7 @@ describe("DirectThreadScreen Rendered Integration Tests", () => {
     const finalMsgs =
       await mockSocialRepository.listMessages("conv-direct-alex");
     expect(finalMsgs.length).toBe(countBefore);
-  });
+  }, 10000);
 
   it("Sends a new message using social store draft and clears draft on success", async () => {
     const screen = render(

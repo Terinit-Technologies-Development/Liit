@@ -25,4 +25,4 @@ tags:
 - assertVisible:
     id: checkout-tickets-screen
 - assertVisible:
-    id: tier-item-tier-vip-tables
+    id: ticket-tier-tier-vip-tables
