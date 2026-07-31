@@ -74,6 +74,16 @@ export const ROUTES = {
     events: "/(creator)/events",
     tools: "/(creator)/tools",
     profile: "/(creator)/profile",
+    activation: "/(creator)/activation",
+    verification: "/(creator)/verification",
+    eventsOpsHub: "/(creator)/events/[eventId]",
+    eventsOpsEdit: "/(creator)/events/[eventId]/edit",
+    eventsOpsPreview: "/(creator)/events/[eventId]/preview",
+    eventsOpsAnalytics: "/(creator)/events/[eventId]/analytics",
+    eventsOpsGuests: "/(creator)/events/[eventId]/guests",
+    eventsOpsContent: "/(creator)/events/[eventId]/content",
+    payouts: "/(creator)/payouts",
+    notifications: "/(creator)/notifications",
   },
   modals: {
     modeSwitch: "/(modals)/mode-switch",
@@ -89,6 +99,8 @@ export const ROUTES = {
     conversationActions: "/(modals)/conversation-actions",
     reportContent: "/(modals)/report-content",
     eventComments: "/(modals)/event-comments",
+    publishConfirmation: "/(modals)/publish-confirmation",
+    requestPayout: "/(modals)/request-payout",
   },
 } as const;
 
@@ -141,6 +153,31 @@ export const routeBuilders = {
     return {
       pathname: ROUTES.modals.eventShare,
       params: { eventId },
+    } as const;
+  },
+
+  creatorEventOpsHub(eventId: string) {
+    return {
+      pathname: ROUTES.creator.eventsOpsHub,
+      params: { eventId },
+    } as const;
+  },
+
+  creatorActivation() {
+    return {
+      pathname: ROUTES.creator.activation,
+    } as const;
+  },
+
+  creatorPayouts() {
+    return {
+      pathname: ROUTES.creator.payouts,
+    } as const;
+  },
+
+  creatorNotifications() {
+    return {
+      pathname: ROUTES.creator.notifications,
     } as const;
   },
 

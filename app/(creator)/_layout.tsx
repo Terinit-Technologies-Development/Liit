@@ -1,72 +1,15 @@
 import React from "react";
-import { Tabs } from "expo-router";
-import { Icon } from "../../src/design-system/icons/Icon";
-import { theme } from "../../src/design-system/theme";
+import { Stack } from "expo-router";
 
-export default function CreatorLayout() {
+export default function CreatorStackLayout() {
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarStyle: {
-          backgroundColor: theme.colors.surfacePrimary,
-          borderTopColor: theme.colors.borderSubtle,
-          height: 64,
-          paddingBottom: 10,
-          paddingTop: 6,
-        },
-        tabBarActiveTintColor: theme.colors.accentEnd,
-        tabBarInactiveTintColor: theme.colors.textMuted,
-        tabBarLabelStyle: {
-          ...theme.typography.label,
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="dashboard"
-        options={{
-          title: "Dashboard",
-          tabBarIcon: ({ color }) => (
-            <Icon name="dashboard" size="sm" color={color as string} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="create"
-        options={{
-          title: "Create",
-          tabBarIcon: ({ color }) => (
-            <Icon name="create" size="sm" color={color as string} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="events"
-        options={{
-          title: "Events",
-          tabBarIcon: ({ color }) => (
-            <Icon name="events" size="sm" color={color as string} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="tools"
-        options={{
-          title: "Tools",
-          tabBarIcon: ({ color }) => (
-            <Icon name="tools" size="sm" color={color as string} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: "Profile",
-          tabBarIcon: ({ color }) => (
-            <Icon name="profile" size="sm" color={color as string} />
-          ),
-        }}
-      />
-    </Tabs>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="activation" />
+      <Stack.Screen name="verification" />
+      <Stack.Screen name="events/[eventId]" />
+      <Stack.Screen name="payouts" />
+      <Stack.Screen name="notifications" />
+    </Stack>
   );
 }
