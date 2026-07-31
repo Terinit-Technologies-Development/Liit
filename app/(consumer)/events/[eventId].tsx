@@ -32,6 +32,7 @@ import { showToast } from "../../../src/components/ui/Toast";
 import { getEventDisplayStatus } from "../../../src/domain/discovery/event-presentation";
 import { DEMO_NOW_ISO } from "../../../src/fixtures/discovery";
 import { theme } from "../../../src/design-system/theme";
+import { useCheckoutStore } from "../../../src/state/useCheckoutStore";
 
 function normaliseRouteId(value: string | string[] | undefined): string | null {
   if (typeof value === "string" && value.trim().length > 0) {
@@ -53,6 +54,8 @@ export default function EventDetailScreen() {
 
   const savedEventIds = useDiscoveryStore((state) => state.savedEventIds);
   const toggleSavedEvent = useDiscoveryStore((state) => state.toggleSavedEvent);
+
+  const beginCheckout = useCheckoutStore((state) => state.beginCheckout);
 
   const [selectedTierId, setSelectedTierId] = useState<string | null>(null);
 
@@ -119,21 +122,22 @@ export default function EventDetailScreen() {
 
   const handlePrimaryAction = (model: EventConversionModel) => {
     switch (model.mode) {
-      case "paid":
-        showToast(
-          "Ticket selection",
-          "Ticket checkout arrives in a later LIIT instruction.",
-          "info",
+      case "paid": {
+        const tierId =
+          selectedTierId ??
+          detail.ticketTiers.find((t) => t.state !== "sold_out")?.id;
+        beginCheckout(eventId, tierId ?? undefined);
+        router.push(
+          routeBuilders.checkoutTickets(eventId, tierId ?? undefined),
         );
         return;
+      }
 
-      case "free_registration":
-        showToast(
-          "Registration simulated",
-          "Your prototype registration is confirmed locally.",
-          "success",
-        );
+      case "free_registration": {
+        beginCheckout(eventId, detail.ticketTiers[0]?.id);
+        router.push(routeBuilders.checkoutTickets(eventId));
         return;
+      }
 
       case "waitlist":
         showToast(

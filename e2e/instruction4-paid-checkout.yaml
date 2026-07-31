@@ -1,0 +1,65 @@
+appId: za.co.liit.prototype
+---
+# Instruction 4 — Paid Checkout Journey
+# UNEXECUTED: Maestro runner and device emulator not available in this environment.
+
+- launchApp:
+    clearState: true
+
+# Navigate to an event that has paid tiers (Midnight Grooves — R250)
+- tapOn:
+    id: "tab-explore"
+
+- tapOn:
+    text: "Midnight Kinetic Grooves"
+
+- assertVisible:
+    text: "Get Tickets"
+
+# Tap the primary CTA
+- tapOn:
+    id: "sticky-action-bar-primary"
+
+# Ticket Selection screen
+- assertVisible:
+    text: "Select Tickets"
+
+- assertVisible:
+    text: "General Access"
+
+- tapOn:
+    id: "ticket-tier-tier-general-increment"
+
+- assertVisible:
+    text: "Continue"
+
+- tapOn:
+    id: "checkout-tickets-continue"
+
+# Payment screen
+- assertVisible:
+    text: "Payment"
+
+- assertVisible:
+    text: "Demo Visa ending 4242"
+
+- tapOn:
+    id: "checkout-payment-pay"
+
+# Processing screen — wait for result
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Result screen — success
+- assertVisible:
+    text: "Tickets confirmed!"
+
+- tapOn:
+    id: "result-go-to-wallet"
+
+# Wallet — ticket appears
+- assertVisible:
+    text: "My Wallet"
+
+- assertVisible:
+    text: "Midnight Kinetic Grooves"

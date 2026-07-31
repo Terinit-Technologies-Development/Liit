@@ -15,7 +15,7 @@ describe("Consumer Bottom Tabs Visibility", () => {
     ]);
   });
 
-  it("hides contextual routes (settings, search, notifications, events, hosts) from bottom navigation", () => {
+  it("hides contextual routes (settings, search, notifications, events, hosts, checkout) from bottom navigation", () => {
     const hiddenRoutes = CONSUMER_TAB_ROUTES.filter(
       (route) => !route.visible,
     ).map((route) => route.name);
@@ -26,6 +26,7 @@ describe("Consumer Bottom Tabs Visibility", () => {
       "notifications",
       "events",
       "hosts",
+      "checkout",
     ]);
   });
 });

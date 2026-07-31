@@ -1,0 +1,51 @@
+appId: za.co.liit.prototype
+---
+# Instruction 4 — Free Registration Journey
+# UNEXECUTED: Maestro runner and device emulator not available in this environment.
+
+- launchApp:
+    clearState: true
+
+# Navigate to Soweto Food Market (free event)
+- tapOn:
+    id: "tab-explore"
+
+- scrollUntilVisible:
+    element:
+      text: "Soweto Street Food & Craft Market"
+
+- tapOn:
+    text: "Soweto Street Food & Craft Market"
+
+- assertVisible:
+    text: "Register Free"
+
+- tapOn:
+    id: "sticky-action-bar-primary"
+
+# Ticket Selection — free flow
+- assertVisible:
+    text: "Register"
+
+- assertVisible:
+    text: "Free Registration"
+
+- tapOn:
+    id: "ticket-tier-tier-free-registration-increment"
+
+- tapOn:
+    id: "checkout-tickets-continue"
+
+# Free result — no payment screen
+- assertVisible:
+    text: "Registration confirmed!"
+
+- tapOn:
+    id: "result-go-to-wallet"
+
+# Wallet — ticket appears under Upcoming
+- assertVisible:
+    text: "My Wallet"
+
+- assertVisible:
+    text: "Soweto Street Food"

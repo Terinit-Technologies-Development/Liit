@@ -9,6 +9,7 @@ export interface CardProps {
   padding?: keyof typeof theme.spacing;
   accessibilityLabel?: string;
   style?: StyleProp<ViewStyle>;
+  testID?: string;
 }
 
 export const Card: React.FC<CardProps> = ({
@@ -18,9 +19,11 @@ export const Card: React.FC<CardProps> = ({
   padding = "lg",
   accessibilityLabel,
   style,
+  testID,
 }) => {
   const content = (
     <Pressable
+      testID={testID}
       onPress={onPress}
       disabled={!onPress}
       accessibilityRole={onPress ? "button" : undefined}

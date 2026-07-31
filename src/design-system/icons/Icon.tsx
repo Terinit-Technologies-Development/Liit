@@ -47,7 +47,12 @@ export type SemanticIconName =
   | "activity"
   | "users"
   | "shoppingBag"
-  | "moon";
+  | "moon"
+  | "qr"
+  | "card"
+  | "plus"
+  | "minus"
+  | "lock";
 
 const iconNameMap: Record<SemanticIconName, keyof typeof Ionicons.glyphMap> = {
   feed: "flame-outline",
@@ -93,6 +98,11 @@ const iconNameMap: Record<SemanticIconName, keyof typeof Ionicons.glyphMap> = {
   users: "people-outline",
   shoppingBag: "bag-handle-outline",
   moon: "moon-outline",
+  qr: "qr-code-outline",
+  card: "card-outline",
+  plus: "add-outline",
+  minus: "remove-outline",
+  lock: "lock-closed-outline",
 };
 
 export interface IconProps {

@@ -19,12 +19,12 @@ describe("Instruction 3 Routes and Tab Visibility", () => {
     ]);
   });
 
-  it("configures events and hosts as hidden contextual routes with tab bar hidden", () => {
+  it("configures events, hosts, and checkout as hidden contextual routes with tab bar hidden", () => {
     const hiddenTabRoutes = CONSUMER_TAB_ROUTES.filter(
       (route) => "hideTabBar" in route && route.hideTabBar,
     ).map((route) => route.name);
 
-    expect(hiddenTabRoutes).toEqual(["events", "hosts"]);
+    expect(hiddenTabRoutes).toEqual(["events", "hosts", "checkout"]);
   });
 
   it("builds typed route parameters for event detail, host profile, share and report", () => {

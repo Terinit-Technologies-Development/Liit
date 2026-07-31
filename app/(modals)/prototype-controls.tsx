@@ -15,7 +15,9 @@ import { useAppStore, PrototypeScenario } from "../../src/state/useAppStore";
 import { useSessionStore } from "../../src/state/useSessionStore";
 import { useDiscoveryStore } from "../../src/state/useDiscoveryStore";
 import { useMapDiscoveryStore } from "../../src/state/useMapDiscoveryStore";
+import { useCheckoutStore } from "../../src/state/useCheckoutStore";
 import { mockNotificationRepository } from "../../src/repositories/mock/MockNotificationRepository";
+import { mockTicketingRepository } from "../../src/repositories/mock/MockTicketingRepository";
 import { envConfig } from "../../src/config/env";
 import { mockUser } from "../../src/fixtures";
 import { theme } from "../../src/design-system/theme";
@@ -37,6 +39,7 @@ export default function PrototypeControlsScreen() {
   const resetSession = useSessionStore((s) => s.resetSession);
   const resetDiscovery = useDiscoveryStore((s) => s.resetDiscovery);
   const resetMapDiscovery = useMapDiscoveryStore((s) => s.resetMapDiscovery);
+  const resetCheckout = useCheckoutStore((s) => s.resetCheckout);
 
   const handleModeSwitch = (mode: "consumer" | "creator") => {
     setActiveMode(mode);
@@ -47,12 +50,14 @@ export default function PrototypeControlsScreen() {
     }
   };
 
-  const handleResetAll = () => {
+  const handleResetAll = async () => {
     resetPrototype();
     resetSession();
     resetDiscovery();
     resetMapDiscovery();
+    resetCheckout();
     mockNotificationRepository.reset();
+    await mockTicketingRepository.reset();
     queryClient.clear();
   };
 
@@ -61,12 +66,15 @@ export default function PrototypeControlsScreen() {
     { key: "sold_out", label: "Sold Out Events" },
     { key: "offline", label: "Offline State" },
     { key: "payment_decline", label: "Payment Decline" },
+    { key: "payment_network_error", label: "Payment Network Error" },
     { key: "live_event", label: "Live Event Active" },
     { key: "empty_discovery", label: "Empty Discovery" },
     { key: "discovery_error", label: "Discovery Error" },
     { key: "notifications_disabled", label: "Notifications Disabled" },
     { key: "map_location_disabled", label: "Map Location Disabled" },
     { key: "map_no_results", label: "Map No Results" },
+    { key: "wallet_empty", label: "Wallet Empty" },
+    { key: "ticketing_error", label: "Ticketing Error" },
   ];
 
   return (

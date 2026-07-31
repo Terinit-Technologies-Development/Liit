@@ -8,12 +8,15 @@ export type PrototypeScenario =
   | "sold_out"
   | "offline"
   | "payment_decline"
+  | "payment_network_error"
   | "live_event"
   | "empty_discovery"
   | "discovery_error"
   | "notifications_disabled"
   | "map_location_disabled"
-  | "map_no_results";
+  | "map_no_results"
+  | "wallet_empty"
+  | "ticketing_error";
 
 export interface AppState {
   activeMode: ProductMode;

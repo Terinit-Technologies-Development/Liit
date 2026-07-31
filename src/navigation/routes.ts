@@ -25,6 +25,12 @@ export const CONSUMER_TAB_ROUTES = [
     visible: false,
     hideTabBar: true,
   },
+  {
+    name: "checkout",
+    title: "Checkout",
+    visible: false,
+    hideTabBar: true,
+  },
 ] as const;
 
 export const ROUTES = {
@@ -47,6 +53,11 @@ export const ROUTES = {
     notifications: "/(consumer)/notifications",
     eventDetail: "/(consumer)/events/[eventId]",
     hostProfile: "/(consumer)/hosts/[hostId]",
+    checkoutTickets: "/(consumer)/checkout/[eventId]/tickets",
+    checkoutPayment: "/(consumer)/checkout/[eventId]/payment",
+    checkoutProcessing: "/(consumer)/checkout/[eventId]/processing",
+    checkoutResult: "/(consumer)/checkout/[eventId]/result",
+    fullTicket: "/(consumer)/tickets/[ticketId]",
   },
   creator: {
     dashboard: "/(creator)/dashboard",
@@ -63,8 +74,40 @@ export const ROUTES = {
     mapFilters: "/(modals)/map-filters",
     eventShare: "/(modals)/event-share",
     eventReport: "/(modals)/event-report",
+    paymentMethod: "/(modals)/payment-method",
+    ticketTerms: "/(modals)/ticket-terms",
   },
 } as const;
+
+export interface CheckoutTicketsRouteParams {
+  eventId: string;
+  initialTierId?: string;
+}
+
+export interface CheckoutPaymentRouteParams {
+  eventId: string;
+}
+
+export interface CheckoutProcessingRouteParams {
+  eventId: string;
+  attemptId: string;
+}
+
+export type CheckoutResultKind =
+  "paid_success" | "free_success" | "declined" | "network_error";
+
+export interface CheckoutResultRouteParams {
+  eventId: string;
+  result: CheckoutResultKind;
+  orderId?: string;
+  ticketId?: string;
+  attemptId?: string;
+  [key: string]: string | undefined;
+}
+
+export interface FullTicketRouteParams {
+  ticketId: string;
+}
 
 export const routeBuilders = {
   eventDetail(eventId: string) {
@@ -97,6 +140,44 @@ export const routeBuilders = {
         targetKind: target.kind,
         targetId: target.id,
       },
+    } as const;
+  },
+
+  checkoutTickets(eventId: string, initialTierId?: string) {
+    return {
+      pathname: ROUTES.consumer.checkoutTickets,
+      params: {
+        eventId,
+        ...(initialTierId ? { initialTierId } : {}),
+      },
+    } as const;
+  },
+
+  checkoutPayment(eventId: string) {
+    return {
+      pathname: ROUTES.consumer.checkoutPayment,
+      params: { eventId },
+    } as const;
+  },
+
+  checkoutProcessing(eventId: string, attemptId: string) {
+    return {
+      pathname: ROUTES.consumer.checkoutProcessing,
+      params: { eventId, attemptId },
+    } as const;
+  },
+
+  checkoutResult(params: CheckoutResultRouteParams) {
+    return {
+      pathname: ROUTES.consumer.checkoutResult,
+      params,
+    } as const;
+  },
+
+  fullTicket(ticketId: string) {
+    return {
+      pathname: ROUTES.consumer.fullTicket,
+      params: { ticketId },
     } as const;
   },
 };
