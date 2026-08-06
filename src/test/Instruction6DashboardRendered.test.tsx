@@ -18,7 +18,7 @@ describe("LIIT Instruction 6: Dashboard Screen", () => {
   });
 
   it("renders the dashboard successfully", async () => {
-    const { getByText, queryByText } = render(
+    const { getByText } = render(
       <SafeAreaProvider
         initialMetrics={{
           frame: { x: 0, y: 0, width: 0, height: 0 },

@@ -7,11 +7,8 @@
 - **URL**: [https://github.com/Terinit-Technologies-Development/Liit/pull/8](https://github.com/Terinit-Technologies-Development/Liit/pull/8)
 - **Base branch**: `main`
 - **Base SHA**: `957b8057330875130773071885a8123ff56dec49`
-- **Final head SHA**: `5d621f3e992b06264353cccc95a997c3f49b9aa9`
-- **Commits**: 1
-- **Files Changed**: 41
-- **Additions**: +2,648
-- **Deletions**: -84
+- **Commits**: 2
+- **Files Changed**: 48
 - **PR State**: OPEN
 - **Draft Status**: False (non-draft)
 - **Mergeability**: MERGEABLE
@@ -20,7 +17,7 @@
 
 ## 2. Objective
 
-Repair the merged Instruction 6 implementation on top of `main` (`957b8057330875130773071885a8123ff56dec49`) so that Creator mode is a complete, coherent, stateful advanced prototype rather than a route skeleton.
+Repair the merged Instruction 6 implementation on top of `main` (`957b8057330875130773071885a8123ff56dec49`) so that Creator mode is a complete, coherent, stateful advanced prototype projecting canonical Consumer entities (`evt-midnight-grooves`, `host-groove-co`).
 
 ---
 
@@ -28,10 +25,10 @@ Repair the merged Instruction 6 implementation on top of `main` (`957b8057330875
 
 1. **Inert Inputs**: Replaced fixed inputs with controlled state across `activation.tsx`, `create.tsx`, `edit.tsx`, `content.tsx`, and `request-payout.tsx`.
 2. **Placeholder Contextual Screens**: Replaced `verification.tsx`, `preview.tsx`, `analytics.tsx`, `guests.tsx`, `content.tsx`, `notifications.tsx`, and modal stubs with fully interactive Instruction 6 surfaces.
-3. **Shared Event/Host Entities**: Re-projected Creator views around canonical Consumer entities (`evt_jhb_midnight_grooves`, `host_groove_co`) rather than disjoint IDs (`evt_1`, `creator_1`).
+3. **Shared Event/Host Entities**: Re-projected Creator views around canonical Consumer entities (`evt-midnight-grooves`, `host-groove-co`) rather than disjoint IDs (`evt_1`, `creator_1`).
 4. **Payout Value Consistency**: Unified all payout balances, history, and request validation to single-source ZAR minor units (`1_500_000` = R15,000.00).
-5. **Dead Controls**: Wire all visible actions to navigation, modal triggers, state handlers, or explicit `PROTOTYPE` disclosure banners.
-6. **Corrupted Documentation**: Generated clean, UTF-8 evidence file `PR-06-CORRECTION.md` and updated remote PR #8 body.
+5. **Dead Controls Policy**: Wired all visible actions to navigation, modal triggers, state handlers, or explicit `PROTOTYPE` disclosure banners.
+6. **Maestro Test Coverage**: Added complete instruction 06 YAML flows in `.maestro/` and `test:e2e:instruction-06*` package scripts.
 
 ---
 
@@ -60,6 +57,7 @@ app/(modals)/request-payout.tsx
 src/components/creator/AnalyticsChart.tsx
 src/components/creator/ContentPostRow.tsx
 src/components/creator/CreatorStatCard.tsx
+src/components/creator/EventBuilderForm.tsx
 src/components/creator/EventCreatorRow.tsx
 src/components/creator/EventStatusPill.tsx
 src/components/creator/PayoutSummaryCard.tsx
@@ -71,20 +69,30 @@ src/hooks/creator/useCreatorQueries.ts
 src/navigation/routes.ts
 src/repositories/contracts/CreatorRepository.ts
 src/repositories/mock/MockCreatorRepository.ts
+src/state/useCreatorStore.ts
+src/test/Instruction6ActivationRendered.test.tsx
 src/test/Instruction6CreatorDomain.test.ts
 src/test/Instruction6CreatorRoutes.test.ts
 src/test/Instruction6DashboardRendered.test.tsx
+src/test/Instruction6EventFormRendered.test.tsx
 src/test/Instruction6EventsListRendered.test.tsx
+src/test/Instruction6PayoutsRendered.test.tsx
+.maestro/instruction-06-activation-dashboard.yaml
+.maestro/instruction-06-create-preview.yaml
+.maestro/instruction-06-events-operations.yaml
+.maestro/instruction-06-payout-profile.yaml
+.maestro/instruction-06-states.yaml
+package.json
 ```
 
 ---
 
 ## 5. Local Verification Results
 
-- **Prettier (`format:check`)**: ✅ All matched files use Prettier code style!
+- **Prettier (`format:check`)**: ✅ All matched files pass formatting check!
 - **TypeScript (`typecheck`)**: ✅ `tsc --noEmit` clean with 0 errors.
-- **ESLint (`lint`)**: ✅ `expo lint` clean with 0 errors (32 pre-existing warnings only).
-- **Jest (`test --runInBand`)**: ✅ **61 passed suites, 243 passed tests, 0 failures, 0 skipped, 0 todo**.
+- **ESLint (`lint`)**: ✅ `expo lint` clean with 0 errors (21 pre-existing warnings only).
+- **Jest (`test --runInBand`)**: ✅ **63 passed suites, 254 passed tests, 0 failures, 0 skipped, 0 todo**.
 
 ---
 

@@ -1,0 +1,14 @@
+appId: com.liit.app
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Creator Account Activation"
+- tapOn: "Brand / Artist Name *"
+- inputText: "Groove Co. Johannesburg"
+- tapOn: "Bio & Creator Description *"
+- inputText: "Curating premier deep house, electronic music & rooftop nightlife experiences in Jozi."
+- tapOn: "Continue to Mock Verification"
+- assertVisible: "Creator Verification"
+- tapOn: "Complete Verification & Enter Dashboard"
+- assertVisible: "Creator Dashboard"
+- assertVisible: "Performance Stats"

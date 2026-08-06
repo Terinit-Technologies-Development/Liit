@@ -39,6 +39,14 @@ export const CONSUMER_TAB_ROUTES = [
   },
 ] as const;
 
+export const CREATOR_TAB_ROUTES = [
+  { name: "dashboard", title: "Dashboard", icon: "dashboard", visible: true },
+  { name: "create", title: "Create", icon: "create", visible: true },
+  { name: "events", title: "Events", icon: "events", visible: true },
+  { name: "tools", title: "Tools", icon: "tools", visible: true },
+  { name: "profile", title: "Profile", icon: "profile", visible: true },
+] as const;
+
 export const ROUTES = {
   public: {
     welcome: "/(public)/welcome",
@@ -119,29 +127,75 @@ export interface CheckoutProcessingRouteParams {
 }
 
 export type CheckoutResultKind =
-  "paid_success" | "free_success" | "declined" | "network_error";
+  | "paid_success"
+  | "free_success"
+  | "declined"
+  | "network_error";
 
 export interface CheckoutResultRouteParams {
   eventId: string;
-  result: CheckoutResultKind;
+  outcome?: CheckoutResultKind;
+  result?: string;
   orderId?: string;
-  ticketId?: string;
-  attemptId?: string;
-  [key: string]: string | undefined;
-}
-
-export interface FullTicketRouteParams {
-  ticketId: string;
+  registrationId?: string;
+  errorMessage?: string;
+  [key: string]: any;
 }
 
 export const routeBuilders = {
+  welcome() {
+    return { pathname: ROUTES.public.welcome } as const;
+  },
+  location() {
+    return { pathname: ROUTES.public.location } as const;
+  },
+  interests() {
+    return { pathname: ROUTES.public.interests } as const;
+  },
+  signIn() {
+    return { pathname: ROUTES.public.signIn } as const;
+  },
+
+  feed() {
+    return { pathname: ROUTES.consumer.feed } as const;
+  },
+  explore() {
+    return { pathname: ROUTES.consumer.explore } as const;
+  },
+  map() {
+    return { pathname: ROUTES.consumer.map } as const;
+  },
+  tickets() {
+    return { pathname: ROUTES.consumer.tickets } as const;
+  },
+  profile() {
+    return { pathname: ROUTES.consumer.profile } as const;
+  },
+  savedEvents() {
+    return { pathname: ROUTES.consumer.savedEvents } as const;
+  },
+  activity() {
+    return { pathname: ROUTES.consumer.activity } as const;
+  },
+  settings() {
+    return { pathname: ROUTES.consumer.settings } as const;
+  },
+  search(query?: string) {
+    return {
+      pathname: ROUTES.consumer.search,
+      params: query ? { q: query } : undefined,
+    } as const;
+  },
+  notifications() {
+    return { pathname: ROUTES.consumer.notifications } as const;
+  },
+
   eventDetail(eventId: string) {
     return {
       pathname: ROUTES.consumer.eventDetail,
       params: { eventId },
     } as const;
   },
-
   hostProfile(hostId: string) {
     return {
       pathname: ROUTES.consumer.hostProfile,
@@ -156,40 +210,10 @@ export const routeBuilders = {
     } as const;
   },
 
-  creatorEventOpsHub(eventId: string) {
-    return {
-      pathname: ROUTES.creator.eventsOpsHub,
-      params: { eventId },
-    } as const;
-  },
-
-  creatorActivation() {
-    return {
-      pathname: ROUTES.creator.activation,
-    } as const;
-  },
-
-  creatorPayouts() {
-    return {
-      pathname: ROUTES.creator.payouts,
-    } as const;
-  },
-
-  creatorNotifications() {
-    return {
-      pathname: ROUTES.creator.notifications,
-    } as const;
-  },
-
-  reportTarget(
-    target: { kind: "event"; id: string } | { kind: "host"; id: string },
-  ) {
+  reportTarget(target: { kind: string; id: string }) {
     return {
       pathname: ROUTES.modals.eventReport,
-      params: {
-        targetKind: target.kind,
-        targetId: target.id,
-      },
+      params: { targetKind: target.kind, targetId: target.id },
     } as const;
   },
 
@@ -278,6 +302,93 @@ export const routeBuilders = {
     return {
       pathname: ROUTES.modals.eventComments,
       params: { eventId },
+    } as const;
+  },
+
+  // --- Creator Route Builders ---
+
+  events() {
+    return {
+      pathname: ROUTES.creator.events,
+    } as const;
+  },
+
+  creatorActivation() {
+    return {
+      pathname: ROUTES.creator.activation,
+    } as const;
+  },
+
+  creatorVerification() {
+    return {
+      pathname: ROUTES.creator.verification,
+    } as const;
+  },
+
+  creatorEventOpsHub(eventId: string) {
+    return {
+      pathname: ROUTES.creator.eventsOpsHub,
+      params: { eventId },
+    } as const;
+  },
+
+  creatorEventEdit(eventId: string, mode?: "edit" | "duplicate") {
+    return {
+      pathname: ROUTES.creator.eventsOpsEdit,
+      params: { eventId, ...(mode ? { mode } : {}) },
+    } as const;
+  },
+
+  creatorEventPreview(eventId: string, draftId?: string) {
+    return {
+      pathname: ROUTES.creator.eventsOpsPreview,
+      params: { eventId, ...(draftId ? { draftId } : {}) },
+    } as const;
+  },
+
+  creatorEventAnalytics(eventId: string) {
+    return {
+      pathname: ROUTES.creator.eventsOpsAnalytics,
+      params: { eventId },
+    } as const;
+  },
+
+  creatorEventGuests(eventId: string) {
+    return {
+      pathname: ROUTES.creator.eventsOpsGuests,
+      params: { eventId },
+    } as const;
+  },
+
+  creatorEventContent(eventId: string) {
+    return {
+      pathname: ROUTES.creator.eventsOpsContent,
+      params: { eventId },
+    } as const;
+  },
+
+  creatorPayouts() {
+    return {
+      pathname: ROUTES.creator.payouts,
+    } as const;
+  },
+
+  creatorNotifications() {
+    return {
+      pathname: ROUTES.creator.notifications,
+    } as const;
+  },
+
+  publishConfirmationModal(eventId: string) {
+    return {
+      pathname: ROUTES.modals.publishConfirmation,
+      params: { eventId },
+    } as const;
+  },
+
+  requestPayoutModal() {
+    return {
+      pathname: ROUTES.modals.requestPayout,
     } as const;
   },
 };

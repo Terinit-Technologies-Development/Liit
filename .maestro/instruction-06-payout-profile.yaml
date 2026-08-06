@@ -1,0 +1,10 @@
+appId: com.liit.app
+---
+- launchApp
+- tapOn: "Profile"
+- assertVisible: "Creator Profile"
+- tapOn: "Payouts & Financial Overview"
+- assertVisible: "Payout History"
+- tapOn: "Request Payout"
+- assertVisible: "Available for Immediate Payout:"
+- tapOn: "Cancel"

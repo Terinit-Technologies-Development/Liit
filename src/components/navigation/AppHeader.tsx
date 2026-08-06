@@ -16,6 +16,7 @@ export interface AppHeaderProps {
   showDevControls?: boolean;
   rightActionIcon?: string;
   onRightAction?: () => void;
+  rightElement?: React.ReactNode;
   rightAction?: {
     label?: string;
     icon?: string;
@@ -33,6 +34,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
   onBack,
   showDevControls = true,
   rightAction,
+  rightElement,
   style,
 }) => {
   const insets = useSafeAreaInsets();
@@ -75,6 +77,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         </View>
 
         <View style={styles.rightSection}>
+          {rightElement}
           {rightAction ? (
             rightAction.label ? (
               <Chip label={rightAction.label} onPress={rightAction.onPress} />

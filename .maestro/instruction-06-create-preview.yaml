@@ -1,0 +1,14 @@
+appId: com.liit.app
+---
+- launchApp
+- tapOn: "Create"
+- assertVisible: "1. Event Media & Poster"
+- tapOn: "Event Title *"
+- inputText: "Amapiano Rooftop Kinetic Session"
+- tapOn: "Preview"
+- assertVisible: "PREVIEW MODE — Unsaved Draft"
+- tapOn: "Return to Edit Form"
+- tapOn: "Publish"
+- assertVisible: "Confirm Event Publishing"
+- tapOn: "Confirm & Publish Live"
+- assertVisible: "Event Published Successfully!"

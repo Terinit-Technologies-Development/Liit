@@ -10,6 +10,7 @@ import { ConversationSummary } from "../domain/social";
 
 export * from "./discovery";
 export * from "./social";
+export * from "./creator";
 
 export const mockUser: User = {
   id: "usr_jhb_001",
@@ -171,6 +172,7 @@ export const mockCreatorProfile: CreatorProfile = {
   rating: 4.9,
   followersCount: 3200,
   isVerified: true,
+  activationStatus: "verified",
 };
 
 export const mockCreatorEvents: CreatorEventSummary[] = [

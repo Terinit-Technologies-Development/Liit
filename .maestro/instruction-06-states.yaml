@@ -1,0 +1,8 @@
+appId: com.liit.app
+---
+- launchApp
+- tapOn: "Tools"
+- assertVisible: "LIVE BROADCAST"
+- tapOn: "Start Live Broadcast [PROTOTYPE]"
+- assertVisible: "Live broadcasting is unavailable in this prototype."
+- tapOn: "OK"

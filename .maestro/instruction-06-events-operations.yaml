@@ -1,0 +1,13 @@
+appId: com.liit.app
+---
+- launchApp
+- tapOn: "Events"
+- assertVisible: "All"
+- tapOn: "Midnight Kinetic Grooves"
+- assertVisible: "Operations Hub"
+- tapOn: "Analytics & Performance"
+- assertVisible: "Key Performance Indicators"
+- tapOn: "Back"
+- tapOn: "Guest Roster & Check-In"
+- assertVisible: "Guest Roster"
+- tapOn: "Back"
