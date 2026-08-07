@@ -1,0 +1,51 @@
+appId: com.liit.app
+tags:
+  - instruction-06
+---
+- launchApp:
+    clearState: true
+- runFlow:
+    file: flows/authenticated-onboarding.yaml
+
+- tapOn: "CONSUMER"
+- tapOn: "Creator Mode"
+- assertVisible: "Creator Dashboard"
+
+# 1. Tools — live broadcast prototype feedback
+- tapOn: "Tools"
+- assertVisible: "LIVE BROADCAST"
+- tapOn: "Start Live Broadcast [PROTOTYPE]"
+- assertVisible: "Live broadcasting features are unavailable in this advanced prototype."
+- tapOn: "OK"
+
+# 2. Content states via Manage Content
+- tapOn: "Manage Content →"
+- assertVisible: "Event Content & Posts"
+- assertVisible: "PINNED"
+- assertVisible: "PUBLIC"
+- tapOn: "Navigate back"
+
+# 3. Notifications — categories and mark read
+- tapOn: "Profile"
+- assertVisible: "Creator Profile"
+- tapOn: "Creator Notifications"
+- assertVisible: "Creator Notifications"
+- tapOn: "Sales"
+- assertVisible: "VIP Ticket Purchased"
+- tapOn: "Mark All Read"
+- assertVisible: "Creator Notifications"
+
+# 4. Verification states
+- tapOn: "Navigate back"
+- assertVisible: "Creator Profile"
+- tapOn: "Verification & KYC Checklist"
+- assertVisible: "Creator Verification"
+- tapOn:
+    id: "verification-scenario-under_review"
+- assertVisible: "Verification Status: UNDER REVIEW"
+- tapOn:
+    id: "verification-scenario-incomplete"
+- assertVisible: "Verification Status: INCOMPLETE"
+- tapOn:
+    id: "verification-scenario-not_started"
+- assertVisible: "Verification Status: NOT_STARTED"

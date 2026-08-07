@@ -163,4 +163,19 @@ describe("InboxScreen & Social Feed Rendered Integration Tests", () => {
       params: { conversationId: "conv-direct-alex" },
     });
   });
+
+  it("Navigates to new message composer modal when compose button is pressed", async () => {
+    const screen = render(
+      <QueryClientProvider client={queryClient}>
+        <InboxScreen />
+      </QueryClientProvider>,
+    );
+
+    const composeBtn = screen.getByTestId("inbox-new-message-button");
+    fireEvent.press(composeBtn);
+
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: "/(modals)/new-message",
+    });
+  });
 });

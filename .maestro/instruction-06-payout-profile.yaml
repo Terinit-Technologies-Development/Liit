@@ -1,0 +1,45 @@
+appId: com.liit.app
+tags:
+  - instruction-06
+---
+- launchApp:
+    clearState: true
+- runFlow:
+    file: flows/authenticated-onboarding.yaml
+
+- tapOn: "CONSUMER"
+- tapOn: "Creator Mode"
+- assertVisible: "Creator Dashboard"
+
+# 1. Profile surface
+- tapOn: "Profile"
+- assertVisible: "Creator Profile"
+
+# 2. Payouts overview
+- tapOn: "Payouts & Financial Overview"
+- assertVisible: "Payout History"
+- assertVisible: "R 15 000,00"
+
+# 3. Request payout — deterministic failure then retry then success
+- tapOn: "Request Payout"
+- assertVisible: "Available for Immediate Payout:"
+- tapOn: "e.g. 5000.00"
+- inputText: "2500.00"
+- tapOn:
+    id: "payout-simulate-failure-toggle"
+- tapOn:
+    id: "submit-payout-button"
+- assertVisible: "Processing Payout Request..."
+- assertVisible: "Payout Failed"
+- tapOn:
+    id: "retry-payout-button"
+- assertVisible: "Processing Payout Request..."
+- assertVisible: "Payout Request Recorded"
+- assertVisible: "No bank transfer has occurred"
+- tapOn: "Done"
+
+# 4. Switch back to Consumer mode
+- tapOn: "Navigate back"
+- assertVisible: "Creator Profile"
+- tapOn: "Switch to Consumer Mode"
+- assertVisible: "Feed"

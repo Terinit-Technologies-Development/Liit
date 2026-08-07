@@ -34,6 +34,8 @@ export type SemanticIconName =
   | "sparkles"
   | "chevronRight"
   | "chevronLeft"
+  | "chevronUp"
+  | "chevronDown"
   | "music"
   | "bookmark"
   | "bookmarkFilled"
@@ -58,7 +60,10 @@ export type SemanticIconName =
   | "slash"
   | "add"
   | "phone"
-  | "video";
+  | "video"
+  | "info"
+  | "warning"
+  | "pin";
 
 const iconNameMap: Record<SemanticIconName, keyof typeof Ionicons.glyphMap> = {
   feed: "flame-outline",
@@ -90,6 +95,8 @@ const iconNameMap: Record<SemanticIconName, keyof typeof Ionicons.glyphMap> = {
   sparkles: "sparkles-outline",
   chevronRight: "chevron-forward-outline",
   chevronLeft: "chevron-back-outline",
+  chevronUp: "chevron-up-outline",
+  chevronDown: "chevron-down-outline",
   music: "musical-notes-outline",
   bookmark: "bookmark-outline",
   bookmarkFilled: "bookmark",
@@ -115,6 +122,9 @@ const iconNameMap: Record<SemanticIconName, keyof typeof Ionicons.glyphMap> = {
   add: "add-outline",
   phone: "call-outline",
   video: "videocam-outline",
+  info: "information-circle-outline",
+  warning: "warning-outline",
+  pin: "pin-outline",
 };
 
 export interface IconProps {

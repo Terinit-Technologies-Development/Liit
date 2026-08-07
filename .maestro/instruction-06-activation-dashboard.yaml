@@ -1,0 +1,57 @@
+appId: com.liit.app
+tags:
+  - instruction-06
+---
+# Deterministic startup: fresh state, authenticated onboarding, then explicit
+# entry into Creator mode. Never assumes activation is the startup screen or
+# that another flow has already run.
+- launchApp:
+    clearState: true
+- runFlow:
+    file: flows/authenticated-onboarding.yaml
+
+# Enter Creator mode explicitly via the header mode chip.
+- tapOn: "CONSUMER"
+- tapOn: "Creator Mode"
+- assertVisible: "Creator Dashboard"
+
+# 1. Creator Activation
+- tapOn: "Profile"
+- assertVisible: "Creator Profile"
+- tapOn: "Account Activation & Brand Profile"
+- assertVisible: "Creator Account Activation"
+
+# Change the brand name deterministically.
+- tapOn: "Enter your creator or brand name"
+- eraseText
+- inputText: "Groove Co. Johannesburg"
+- assertVisible: "Groove Co. Johannesburg"
+
+# Continue to verification.
+- tapOn: "Continue to Mock Verification"
+- assertVisible: "Creator Verification"
+- assertVisible: "Verification Status: NOT_STARTED"
+
+# Deterministic verification completion: verified scenario + all items.
+- tapOn:
+    id: "verification-scenario-verified"
+- tapOn:
+    id: "verification-item-vcheck-1"
+- tapOn:
+    id: "verification-item-vcheck-2"
+- tapOn:
+    id: "verification-item-vcheck-3"
+- tapOn:
+    id: "verification-item-vcheck-4"
+- tapOn:
+    id: "verification-item-vcheck-5"
+- tapOn:
+    id: "verification-item-vcheck-6"
+- assertVisible: "Verification Status: VERIFIED"
+- tapOn:
+    id: "complete-verification-button"
+
+# 2. Dashboard
+- assertVisible: "Creator Dashboard"
+- assertVisible: "Performance Stats"
+- assertVisible: "Active Events Sales Progress"
