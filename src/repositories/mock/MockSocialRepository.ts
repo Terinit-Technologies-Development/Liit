@@ -178,7 +178,7 @@ export class MockSocialRepository implements SocialRepository {
       msg.status = "sent";
       await this.saveState(state);
 
-      await delayMs(50);
+      await delayMs(300);
 
       msg.status = "delivered";
       await this.saveState(state);

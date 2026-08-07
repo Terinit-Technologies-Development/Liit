@@ -56,6 +56,13 @@ export default function CreatorActivation() {
       : ["Nightlife", "Music & Live Shows"],
   );
 
+  const [avatarUploaded, setAvatarUploaded] = useState(
+    !!activationDraft.avatarUrl,
+  );
+  const [coverUploaded, setCoverUploaded] = useState(
+    !!activationDraft.coverImageUrl,
+  );
+
   const [errors, setErrors] = useState<{
     brandName?: string;
     bio?: string;
@@ -99,6 +106,8 @@ export default function CreatorActivation() {
     const draft = {
       brandName: brandName.trim(),
       bio: bio.trim(),
+      avatarUrl: avatarUploaded ? "avatarSimulated" : "",
+      coverImageUrl: coverUploaded ? "coverSimulated" : "",
       instagram: instagram.trim(),
       tiktok: tiktok.trim(),
       website: website.trim(),
@@ -191,27 +200,69 @@ export default function CreatorActivation() {
           </View>
         </View>
 
-        {/* Profile Image & Cover Placeholder */}
+        {/* Profile Image & Cover Controls */}
         <View style={styles.avatarSection}>
           <Pressable
             style={styles.avatarPlaceholder}
-            onPress={() =>
+            onPress={() => {
+              setAvatarUploaded(true);
               Alert.alert(
-                "Prototype Media Upload",
-                "Profile photo upload is simulated in this prototype.",
-              )
-            }
+                "Profile Photo [PROTOTYPE]",
+                "Simulated profile photo upload completed. State persisted in the activation draft.",
+              );
+            }}
+            testID="activation-avatar-upload"
           >
-            <Icon name="add" size="lg" color={theme.colors.textMuted} />
+            <Icon
+              name={avatarUploaded ? "check" : "add"}
+              size="lg"
+              color={
+                avatarUploaded ? theme.colors.success : theme.colors.textMuted
+              }
+            />
           </Pressable>
           <AppText
             variant="caption"
             color="textMuted"
             style={{ marginTop: theme.spacing.sm }}
           >
-            Add Brand Logo / Profile Photo [PROTOTYPE]
+            {avatarUploaded
+              ? "Brand Logo / Profile Photo Selected"
+              : "Add Brand Logo / Profile Photo [PROTOTYPE]"}
           </AppText>
         </View>
+
+        <Pressable
+          style={[
+            styles.coverPlaceholder,
+            coverUploaded && styles.coverPlaceholderSelected,
+          ]}
+          onPress={() => {
+            setCoverUploaded(true);
+            Alert.alert(
+              "Cover Image [PROTOTYPE]",
+              "Simulated cover image upload completed. State persisted in the activation draft.",
+            );
+          }}
+          testID="activation-cover-upload"
+        >
+          <Icon
+            name={coverUploaded ? "check" : "add"}
+            size="md"
+            color={
+              coverUploaded ? theme.colors.success : theme.colors.textMuted
+            }
+          />
+          <AppText
+            variant="body"
+            color={coverUploaded ? "success" : "textMuted"}
+            style={{ marginLeft: theme.spacing.xs }}
+          >
+            {coverUploaded
+              ? "Cover Image Selected"
+              : "Upload Cover Image [PROTOTYPE]"}
+          </AppText>
+        </Pressable>
 
         {/* Form Summary Error */}
         {errors.summary && (
@@ -400,6 +451,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.borderSubtle,
     borderStyle: "dashed",
+  },
+  coverPlaceholder: {
+    height: 120,
+    backgroundColor: theme.colors.surfaceElevated,
+    borderRadius: theme.radii.lg,
+    borderWidth: 1,
+    borderColor: theme.colors.borderSubtle,
+    borderStyle: "dashed",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: theme.spacing.lg,
+    gap: theme.spacing.xs,
+  },
+  coverPlaceholderSelected: {
+    borderColor: theme.colors.success,
   },
   errorSummaryBanner: {
     backgroundColor: "rgba(255, 77, 77, 0.1)",

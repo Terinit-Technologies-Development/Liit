@@ -125,24 +125,28 @@ export default function PublishConfirmationModal() {
 
   /**
    * Deterministic publish simulation. `shouldFail` is an explicit parameter —
-   * Retry never relies on a stale closure around setForceFail.
+   * Retry never relies on a stale closure around setForceFail. A short delay
+   * guarantees the Processing state is visibly rendered before either the
+   * deterministic failure or the repository mutation resolves.
    */
   const publishEvent = (shouldFail = forceFail) => {
     setState("processing");
 
-    if (shouldFail) {
-      setState("failure");
-      return;
-    }
-
-    publishMutation.mutate(eventId, {
-      onSuccess: () => {
-        setState("success");
-      },
-      onError: () => {
+    setTimeout(() => {
+      if (shouldFail) {
         setState("failure");
-      },
-    });
+        return;
+      }
+
+      publishMutation.mutate(eventId, {
+        onSuccess: () => {
+          setState("success");
+        },
+        onError: () => {
+          setState("failure");
+        },
+      });
+    }, 600);
   };
 
   const handleConfirmPublish = () => {

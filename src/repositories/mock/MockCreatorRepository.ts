@@ -265,9 +265,16 @@ export class MockCreatorRepository implements CreatorRepository {
         ...this.profileState,
         brandName: draft.brandName || this.profileState.brandName,
         bio: draft.bio || this.profileState.bio,
+        avatarUrl: draft.avatarUrl || this.profileState.avatarUrl,
+        coverImageUrl: draft.coverImageUrl || this.profileState.coverImageUrl,
         contactEmail: draft.contactEmail,
         contactPreference: draft.contactPreference,
         categories: draft.categories,
+        socialLinks: {
+          instagram: draft.instagram,
+          tiktok: draft.tiktok,
+          website: draft.website,
+        },
         activationStatus: "in_progress",
       };
       return { ...this.profileState };
@@ -290,6 +297,7 @@ export class MockCreatorRepository implements CreatorRepository {
     options?: MockOptions,
   ): Promise<CreatorEventProjection> {
     return simulateMockOperation(() => {
+      this.checkSimulatedError("saveDraft");
       // Deterministic draft identity for review fixtures — never Date.now().
       const eventId = draft.event?.id || "evt-draft-001";
       let existingIndex = this.projectionsState.findIndex(

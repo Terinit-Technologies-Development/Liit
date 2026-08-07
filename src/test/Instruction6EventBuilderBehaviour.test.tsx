@@ -11,6 +11,7 @@ const mockPush = jest.fn();
 const mockNavigate = jest.fn();
 const mockDispatch = jest.fn();
 let mockBeforeRemoveListener: ((e: any) => void) | null = null;
+let mockFocusListener: ((e?: any) => void) | null = null;
 
 jest.mock("expo-router", () => ({
   useRouter: () => ({
@@ -21,6 +22,7 @@ jest.mock("expo-router", () => ({
   useNavigation: () => ({
     addListener: (event: string, cb: (e: any) => void) => {
       if (event === "beforeRemove") mockBeforeRemoveListener = cb;
+      if (event === "focus") mockFocusListener = cb;
       return () => {};
     },
     getParent: () => ({ addListener: () => () => {} }),
@@ -48,6 +50,7 @@ describe("LIIT Instruction 6: Event Builder Behaviour", () => {
     mockNavigate.mockClear();
     mockDispatch.mockClear();
     mockBeforeRemoveListener = null;
+    mockFocusListener = null;
   });
 
   const renderForm = () =>
@@ -276,5 +279,121 @@ describe("LIIT Instruction 6: Event Builder Behaviour", () => {
     expect(saved?.eventDraft?.tiers).toHaveLength(2);
     expect(saved?.eventDraft?.tiers[0].id).toBe("creator-tier-draft-001");
     expect(saved?.eventDraft?.tiers[1].id).toBe("creator-tier-draft-002");
+  });
+
+  it("re-arms the guard after a saved navigation (one-shot bypass), so a second edit shows the guard again", async () => {
+    const screen = renderForm();
+
+    // First cycle: edit -> Preview -> guard -> Save Draft -> navigate.
+    fireEvent.changeText(
+      screen.getByPlaceholderText("e.g. Midnight Kinetic Grooves"),
+      "First Edit",
+    );
+    fireEvent.press(screen.getByText("Preview"));
+    expect(screen.getByTestId("unsaved-changes-guard")).toBeTruthy();
+    fireEvent.press(screen.getByTestId("guard-save-draft"));
+    await waitFor(
+      () => {
+        expect(mockPush).toHaveBeenCalledTimes(1);
+      },
+      { timeout: 10000 },
+    );
+
+    // Return to the form (focus re-arms the bypass lock).
+    act(() => {
+      mockFocusListener?.();
+    });
+
+    // Second cycle: edit again and attempt to leave — guard must appear again.
+    fireEvent.changeText(
+      screen.getByPlaceholderText("e.g. Midnight Kinetic Grooves"),
+      "Second Edit",
+    );
+    fireEvent.press(screen.getByText("Preview"));
+    expect(screen.getByTestId("unsaved-changes-guard")).toBeTruthy();
+
+    // Discard resolves the second navigation with a fresh one-shot bypass.
+    fireEvent.press(screen.getByTestId("guard-discard-changes"));
+    await waitFor(
+      () => {
+        expect(mockPush).toHaveBeenCalledTimes(2);
+      },
+      { timeout: 10000 },
+    );
+    expect(useCreatorStore.getState().isFormDirty).toBe(false);
+  });
+
+  it("a failed Save Draft does not permanently suppress future guards", async () => {
+    mockCreatorRepository.simulateErrorFor("saveDraft", true);
+    const screen = renderForm();
+
+    fireEvent.changeText(
+      screen.getByPlaceholderText("e.g. Midnight Kinetic Grooves"),
+      "Edits That Fail To Save",
+    );
+    fireEvent.press(screen.getByText("Preview"));
+    expect(screen.getByTestId("unsaved-changes-guard")).toBeTruthy();
+    fireEvent.press(screen.getByTestId("guard-save-draft"));
+
+    // Let the failed save resolve; no navigation occurs and the lock is not
+    // latched.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 400));
+    });
+    expect(mockPush).not.toHaveBeenCalled();
+
+    mockCreatorRepository.simulateErrorFor("saveDraft", false);
+
+    // Attempting to leave again must show the guard.
+    fireEvent.press(screen.getByText("Preview"));
+    expect(screen.getByTestId("unsaved-changes-guard")).toBeTruthy();
+  });
+
+  it("never reuses tier IDs after deleting a middle tier (monotonic sequence)", async () => {
+    const screen = renderForm();
+
+    fireEvent.press(screen.getByTestId("add-tier-button")); // -> 003
+    expect(
+      screen.getAllByPlaceholderText("Tier Name (e.g. VIP Access)")[2].props
+        .value,
+    ).toBe("Tier 3");
+
+    fireEvent.press(screen.getByTestId("delete-tier-creator-tier-draft-002"));
+
+    fireEvent.press(screen.getByTestId("add-tier-button")); // must be 004, not 002
+    expect(
+      screen.getAllByPlaceholderText("Tier Name (e.g. VIP Access)")[2].props
+        .value,
+    ).toBe("Tier 4");
+
+    // New tiers require a description before the draft can be saved.
+    fireEvent.changeText(
+      screen.getAllByPlaceholderText(
+        "Tier description (e.g. Includes VIP bar access)",
+      )[1],
+      "Third tier description",
+    );
+    fireEvent.changeText(
+      screen.getAllByPlaceholderText(
+        "Tier description (e.g. Includes VIP bar access)",
+      )[2],
+      "Fourth tier description",
+    );
+
+    fireEvent.press(screen.getByText("Save Draft"));
+    await waitFor(
+      () => {
+        expect(useCreatorStore.getState().isFormDirty).toBe(false);
+      },
+      { timeout: 10000 },
+    );
+
+    const saved = await mockCreatorRepository.getCreatorEvent("evt-draft-001");
+    const ids = saved?.eventDraft?.tiers.map((t) => t.id) || [];
+    expect(ids).toContain("creator-tier-draft-001");
+    expect(ids).toContain("creator-tier-draft-003");
+    expect(ids).toContain("creator-tier-draft-004");
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids.some((id) => id === "creator-tier-draft-002")).toBe(false);
   });
 });

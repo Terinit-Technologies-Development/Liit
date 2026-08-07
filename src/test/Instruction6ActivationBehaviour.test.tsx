@@ -113,4 +113,27 @@ describe("LIIT Instruction 6: Activation Behaviour", () => {
       { timeout: 10000 },
     );
   });
+
+  it("simulated cover-image upload shows a visible selected state and persists into the activation draft", async () => {
+    const screen = renderActivation();
+
+    fireEvent.press(screen.getByTestId("activation-cover-upload"));
+    expect(screen.getByText("Cover Image Selected")).toBeTruthy();
+
+    fireEvent.press(screen.getByText("Continue to Mock Verification"));
+    await waitFor(
+      () => {
+        expect(mockPush).toHaveBeenCalledWith({
+          pathname: "/(creator)/verification",
+        });
+      },
+      { timeout: 10000 },
+    );
+
+    expect(useCreatorStore.getState().activationDraft.coverImageUrl).toBe(
+      "coverSimulated",
+    );
+    const profile = await mockCreatorRepository.getCreatorProfile();
+    expect(profile.coverImageUrl).toBe("coverSimulated");
+  });
 });

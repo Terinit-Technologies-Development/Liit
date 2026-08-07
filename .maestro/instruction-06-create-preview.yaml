@@ -21,8 +21,12 @@ tags:
 - eraseText
 - inputText: "Amapiano Rooftop Kinetic Session"
 
-# 2. Preview must show the actual draft
+# 2. Preview — the dirty form opens the unsaved-changes guard; Save Draft
+# persists the exact draft, then navigation proceeds to the Preview surface.
 - tapOn: "Preview"
+- assertVisible: "Unsaved Changes"
+- tapOn:
+    id: "guard-save-draft"
 - assertVisible: "PREVIEW MODE — Draft Preview"
 - assertVisible: "Amapiano Rooftop Kinetic Session"
 - assertVisible: "18:00 SAST"
@@ -36,8 +40,10 @@ tags:
     id: "publish-simulate-failure-toggle"
 - tapOn:
     id: "confirm-publish-button"
+- assertVisible: "Publishing Event..."
 - assertVisible: "Publishing Failed"
 - tapOn:
     id: "retry-publish-button"
+- assertVisible: "Publishing Event..."
 - assertVisible: "Event Publish Simulated"
 - assertVisible: "Consumer marketplace propagation is deferred to Instruction 8"

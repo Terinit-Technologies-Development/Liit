@@ -29,9 +29,11 @@ tags:
     id: "payout-simulate-failure-toggle"
 - tapOn:
     id: "submit-payout-button"
+- assertVisible: "Processing Payout Request..."
 - assertVisible: "Payout Failed"
 - tapOn:
     id: "retry-payout-button"
+- assertVisible: "Processing Payout Request..."
 - assertVisible: "Payout Request Recorded"
 - assertVisible: "No bank transfer has occurred"
 - tapOn: "Done"

@@ -175,9 +175,12 @@ describe("LIIT Instruction 6: Publish Confirmation Behaviour", () => {
       { timeout: 10000 },
     );
 
-    // Deterministic failure
+    // Deterministic failure — Processing must be visibly rendered first.
     fireEvent.press(screen.getByTestId("publish-simulate-failure-toggle"));
     fireEvent.press(confirmBtn);
+    await waitFor(() => {
+      expect(screen.getByText(/Publishing Event\.\.\./i)).toBeTruthy();
+    });
     await waitFor(() => {
       expect(screen.getByText(/Publishing Failed/i)).toBeTruthy();
     });
@@ -188,8 +191,11 @@ describe("LIIT Instruction 6: Publish Confirmation Behaviour", () => {
     expect(afterFailure?.eventDraft?.title).toBe("Publishable Draft");
     expect(afterFailure?.operationalStatus).toBe("draft");
 
-    // Retry (explicit parameter — no stale closure)
+    // Retry (explicit parameter — no stale closure); Processing renders again.
     fireEvent.press(screen.getByTestId("retry-publish-button"));
+    await waitFor(() => {
+      expect(screen.getByText(/Publishing Event\.\.\./i)).toBeTruthy();
+    });
     await waitFor(
       () => {
         expect(screen.getByText(/Event Publish Simulated/i)).toBeTruthy();

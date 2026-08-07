@@ -233,18 +233,60 @@ export function EventBuilderForm({
     };
   }, [navigation, router]);
 
-  const nextTierId = (): string => {
-    const seq = tiers.length + 1;
-    return `creator-tier-draft-${String(seq).padStart(3, "0")}`;
+  // Re-arm the unsaved-changes guard whenever the form screen regains focus
+  // after a navigate-away-and-back cycle.
+  useEffect(() => {
+    const nav = navigation as
+      | { addListener?: (event: string, cb: () => void) => () => void }
+      | undefined;
+    if (!nav || typeof nav.addListener !== "function") return;
+    const unsub = nav.addListener("focus", () => {
+      leaveLockRef.current = false;
+    });
+    return () => {
+      if (typeof unsub === "function") unsub();
+    };
+  }, [navigation]);
+
+  /**
+   * One-shot navigation bypass: allows exactly the pending navigation to
+   * proceed, then re-arms the guard (including after a navigation failure).
+   */
+  const executePendingAction = (action?: (() => void) | null) => {
+    if (!action) return;
+    leaveLockRef.current = true;
+    try {
+      action();
+    } finally {
+      setTimeout(() => {
+        leaveLockRef.current = false;
+      }, 0);
+    }
+  };
+
+  /**
+   * Monotonic next sequence number based on the highest existing tier suffix
+   * so deleting a middle tier can never reuse an in-use ID.
+   */
+  const nextTierSeq = (): number => {
+    let maxSeq = 0;
+    tiers.forEach((t) => {
+      const match = /creator-tier-draft-(\d+)$/.exec(t.id);
+      if (match) {
+        maxSeq = Math.max(maxSeq, parseInt(match[1], 10));
+      }
+    });
+    return maxSeq + 1;
   };
 
   const handleAddTier = () => {
     markDirty();
+    const seq = nextTierSeq();
     setTiers([
       ...tiers,
       {
-        id: nextTierId(),
-        name: `Tier ${tiers.length + 1}`,
+        id: `creator-tier-draft-${String(seq).padStart(3, "0")}`,
+        name: `Tier ${seq}`,
         priceZar: isFree ? "0.00" : "150.00",
         capacity: "100",
         description: "",
@@ -466,6 +508,7 @@ export function EventBuilderForm({
   const persistDraft = (
     onSaved?: () => void,
     shouldValidate = false,
+    onError?: () => void,
   ): boolean => {
     if (shouldValidate && !validate()) return false;
     const payload = buildDraftPayload();
@@ -474,6 +517,9 @@ export function EventBuilderForm({
         setDirty(false);
         setIsFormDirty(false);
         onSaved?.();
+      },
+      onError: () => {
+        onError?.();
       },
     });
     return true;
@@ -534,22 +580,25 @@ export function EventBuilderForm({
       return;
     }
     const action = pendingActionRef.current;
-    leaveLockRef.current = true;
-    setGuardVisible(false);
     pendingActionRef.current = null;
-    persistDraft(() => {
-      if (action) action();
-    });
+    setGuardVisible(false);
+    persistDraft(
+      () => executePendingAction(action),
+      false,
+      () => {
+        // Save failed — the one-shot bypass must not stay latched.
+        leaveLockRef.current = false;
+      },
+    );
   };
 
   const handleGuardDiscard = () => {
     const action = pendingActionRef.current;
-    leaveLockRef.current = true;
+    pendingActionRef.current = null;
     setDirty(false);
     setIsFormDirty(false);
     setGuardVisible(false);
-    pendingActionRef.current = null;
-    if (action) action();
+    executePendingAction(action);
   };
 
   return (

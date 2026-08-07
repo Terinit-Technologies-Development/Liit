@@ -110,10 +110,16 @@ describe("LIIT Instruction 6: Payout Request Behaviour", () => {
     fireEvent.press(screen.getByTestId("payout-simulate-failure-toggle"));
     fireEvent.press(screen.getByTestId("submit-payout-button"));
     await waitFor(() => {
+      expect(screen.getByText(/Processing Payout Request\.\.\./i)).toBeTruthy();
+    });
+    await waitFor(() => {
       expect(screen.getByText("Payout Failed")).toBeTruthy();
     });
 
     fireEvent.press(screen.getByTestId("retry-payout-button"));
+    await waitFor(() => {
+      expect(screen.getByText(/Processing Payout Request\.\.\./i)).toBeTruthy();
+    });
     await waitFor(
       () => {
         expect(screen.getByText("Payout Request Recorded")).toBeTruthy();

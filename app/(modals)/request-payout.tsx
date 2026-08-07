@@ -37,31 +37,35 @@ export default function RequestPayoutModal() {
 
   /**
    * Deterministic payout simulation. `shouldFail` is an explicit parameter so
-   * Retry never depends on stale closure state.
+   * Retry never depends on stale closure state. A short delay guarantees the
+   * Processing state is visibly rendered before either the deterministic
+   * failure or the repository mutation resolves.
    */
   const submitRequest = (shouldFail = forceFail) => {
     if (!isValidAmount) return;
     setState("processing");
     setErrorMessage("");
 
-    if (shouldFail) {
-      setState("failure");
-      setErrorMessage(
-        "Simulated banking communication failure for reviewer testing.",
-      );
-      return;
-    }
-
-    requestMutation.mutate(amountMinor, {
-      onSuccess: (data) => {
-        setPayoutReference(data.reference || "PAY-REQ-0001");
-        setState("success");
-      },
-      onError: (err: any) => {
-        setErrorMessage(err?.message || "Failed to process payout request.");
+    setTimeout(() => {
+      if (shouldFail) {
         setState("failure");
-      },
-    });
+        setErrorMessage(
+          "Simulated banking communication failure for reviewer testing.",
+        );
+        return;
+      }
+
+      requestMutation.mutate(amountMinor, {
+        onSuccess: (data) => {
+          setPayoutReference(data.reference || "PAY-REQ-0001");
+          setState("success");
+        },
+        onError: (err: any) => {
+          setErrorMessage(err?.message || "Failed to process payout request.");
+          setState("failure");
+        },
+      });
+    }, 600);
   };
 
   const handleSubmit = () => submitRequest();
