@@ -99,7 +99,10 @@ export const ConversationRow: React.FC<ConversationRowProps> = ({
           </AppText>
 
           {unreadCount > 0 ? (
-            <View style={styles.unreadBadge}>
+            <View
+              style={styles.unreadBadge}
+              testID={`unread-badge-${unreadCount}`}
+            >
               <AppText variant="caption" style={styles.unreadBadgeText}>
                 {unreadCount}
               </AppText>

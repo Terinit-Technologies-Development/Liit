@@ -9,9 +9,13 @@ export const creatorKeys = {
   all: ["creator"] as const,
   profile: () => [...creatorKeys.all, "profile"] as const,
   stats: (period?: string) =>
-    [...creatorKeys.all, "stats", period || "30d"] as const,
+    period
+      ? ([...creatorKeys.all, "stats", period] as const)
+      : ([...creatorKeys.all, "stats"] as const),
   events: (filter?: string) =>
-    [...creatorKeys.all, "events", filter || "all"] as const,
+    filter
+      ? ([...creatorKeys.all, "events", filter] as const)
+      : ([...creatorKeys.all, "events"] as const),
   event: (eventId: string) => [...creatorKeys.all, "event", eventId] as const,
   activeEventProgress: () =>
     [...creatorKeys.all, "activeEventProgress"] as const,
@@ -19,7 +23,9 @@ export const creatorKeys = {
   payoutsOverview: () => [...creatorKeys.all, "payoutsOverview"] as const,
   payoutHistory: () => [...creatorKeys.all, "payoutHistory"] as const,
   contentPosts: (eventId?: string) =>
-    [...creatorKeys.all, "contentPosts", eventId || "all"] as const,
+    eventId
+      ? ([...creatorKeys.all, "contentPosts", eventId] as const)
+      : ([...creatorKeys.all, "contentPosts"] as const),
   eventAnalytics: (eventId: string) =>
     [...creatorKeys.all, "eventAnalytics", eventId] as const,
   eventGuests: (eventId: string, filter?: string, search?: string) =>
