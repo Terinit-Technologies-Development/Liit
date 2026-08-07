@@ -22,6 +22,7 @@ export interface EventCardProps {
   nowIso: string;
   attendeeCount?: number;
   attendeeAvatarKeys?: string[];
+  isSaved?: boolean;
   onPress(): void;
   onSave?(): void;
   testID?: string;
@@ -52,6 +53,7 @@ export function EventCard({
   nowIso,
   attendeeCount = 0,
   attendeeAvatarKeys = [],
+  isSaved,
   onPress,
   onSave,
   testID,
@@ -59,6 +61,7 @@ export function EventCard({
   const model = toEventCardViewModel(event, {
     nowIso,
     attendeeCount,
+    isSaved,
   });
 
   const imageSource = getImageSource(model.imageKey);

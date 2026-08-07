@@ -14,6 +14,7 @@ export const queryKeys = {
     detail: (id: string) => [...queryKeys.events.all, "detail", id] as const,
     search: (query: string) =>
       [...queryKeys.events.all, "search", query] as const,
+    byIds: (ids: string[]) => [...queryKeys.events.all, "by-ids", ids] as const,
   },
   discovery: {
     all: ["discovery"] as const,
@@ -57,6 +58,7 @@ export const queryKeys = {
       [...queryKeys.hosts.all, "public-profile", hostId] as const,
     upcomingEvents: (hostId: string) =>
       [...queryKeys.hosts.all, "upcoming-events", hostId] as const,
+    byIds: (ids: string[]) => [...queryKeys.hosts.all, "by-ids", ids] as const,
   },
   ticketing: {
     all: ["ticketing"] as const,

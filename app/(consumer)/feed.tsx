@@ -19,15 +19,19 @@ import { useNotificationsQuery } from "../../src/hooks/discovery/useNotification
 import { useConversationsQuery } from "../../src/hooks/social/useSocialQueries";
 import { useDiscoveryStore } from "../../src/state/useDiscoveryStore";
 import { useAppStore } from "../../src/state/useAppStore";
+import { useSaveFollowActions } from "../../src/hooks/useSaveFollowActions";
+import { useDemoNowIso } from "../../src/hooks/useDemoNowIso";
 import { useToast } from "../../src/hooks/useToast";
-import { DEMO_NOW_ISO, discoveryHosts } from "../../src/fixtures/discovery";
+import { discoveryHosts } from "../../src/fixtures/discovery";
 import { routeBuilders, ROUTES } from "../../src/navigation/routes";
 import { theme } from "../../src/design-system/theme";
 
 export default function FeedScreen() {
   const router = useRouter();
   const { showToast } = useToast();
-  const { feedMode, setFeedMode } = useDiscoveryStore();
+  const { feedMode, setFeedMode, savedEventIds } = useDiscoveryStore();
+  const { toggleSaved } = useSaveFollowActions();
+  const nowIso = useDemoNowIso();
   const scenario = useAppStore((state) => state.scenario);
   const feedQuery = useFeedQuery(feedMode);
   const notifQuery = useNotificationsQuery("all");
@@ -161,10 +165,12 @@ export default function FeedScreen() {
                   <EventCard
                     event={item.event}
                     variant={index === 0 ? "featured" : "standard"}
-                    nowIso={DEMO_NOW_ISO}
+                    nowIso={nowIso}
+                    isSaved={savedEventIds.includes(item.event.id)}
                     attendeeCount={item.attendeeCount}
                     attendeeAvatarKeys={item.attendeeAvatarKeys}
                     onPress={() => handleEventPress(item.event.id)}
+                    onSave={() => toggleSaved(item.event.id)}
                   />
                 </View>
               );

@@ -18,7 +18,10 @@ import { RelatedEventRail } from "../../../src/components/events/RelatedEventRai
 import { StickyActionBar } from "../../../src/components/events/StickyActionBar";
 import { StatusPill } from "../../../src/components/ui/StatusPill";
 import { ReactionBar } from "../../../src/components/social/ReactionBar";
-import { useCommentsQuery } from "../../../src/hooks/social/useSocialQueries";
+import {
+  useCommentsQuery,
+  useConversationsQuery,
+} from "../../../src/hooks/social/useSocialQueries";
 import {
   useEventDetailQuery,
   useRelatedEventsQuery,
@@ -29,12 +32,17 @@ import {
   getEventConversionModel,
 } from "../../../src/domain/event-detail/conversion-model";
 import { TicketTier } from "../../../src/domain/event-detail";
+import { HostInquiryConversation } from "../../../src/domain/social";
 import { routeBuilders, ROUTES } from "../../../src/navigation/routes";
 import { showToast } from "../../../src/components/ui/Toast";
 import { getEventDisplayStatus } from "../../../src/domain/discovery/event-presentation";
-import { DEMO_NOW_ISO } from "../../../src/fixtures/discovery";
+import { SecondaryButton } from "../../../src/components/ui/SecondaryButton";
 import { theme } from "../../../src/design-system/theme";
 import { useCheckoutStore } from "../../../src/state/useCheckoutStore";
+import { useTicketWalletQuery } from "../../../src/hooks/ticketing/useTicketWalletQuery";
+import { useSaveFollowActions } from "../../../src/hooks/useSaveFollowActions";
+import { useDemoNowIso } from "../../../src/hooks/useDemoNowIso";
+import { useAppStore } from "../../../src/state/useAppStore";
 
 function normaliseRouteId(value: string | string[] | undefined): string | null {
   if (typeof value === "string" && value.trim().length > 0) {
@@ -55,9 +63,14 @@ export default function EventDetailScreen() {
   const relatedQuery = useRelatedEventsQuery(eventId);
 
   const savedEventIds = useDiscoveryStore((state) => state.savedEventIds);
-  const toggleSavedEvent = useDiscoveryStore((state) => state.toggleSavedEvent);
+  const { toggleSaved } = useSaveFollowActions();
 
   const beginCheckout = useCheckoutStore((state) => state.beginCheckout);
+
+  const scenario = useAppStore((state) => state.scenario);
+  const walletQuery = useTicketWalletQuery(scenario);
+  const inquiryQuery = useConversationsQuery("inquiry");
+  const nowIso = useDemoNowIso();
 
   const [selectedTierId, setSelectedTierId] = useState<string | null>(null);
   const [userReacted, setUserReacted] = useState(false);
@@ -119,14 +132,58 @@ export default function EventDetailScreen() {
     );
   }
 
-  const conversion = getEventConversionModel(detail);
+  const baseConversion = getEventConversionModel(detail);
   const selectedTier =
     detail.ticketTiers.find((t: TicketTier) => t.id === selectedTierId) ??
     detail.ticketTiers[0];
 
-  const displayStatus = getEventDisplayStatus(detail.event, DEMO_NOW_ISO);
+  const displayStatus = getEventDisplayStatus(detail.event, nowIso);
+
+  const ownedTickets = (walletQuery.data ?? []).filter(
+    (ticket) =>
+      ticket.eventId === detail.event.id && ticket.status !== "cancelled",
+  );
+  const hasTicket = ownedTickets.length > 0;
+  const firstOwnedTicket = ownedTickets[0];
+
+  const conversion: EventConversionModel = hasTicket
+    ? {
+        ...baseConversion,
+        primaryLabel:
+          firstOwnedTicket?.source === "free_registration"
+            ? "View your pass"
+            : "View your ticket",
+        supportingLabel:
+          baseConversion.mode === "none"
+            ? "This event has ended"
+            : "You already have tickets for this event",
+        disabled: baseConversion.mode === "none",
+      }
+    : baseConversion;
+
+  const hostInquiries = (inquiryQuery.data ?? []).filter(
+    (conversation): conversation is HostInquiryConversation =>
+      conversation.kind === "inquiry",
+  );
+  const inquiryForHost = hostInquiries.find(
+    (conversation) =>
+      conversation.hostId === detail.event.host.id && !conversation.isClosed,
+  );
+
+  const handleAskAboutEvent = () => {
+    if (inquiryForHost) {
+      router.push(routeBuilders.inquiryThread(inquiryForHost.id));
+      return;
+    }
+    router.push(routeBuilders.newMessageModal());
+  };
 
   const handlePrimaryAction = (model: EventConversionModel) => {
+    if (hasTicket && firstOwnedTicket) {
+      router.push(routeBuilders.fullTicket(firstOwnedTicket.id));
+      return;
+    }
+
     switch (model.mode) {
       case "paid": {
         const tierId =
@@ -165,7 +222,7 @@ export default function EventDetailScreen() {
           event={detail.event}
           onBack={() => router.back()}
           isSaved={savedEventIds.includes(detail.event.id)}
-          onToggleSaved={() => toggleSavedEvent(detail.event.id)}
+          onToggleSaved={() => toggleSaved(detail.event.id)}
           onShare={() => router.push(routeBuilders.eventShare(detail.event.id))}
           onReport={() =>
             router.push(
@@ -212,6 +269,15 @@ export default function EventDetailScreen() {
           onPress={() =>
             router.push(routeBuilders.hostProfile(detail.event.host.id))
           }
+        />
+
+        <SecondaryButton
+          label="Ask about this event"
+          leftIcon="messageCircle"
+          fullWidth
+          onPress={handleAskAboutEvent}
+          accessibilityLabel="Ask the host about this event"
+          testID="event-detail-ask-question"
         />
 
         {detail.modules.lineup ? <LineupRail members={detail.lineup} /> : null}

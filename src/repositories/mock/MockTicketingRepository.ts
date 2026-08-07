@@ -9,9 +9,13 @@ import {
 } from "../contracts/TicketingStorage";
 import { AsyncStorageTicketingStorage } from "./AsyncStorageTicketingStorage";
 import {
+  NotificationRepository,
+} from "../contracts/NotificationRepository";
+import {
   PaymentAttempt,
   PaymentMethod,
   TicketOrder,
+  TicketStatus,
   WalletTicket,
 } from "../../domain/ticketing";
 import {
@@ -21,6 +25,7 @@ import {
 } from "../../fixtures/ticketing";
 import { discoveryEvents } from "../../fixtures/discovery";
 import { DEMO_NOW_ISO } from "../../fixtures/discovery/demo-clock";
+import { mockNotificationRepository } from "./MockNotificationRepository";
 
 function formatSequence(value: number): string {
   return value.toString().padStart(4, "0");
@@ -62,9 +67,14 @@ function delayMs(ms: number): Promise<void> {
 export class MockTicketingRepository implements TicketingRepository {
   private storage: TicketingStorage;
   private mutationQueue: Promise<void> = Promise.resolve();
+  private notificationPublisher: NotificationRepository | null;
 
-  constructor(storage?: TicketingStorage) {
+  constructor(
+    storage?: TicketingStorage,
+    notificationPublisher?: NotificationRepository | null,
+  ) {
     this.storage = storage ?? new AsyncStorageTicketingStorage();
+    this.notificationPublisher = notificationPublisher ?? null;
   }
 
   private runExclusive<T>(operation: () => Promise<T>): Promise<T> {
@@ -172,6 +182,16 @@ export class MockTicketingRepository implements TicketingRepository {
 
         attempt.orderId = orderId;
         attempt.ticketIds = newTickets.map((t) => t.id);
+
+        if (this.notificationPublisher) {
+          await this.notificationPublisher.recordTicketConfirmed({
+            eventId: input.eventId,
+            eventTitle: event?.title ?? "LIIT Event",
+            orderId,
+            ticketId: newTickets[0]?.id,
+            eventImageKey: event?.heroImageKey,
+          });
+        }
       }
 
       state.attempts[input.attemptId] = attempt;
@@ -258,6 +278,15 @@ export class MockTicketingRepository implements TicketingRepository {
 
       await this.storage.save(state);
 
+      if (this.notificationPublisher) {
+        await this.notificationPublisher.recordRegistrationConfirmed({
+          eventId: input.eventId,
+          eventTitle: event?.title ?? "LIIT Event",
+          orderId: newOrder.id,
+          eventImageKey: event?.heroImageKey,
+        });
+      }
+
       return {
         order: structuredClone(newOrder),
         tickets: structuredClone(newTickets),
@@ -285,6 +314,23 @@ export class MockTicketingRepository implements TicketingRepository {
     return ticket ? structuredClone(ticket) : null;
   }
 
+  async setTicketStatus(
+    ticketId: string,
+    status: TicketStatus,
+  ): Promise<WalletTicket | null> {
+    return this.runExclusive(async () => {
+      await delayMs(200);
+      const state = await this.loadState();
+      const ticket = state.tickets.find((t) => t.id === ticketId);
+      if (!ticket) {
+        return null;
+      }
+      ticket.status = status;
+      await this.storage.save(state);
+      return structuredClone(ticket);
+    });
+  }
+
   async reset(): Promise<void> {
     await this.runExclusive(async () => {
       await this.storage.clear();
@@ -293,4 +339,7 @@ export class MockTicketingRepository implements TicketingRepository {
   }
 }
 
-export const mockTicketingRepository = new MockTicketingRepository();
+export const mockTicketingRepository = new MockTicketingRepository(
+  undefined,
+  mockNotificationRepository,
+);

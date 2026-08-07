@@ -15,6 +15,7 @@ export interface SocialRepositoryState {
   comments: Comment[];
   blockedUserIds: string[];
   failedCommentAttempts?: Record<string, boolean>;
+  simulatedReplyConversationIds?: string[];
 }
 
 export interface SocialRepository {
@@ -35,5 +36,6 @@ export interface SocialRepository {
     input: ReportContentInput,
   ): Promise<{ success: boolean; reportId: string }>;
   listMessageRecipients(query?: string): Promise<MessageRecipient[]>;
+  simulateHostReply(conversationId: string): Promise<Message | null>;
   reset(): Promise<void>;
 }

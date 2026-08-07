@@ -17,3 +17,12 @@ export function useHostUpcomingEventsQuery(hostId: string | null) {
     enabled: Boolean(hostId),
   });
 }
+
+export function usePublicHostsByIdsQuery(ids: string[]) {
+  return useQuery({
+    queryKey: queryKeys.hosts.byIds(ids),
+    queryFn: () =>
+      Promise.all(ids.map((id) => mockHostRepository.getPublicProfile(id))),
+    enabled: ids.length > 0,
+  });
+}

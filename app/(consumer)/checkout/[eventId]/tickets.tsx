@@ -120,6 +120,9 @@ export default function CheckoutTicketsScreen() {
         await queryClient.invalidateQueries({
           queryKey: queryKeys.ticketing.all,
         });
+        await queryClient.invalidateQueries({
+          queryKey: queryKeys.notifications.all,
+        });
 
         clearCheckout();
 

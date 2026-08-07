@@ -76,6 +76,7 @@ export function toEventCardViewModel(
   options: {
     nowIso: string;
     attendeeCount?: number;
+    isSaved?: boolean;
   },
 ): EventCardViewModel {
   const status = getEventDisplayStatus(event, options.nowIso);
@@ -106,7 +107,7 @@ export function toEventCardViewModel(
     venueLine: `${event.venue.name}, ${event.venue.suburb}`,
     dateLabel,
     priceLabel,
-    isSaved: Boolean(event.isSaved),
+    isSaved: options.isSaved ?? Boolean(event.isSaved),
     imageKey,
     attendeeCount: options.attendeeCount ?? 0,
   };

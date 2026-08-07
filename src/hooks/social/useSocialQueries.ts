@@ -234,6 +234,28 @@ export function useToggleReactionMutation() {
   });
 }
 
+export function useSimulateHostReplyMutation() {
+  const queryClient = useQueryClient();
+  return useMutation<Message | null, Error, string>({
+    mutationFn: (conversationId) =>
+      mockSocialRepository.simulateHostReply(conversationId),
+    onSuccess: (reply, conversationId) => {
+      if (!reply) {
+        return;
+      }
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.social.messages(conversationId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.social.conversationsRoot(),
+      });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.social.conversationDetail(conversationId),
+      });
+    },
+  });
+}
+
 export function useMessageRecipientsQuery(query?: string) {
   return useQuery<MessageRecipient[]>({
     queryKey: [...queryKeys.social.all, "recipients", query ?? ""],

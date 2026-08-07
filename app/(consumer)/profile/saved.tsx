@@ -1,78 +1,78 @@
 import React from "react";
-import { View, StyleSheet, ScrollView } from "react-native";
+import { FlatList, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Screen } from "../../../src/components/ui/Screen";
-import { AppText } from "../../../src/components/ui/AppText";
 import { AppHeader } from "../../../src/components/navigation/AppHeader";
-import { SurfaceCard } from "../../../src/components/ui/Card";
-import { StatusPill } from "../../../src/components/ui/StatusPill";
+import { EventCard } from "../../../src/components/discovery/EventCard";
 import { EmptyState } from "../../../src/components/feedback/EmptyState";
-import { mockEvents } from "../../../src/fixtures";
+import { useDiscoveryStore } from "../../../src/state/useDiscoveryStore";
+import { useSaveFollowActions } from "../../../src/hooks/useSaveFollowActions";
+import { useDemoNowIso } from "../../../src/hooks/useDemoNowIso";
 import { useSessionStore } from "../../../src/state/useSessionStore";
-import { formatCurrency, formatDate } from "../../../src/utils/format";
+import { useEventsByIdsQuery } from "../../../src/hooks/events/useEventDetailQuery";
+import { routeBuilders } from "../../../src/navigation/routes";
 import { theme } from "../../../src/design-system/theme";
 
 export default function SavedEventsScreen() {
   const router = useRouter();
   const { status } = useSessionStore();
+  const savedEventIds = useDiscoveryStore((state) => state.savedEventIds);
+  const { toggleSaved } = useSaveFollowActions();
+  const nowIso = useDemoNowIso();
+  const eventsQuery = useEventsByIdsQuery(savedEventIds);
 
-  const savedEvents = mockEvents.filter((evt) => evt.isSaved);
+  const savedEvents = eventsQuery.data ?? [];
 
   return (
     <Screen safeAreaEdges={["top"]} style={styles.container}>
       <AppHeader title="Saved Events" showBack onBack={() => router.back()} />
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <AppText variant="display" style={styles.title}>
-          Bookmarked Gigs & Parties
-        </AppText>
-
-        {status === "guest" ? (
-          <EmptyState
-            title="No Saved Events"
-            description="Sign in to save events to your personal bookmark list."
-            actionLabel="Sign In"
-            onAction={() => router.push("/(public)/sign-in")}
-            icon="heart"
-          />
-        ) : savedEvents.length === 0 ? (
-          <EmptyState
-            title="Your Saved List is Empty"
-            description="Tap the heart icon on any event card to save it to your bookmarks for quick access."
-            actionLabel="Explore Nearby Events"
-            onAction={() => router.push("/(consumer)/explore")}
-            icon="heart"
-          />
-        ) : (
-          <View style={styles.list}>
-            {savedEvents.map((evt) => (
-              <SurfaceCard key={evt.id} style={styles.card}>
-                <StatusPill
-                  label={evt.status}
-                  type={evt.status === "live" ? "live" : "verified"}
+      {status === "guest" ? (
+        <EmptyState
+          title="No Saved Events"
+          description="Sign in to save events to your personal bookmark list."
+          actionLabel="Sign In"
+          onAction={() => router.push("/(public)/sign-in")}
+          icon="heart"
+        />
+      ) : savedEventIds.length === 0 ? (
+        <EmptyState
+          title="Your Saved List is Empty"
+          description="Tap the heart icon on any event card to save it to your bookmarks for quick access."
+          actionLabel="Explore Nearby Events"
+          onAction={() => router.push("/(consumer)/explore")}
+          icon="heart"
+        />
+      ) : (
+        <FlatList
+          data={savedEvents}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            eventsQuery.isLoading ? (
+              <View style={styles.loading}>
+                <EmptyState
+                  title="Loading saved events..."
+                  description="Fetching your bookmarked events."
+                  icon="heart"
                 />
-                <AppText variant="heading" style={styles.eventTitle}>
-                  {evt.title}
-                </AppText>
-                <AppText variant="label" color={theme.colors.textSecondary}>
-                  {evt.venue.name} • {evt.venue.suburb}
-                </AppText>
-                <AppText
-                  variant="caption"
-                  color={theme.colors.accentStart}
-                  style={styles.price}
-                >
-                  {formatDate(evt.occurrence.startTime)} •{" "}
-                  {formatCurrency(evt.startingPriceMinor, evt.currency)}
-                </AppText>
-              </SurfaceCard>
-            ))}
-          </View>
-        )}
-      </ScrollView>
+              </View>
+            ) : null
+          }
+          renderItem={({ item }) => (
+            <View style={styles.cardWrap}>
+              <EventCard
+                event={item}
+                variant="standard"
+                nowIso={nowIso}
+                isSaved
+                onPress={() => router.push(routeBuilders.eventDetail(item.id))}
+                onSave={() => toggleSaved(item.id)}
+              />
+            </View>
+          )}
+        />
+      )}
     </Screen>
   );
 }
@@ -81,23 +81,15 @@ const styles = StyleSheet.create({
   container: {
     paddingHorizontal: theme.spacing.gutter,
   },
-  scrollContent: {
+  list: {
     paddingTop: theme.spacing.md,
     paddingBottom: theme.spacing.xl,
-  },
-  title: {
-    marginBottom: theme.spacing.lg,
-  },
-  list: {
     gap: theme.spacing.md,
   },
-  card: {
-    gap: theme.spacing.xs,
+  cardWrap: {
+    marginBottom: theme.spacing.md,
   },
-  eventTitle: {
-    marginTop: theme.spacing.xxs,
-  },
-  price: {
-    marginTop: theme.spacing.xxs,
+  loading: {
+    paddingTop: theme.spacing.xl,
   },
 });

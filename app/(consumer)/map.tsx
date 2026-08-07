@@ -21,8 +21,10 @@ import {
 } from "../../src/state/useMapDiscoveryStore";
 import { useDiscoveryStore } from "../../src/state/useDiscoveryStore";
 import { useAppStore } from "../../src/state/useAppStore";
+import { useSaveFollowActions } from "../../src/hooks/useSaveFollowActions";
+import { useDemoNowIso } from "../../src/hooks/useDemoNowIso";
 import { useMapDiscoveryQuery } from "../../src/hooks/map/useMapDiscoveryQuery";
-import { discoveryEvents, DEMO_NOW_ISO } from "../../src/fixtures/discovery";
+import { discoveryEvents } from "../../src/fixtures/discovery";
 import { routeBuilders, ROUTES } from "../../src/navigation/routes";
 import { mockMapAdapter } from "../../src/adapters/map/MockMapAdapter";
 import { DEFAULT_MAP_FILTERS } from "../../src/domain/map/map-filter-schema";
@@ -65,7 +67,8 @@ export default function MapScreen() {
 
   const { scenario, setScenario } = useAppStore();
   const savedEventIds = useDiscoveryStore((state) => state.savedEventIds);
-  const toggleSavedEvent = useDiscoveryStore((state) => state.toggleSavedEvent);
+  const { toggleSaved } = useSaveFollowActions();
+  const nowIso = useDemoNowIso();
 
   const mapQuery = useMapDiscoveryQuery({
     filters,
@@ -258,9 +261,9 @@ export default function MapScreen() {
         <MapEventPreview
           event={selectedEvent}
           distanceKm={selectedPoint.distanceKm}
-          nowIso={DEMO_NOW_ISO}
+          nowIso={nowIso}
           isSaved={savedEventIds.includes(selectedEvent.id)}
-          onToggleSaved={() => toggleSavedEvent(selectedEvent.id)}
+          onToggleSaved={() => toggleSaved(selectedEvent.id)}
           onDismiss={() => selectEvent(null)}
           onViewDetails={() =>
             router.push(routeBuilders.eventDetail(selectedEvent.id))

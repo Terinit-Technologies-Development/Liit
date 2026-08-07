@@ -8,6 +8,7 @@ import {
   MapDiscoveryRepository,
   MapDiscoveryRequest,
 } from "../contracts/MapDiscoveryRepository";
+import { applyEventStatusOverrides } from "../../state/usePrototypeOverridesStore";
 
 function matchesMapFilters(event: Event, filters: MapFilters): boolean {
   if (
@@ -90,7 +91,9 @@ export class MockMapDiscoveryRepository implements MapDiscoveryRepository {
         };
       }
 
-      const baseEvents = applyMapScenario(discoveryEvents, request.scenario);
+      const baseEvents = applyEventStatusOverrides(
+        applyMapScenario(discoveryEvents, request.scenario),
+      );
 
       const candidateEvents = baseEvents.filter((event) =>
         matchesMapFilters(event, request.filters),

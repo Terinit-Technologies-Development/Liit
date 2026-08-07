@@ -15,8 +15,10 @@ import {
   usePublicHostQuery,
 } from "../../../src/hooks/hosts/usePublicHostQuery";
 import { useDiscoveryStore } from "../../../src/state/useDiscoveryStore";
+import { useSaveFollowActions } from "../../../src/hooks/useSaveFollowActions";
+import { useConversationsQuery } from "../../../src/hooks/social/useSocialQueries";
+import { HostInquiryConversation } from "../../../src/domain/social";
 import { routeBuilders, ROUTES } from "../../../src/navigation/routes";
-import { showToast } from "../../../src/components/ui/Toast";
 import { theme } from "../../../src/design-system/theme";
 
 function normaliseRouteId(value: string | string[] | undefined): string | null {
@@ -38,7 +40,8 @@ export default function PublicHostProfileScreen() {
   const upcomingEventsQuery = useHostUpcomingEventsQuery(hostId);
 
   const followedHostIds = useDiscoveryStore((state) => state.followedHostIds);
-  const toggleHostFollow = useDiscoveryStore((state) => state.toggleHostFollow);
+  const { toggleFollow } = useSaveFollowActions();
+  const inquiryQuery = useConversationsQuery("inquiry");
 
   if (!hostId) {
     return (
@@ -97,6 +100,23 @@ export default function PublicHostProfileScreen() {
   const followed = followedHostIds.includes(profile.host.id);
   const upcomingEvents = upcomingEventsQuery.data ?? [];
 
+  const hostInquiries = (inquiryQuery.data ?? []).filter(
+    (conversation): conversation is HostInquiryConversation =>
+      conversation.kind === "inquiry",
+  );
+  const inquiryForHost = hostInquiries.find(
+    (conversation) =>
+      conversation.hostId === profile.host.id && !conversation.isClosed,
+  );
+
+  const handleMessage = () => {
+    if (inquiryForHost) {
+      router.push(routeBuilders.inquiryThread(inquiryForHost.id));
+      return;
+    }
+    router.push(routeBuilders.newMessageModal());
+  };
+
   return (
     <Screen safeAreaEdges={[]} style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -104,14 +124,8 @@ export default function PublicHostProfileScreen() {
           profile={profile}
           followed={followed}
           onBack={() => router.back()}
-          onToggleFollow={() => toggleHostFollow(profile.host.id)}
-          onMessage={() =>
-            showToast(
-              "Messaging",
-              "Host messaging arrives in a later LIIT instruction.",
-              "info",
-            )
-          }
+          onToggleFollow={() => toggleFollow(profile.host.id)}
+          onMessage={handleMessage}
           onOpenMenu={() =>
             router.push(
               routeBuilders.reportTarget({

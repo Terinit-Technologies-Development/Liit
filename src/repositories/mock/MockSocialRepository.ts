@@ -3,6 +3,7 @@ import {
   Comment,
   Conversation,
   ConversationKind,
+  HostInquiryConversation,
   Message,
   MessageRecipient,
   PostCommentInput,
@@ -19,6 +20,7 @@ import {
   seedInquiryConversations,
   seedMessagesMap,
 } from "../../fixtures/social/conversations";
+import { demoNowIso, useDemoClockStore } from "../../state/useDemoClockStore";
 
 const STORAGE_KEY = "liit-social-state-v1";
 
@@ -32,8 +34,16 @@ function createSeedSocialState(): SocialRepositoryState {
     comments: structuredClone(seedComments),
     blockedUserIds: ["usr-sipho-mthethwa"],
     failedCommentAttempts: {},
+    simulatedReplyConversationIds: [],
   };
 }
+
+const SIMULATED_HOST_REPLIES: Record<string, string> = {
+  "conv-inquiry-club-vibez":
+    "Hi! Thanks for the message — VIP tables are still available for Midnight Kinetic Grooves. Complete your booking and we'll keep the table aside for you.",
+  "conv-inquiry-soweto-market":
+    "Sawubona! Yes, the market stall is confirmed for Saturday. You can register for free and we'll see you in Soweto.",
+};
 
 function delayMs(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -62,6 +72,8 @@ export class MockSocialRepository implements SocialRepository {
           comments: parsed.comments ?? [],
           blockedUserIds: parsed.blockedUserIds ?? [],
           failedCommentAttempts: parsed.failedCommentAttempts ?? {},
+          simulatedReplyConversationIds:
+            parsed.simulatedReplyConversationIds ?? [],
         };
       }
     } catch {
@@ -157,6 +169,64 @@ export class MockSocialRepository implements SocialRepository {
 
       await this.saveState(state);
       return structuredClone(newMessage);
+    });
+  }
+
+  async simulateHostReply(conversationId: string): Promise<Message | null> {
+    return this.runExclusive(async () => {
+      const state = await this.loadState();
+
+      const conv = state.conversations.find(
+        (c): c is HostInquiryConversation =>
+          c.id === conversationId && c.kind === "inquiry",
+      );
+      if (!conv) {
+        return null;
+      }
+
+      if (conv.isBlocked || conv.isClosed) {
+        return null;
+      }
+
+      const simulated = state.simulatedReplyConversationIds ?? [];
+      if (simulated.includes(conversationId)) {
+        return null;
+      }
+
+      const replyContent = SIMULATED_HOST_REPLIES[conversationId];
+      if (!replyContent) {
+        return null;
+      }
+
+      const reply: Message = {
+        id: `msg-${conversationId}-reply`,
+        conversationId,
+        senderId: conv.hostId,
+        senderName: conv.hostName,
+        senderAvatarUrl: conv.hostAvatarUrl,
+        senderType: "host",
+        content: replyContent,
+        sentAt: demoNowIso(useDemoClockStore.getState().offsetMs),
+        status: "delivered",
+        isIncoming: true,
+      };
+
+      if (!state.messages[conversationId]) {
+        state.messages[conversationId] = [];
+      }
+      state.messages[conversationId].push(reply);
+
+      conv.lastMessage = reply;
+      conv.updatedAt = reply.sentAt;
+      conv.unreadCount = (conv.unreadCount ?? 0) + 1;
+
+      state.simulatedReplyConversationIds = [
+        ...simulated,
+        conversationId,
+      ];
+
+      await this.saveState(state);
+      return structuredClone(reply);
     });
   }
 
