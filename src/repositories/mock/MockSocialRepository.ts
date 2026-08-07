@@ -21,6 +21,7 @@ import {
   seedMessagesMap,
 } from "../../fixtures/social/conversations";
 import { demoNowIso, useDemoClockStore } from "../../state/useDemoClockStore";
+import { usePrototypeControlsStore } from "../../state/usePrototypeControlsStore";
 
 const STORAGE_KEY = "liit-social-state-v1";
 
@@ -332,7 +333,8 @@ export class MockSocialRepository implements SocialRepository {
       if (
         input.clientMutationId &&
         !state.failedCommentAttempts[input.clientMutationId] &&
-        input.content.includes("FAIL")
+        (input.content.includes("FAIL") ||
+          usePrototypeControlsStore.getState().commentFailure)
       ) {
         state.failedCommentAttempts[input.clientMutationId] = true;
         await this.saveState(state);

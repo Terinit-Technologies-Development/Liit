@@ -114,7 +114,8 @@ export class MockTicketingRepository implements TicketingRepository {
       const status =
         input.scenario === "payment_decline"
           ? "declined"
-          : input.scenario === "payment_network_error"
+          : input.scenario === "payment_network_error" ||
+              input.scenario === "offline"
             ? "network_error"
             : "paid";
 

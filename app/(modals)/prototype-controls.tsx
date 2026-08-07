@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Screen } from "../../src/components/ui/Screen";
 import { AppText } from "../../src/components/ui/AppText";
 import { AppButton } from "../../src/components/ui/AppButton";
@@ -18,16 +18,40 @@ import { useMapDiscoveryStore } from "../../src/state/useMapDiscoveryStore";
 import { useCheckoutStore } from "../../src/state/useCheckoutStore";
 import { useSocialStore } from "../../src/state/useSocialStore";
 import { useCreatorStore } from "../../src/state/useCreatorStore";
+import { usePrototypeControlsStore } from "../../src/state/usePrototypeControlsStore";
+import { usePrototypeOverridesStore } from "../../src/state/usePrototypeOverridesStore";
+import { demoNowIso, useDemoClockStore } from "../../src/state/useDemoClockStore";
 import { mockNotificationRepository } from "../../src/repositories/mock/MockNotificationRepository";
 import { mockTicketingRepository } from "../../src/repositories/mock/MockTicketingRepository";
 import { mockSocialRepository } from "../../src/repositories/mock/MockSocialRepository";
+import { queryKeys } from "../../src/state/query-keys";
+import { discoveryEvents } from "../../src/fixtures/discovery";
+import { TicketStatus } from "../../src/domain/ticketing";
+import { EventStatus } from "../../src/domain/events";
 import { envConfig } from "../../src/config/env";
 import { mockUser } from "../../src/fixtures";
 import { theme } from "../../src/design-system/theme";
 
+const EVENT_STATUS_OPTIONS: Exclude<EventStatus, "draft" | "published">[] = [
+  "live",
+  "sold_out",
+  "completed",
+  "cancelled",
+];
+
+const TICKET_STATUS_OPTIONS: TicketStatus[] = [
+  "pending",
+  "valid",
+  "used",
+  "cancelled",
+];
+
 export default function PrototypeControlsScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
+
+  const [overrideEventId, setOverrideEventId] = useState<string | null>(null);
+  const [ticketId, setTicketId] = useState<string | null>(null);
 
   const {
     activeMode,
@@ -46,6 +70,28 @@ export default function PrototypeControlsScreen() {
   const resetSocial = useSocialStore((s) => s.resetSocial);
   const resetCreator = useCreatorStore((s) => s.resetCreatorStore);
 
+  const {
+    saveFollowFailure,
+    commentFailure,
+    setSaveFollowFailure,
+    setCommentFailure,
+  } = usePrototypeControlsStore();
+
+  const {
+    eventStatusOverrides,
+    setEventStatusOverride,
+    clearAllOverrides,
+  } = usePrototypeOverridesStore();
+
+  const { offsetMs, advanceClock, resetClock } = useDemoClockStore();
+
+  const walletQuery = useQuery({
+    queryKey: ["ticketing", "wallet", "prototype-controls"],
+    queryFn: () => mockTicketingRepository.listWalletTickets(),
+  });
+  const walletTickets = walletQuery.data ?? [];
+  const selectedTicket = walletTickets.find((t) => t.id === ticketId) ?? null;
+
   const handleModeSwitch = (mode: "consumer" | "creator") => {
     setActiveMode(mode);
     if (mode === "creator") {
@@ -53,6 +99,13 @@ export default function PrototypeControlsScreen() {
     } else {
       router.replace("/(consumer)/feed");
     }
+  };
+
+  const handleSetTicketStatus = async (status: TicketStatus) => {
+    if (!ticketId) return;
+    await mockTicketingRepository.setTicketStatus(ticketId, status);
+    await queryClient.invalidateQueries({ queryKey: queryKeys.ticketing.all });
+    await walletQuery.refetch();
   };
 
   const handleResetAll = async () => {
@@ -67,10 +120,15 @@ export default function PrototypeControlsScreen() {
     // repository state (resetCreatorStore resets MockCreatorRepository) and
     // the React Query cache below.
     resetCreator();
+    usePrototypeControlsStore.getState().resetPrototypeControls();
+    usePrototypeOverridesStore.getState().resetPrototypeOverrides();
+    useDemoClockStore.getState().resetClock();
     mockNotificationRepository.reset();
     await mockTicketingRepository.reset();
     await mockSocialRepository.reset();
     queryClient.clear();
+    setOverrideEventId(null);
+    setTicketId(null);
   };
 
   const scenarios: { key: PrototypeScenario; label: string }[] = [
@@ -144,6 +202,160 @@ export default function PrototypeControlsScreen() {
                   onPress={() => setScenario(item.key)}
                 />
               ))}
+            </Row>
+          </Stack>
+        </Card>
+
+        {/* Failure Simulation Toggles */}
+        <Card radius="xl" padding="lg">
+          <Stack gap="sm">
+            <AppText variant="subheading">Failure Simulation Toggles</AppText>
+            <AppText variant="caption" color={theme.colors.textSecondary}>
+              Development-only. Save/follow toggles revert optimistically after
+              a short delay. Comments fail once per post — turn the toggle off
+              and retry to recover.
+            </AppText>
+            <Row gap="sm" wrap>
+              <Chip
+                label="Simulate Save/Follow Failure"
+                selected={saveFollowFailure}
+                onPress={() => setSaveFollowFailure(!saveFollowFailure)}
+                testID="controls-save-follow-failure"
+              />
+              <Chip
+                label="Simulate Comment Failure"
+                selected={commentFailure}
+                onPress={() => setCommentFailure(!commentFailure)}
+                testID="controls-comment-failure"
+              />
+            </Row>
+          </Stack>
+        </Card>
+
+        {/* Per-Event Status Override */}
+        <Card radius="xl" padding="lg">
+          <Stack gap="sm">
+            <AppText variant="subheading">Event Status Override</AppText>
+            <AppText variant="caption" color={theme.colors.textSecondary}>
+              Force one canonical event into a status. Applied across Feed,
+              Explore, Search, Map and Event Detail. Overrides win over global
+              scenarios.
+            </AppText>
+            <Row gap="xs" wrap>
+              {discoveryEvents.map((event) => (
+                <Chip
+                  key={event.id}
+                  label={event.title}
+                  selected={overrideEventId === event.id}
+                  onPress={() =>
+                    setOverrideEventId(
+                      overrideEventId === event.id ? null : event.id,
+                    )
+                  }
+                />
+              ))}
+            </Row>
+            {overrideEventId ? (
+              <Stack gap="sm">
+                <AppText variant="caption" color={theme.colors.textMuted}>
+                  Current override:{" "}
+                  {eventStatusOverrides[overrideEventId] ?? "none"}
+                </AppText>
+                <Row gap="xs" wrap>
+                  {EVENT_STATUS_OPTIONS.map((status) => (
+                    <Chip
+                      key={status}
+                      label={status}
+                      selected={
+                        eventStatusOverrides[overrideEventId] === status
+                      }
+                      onPress={() =>
+                        setEventStatusOverride(overrideEventId, status)
+                      }
+                      testID={`controls-event-status-${status}`}
+                    />
+                  ))}
+                  <Chip
+                    label="Clear"
+                    selected={!eventStatusOverrides[overrideEventId]}
+                    onPress={() => setEventStatusOverride(overrideEventId, null)}
+                  />
+                </Row>
+              </Stack>
+            ) : null}
+            {Object.keys(eventStatusOverrides).length > 0 ? (
+              <Chip label="Clear All Overrides" onPress={clearAllOverrides} />
+            ) : null}
+          </Stack>
+        </Card>
+
+        {/* Ticket Status Override */}
+        <Card radius="xl" padding="lg">
+          <Stack gap="sm">
+            <AppText variant="subheading">Ticket Status Override</AppText>
+            <AppText variant="caption" color={theme.colors.textSecondary}>
+              Pick a wallet ticket and force its status. The Full Ticket screen
+              and wallet classification follow the demo clock and this status.
+            </AppText>
+            <Row gap="xs" wrap>
+              {walletTickets.map((ticket) => (
+                <Chip
+                  key={ticket.id}
+                  label={`${ticket.eventSnapshot.title} (${ticket.status})`}
+                  selected={ticketId === ticket.id}
+                  onPress={() => setTicketId(ticketId === ticket.id ? null : ticket.id)}
+                />
+              ))}
+            </Row>
+            {selectedTicket ? (
+              <Row gap="xs" wrap>
+                {TICKET_STATUS_OPTIONS.map((status) => (
+                  <Chip
+                    key={status}
+                    label={status}
+                    selected={selectedTicket.status === status}
+                    onPress={() => handleSetTicketStatus(status)}
+                    testID={`controls-ticket-status-${status}`}
+                  />
+                ))}
+              </Row>
+            ) : null}
+          </Stack>
+        </Card>
+
+        {/* Demo Clock */}
+        <Card radius="xl" padding="lg">
+          <Stack gap="sm">
+            <AppText variant="subheading">Demo Clock</AppText>
+            <AppText variant="caption" color={theme.colors.textSecondary}>
+              Advances the fixed prototype clock. Wallet upcoming/past,
+              ticket validity and event statuses are classified against it.
+            </AppText>
+            <AppText variant="body">
+              Demo now: {demoNowIso(offsetMs)}
+            </AppText>
+            <Row gap="xs" wrap>
+              <Chip
+                label="+1 hour"
+                onPress={() => advanceClock(60 * 60 * 1000)}
+                testID="controls-clock-plus-1h"
+              />
+              <Chip
+                label="+6 hours"
+                onPress={() => advanceClock(6 * 60 * 60 * 1000)}
+                testID="controls-clock-plus-6h"
+              />
+              <Chip
+                label="+24 hours"
+                onPress={() => advanceClock(24 * 60 * 60 * 1000)}
+                testID="controls-clock-plus-24h"
+              />
+              <Chip
+                label="Reset"
+                selected={offsetMs === 0}
+                onPress={resetClock}
+                testID="controls-clock-reset"
+              />
             </Row>
           </Stack>
         </Card>

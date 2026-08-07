@@ -30,9 +30,11 @@ import {
   useMessagesQuery,
   useRetryMessageMutation,
   useSendMessageMutation,
+  useSimulateHostReplyMutation,
 } from "../../../../src/hooks/social/useSocialQueries";
 import { useSocialStore } from "../../../../src/state/useSocialStore";
 import { useToast } from "../../../../src/hooks/useToast";
+import { TypingIndicator } from "../../../../src/components/social/TypingIndicator";
 import { routeBuilders } from "../../../../src/navigation/routes";
 import { useCheckoutStore } from "../../../../src/state/useCheckoutStore";
 import { VISIBLE_CONSUMER_TAB_BAR_STYLE } from "../../_layout";
@@ -89,6 +91,28 @@ export default function InquiryThreadScreen() {
       markRead(conversationId);
     }
   }, [conversationId, unreadCount, markRead]);
+
+  // Deterministic simulated host reply + typing indicator
+  const isTypingMap = useSocialStore((state) => state.isTypingMap);
+  const setTyping = useSocialStore((state) => state.setTyping);
+  const isTyping = Boolean(conversationId && isTypingMap[conversationId]);
+  const simulateHostReply = useSimulateHostReplyMutation();
+
+  useEffect(() => {
+    if (conversationId !== "conv-inquiry-club-vibez") return;
+
+    const typingOn = setTimeout(() => setTyping(conversationId, true), 1200);
+    const replyTimer = setTimeout(() => {
+      setTyping(conversationId, false);
+      simulateHostReply.mutate(conversationId);
+    }, 3200);
+
+    return () => {
+      clearTimeout(typingOn);
+      clearTimeout(replyTimer);
+      setTyping(conversationId, false);
+    };
+  }, [conversationId, setTyping, simulateHostReply]);
 
   if (conversationQuery.isLoading || messagesQuery.isLoading) {
     return (
@@ -270,13 +294,21 @@ export default function InquiryThreadScreen() {
             />
           )}
           ListFooterComponent={
-            canUseBookingOffer && bookingOffer ? (
-              <BookingLinkCard
-                offer={bookingOffer}
-                onSelectOffer={handleBookingOfferSelect}
-                testID="inquiry-booking-link-card"
-              />
-            ) : null
+            <>
+              {isTyping ? (
+                <TypingIndicator
+                  name={conversation.hostName}
+                  testID="inquiry-typing-indicator"
+                />
+              ) : null}
+              {canUseBookingOffer && bookingOffer ? (
+                <BookingLinkCard
+                  offer={bookingOffer}
+                  onSelectOffer={handleBookingOfferSelect}
+                  testID="inquiry-booking-link-card"
+                />
+              ) : null}
+            </>
           }
           contentContainerStyle={styles.messagesList}
         />
