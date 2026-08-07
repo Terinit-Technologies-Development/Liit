@@ -20,7 +20,11 @@ export const usePrototypeControlsStore = create<PrototypeControlsState>()(
       setSaveFollowFailure: (saveFollowFailure) => set({ saveFollowFailure }),
       setCommentFailure: (commentFailure) => set({ commentFailure }),
       resetPrototypeControls: () =>
-        set({ saveFollowFailure: false, commentFailure: false, hasHydrated: true }),
+        set({
+          saveFollowFailure: false,
+          commentFailure: false,
+          hasHydrated: true,
+        }),
     }),
     {
       name: "liit-prototype-controls-v1",

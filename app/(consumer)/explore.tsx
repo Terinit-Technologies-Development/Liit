@@ -173,13 +173,11 @@ export default function ExploreScreen() {
                   event={evt}
                   variant="standard"
                   nowIso={nowIso}
-                  
+
                   onPress={() => handleEventPress(evt.id)}
 
-                  
                   isSaved={savedEventIds.includes(evt.id)}
 
-                  
                   onSave={() => toggleSaved(evt.id)}
                 />
               )}
@@ -209,13 +207,11 @@ export default function ExploreScreen() {
                   event={evt}
                   variant="standard"
                   nowIso={nowIso}
-                  
+
                   onPress={() => handleEventPress(evt.id)}
 
-                  
                   isSaved={savedEventIds.includes(evt.id)}
 
-                  
                   onSave={() => toggleSaved(evt.id)}
                 />
               )}
@@ -233,13 +229,11 @@ export default function ExploreScreen() {
                   event={evt}
                   variant="standard"
                   nowIso={nowIso}
-                  
+
                   onPress={() => handleEventPress(evt.id)}
 
-                  
                   isSaved={savedEventIds.includes(evt.id)}
 
-                  
                   onSave={() => toggleSaved(evt.id)}
                 />
               )}
@@ -257,13 +251,11 @@ export default function ExploreScreen() {
                   event={evt}
                   variant="standard"
                   nowIso={nowIso}
-                  
+
                   onPress={() => handleEventPress(evt.id)}
 
-                  
                   isSaved={savedEventIds.includes(evt.id)}
 
-                  
                   onSave={() => toggleSaved(evt.id)}
                 />
               )}

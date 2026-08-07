@@ -38,11 +38,7 @@ describe("Booking notification creation", () => {
 
     const event = discoveryEvents.find((e) => e.id === "evt-midnight-grooves")!;
     const tiers = midnightGroovesTiers;
-    const quote = buildCheckoutQuote(
-      event.id,
-      tiers,
-      { [tiers[0].id]: 2 },
-    );
+    const quote = buildCheckoutQuote(event.id, tiers, { [tiers[0].id]: 2 });
 
     const attempt = await repo.simulatePayment({
       attemptId: "attempt-001",
@@ -86,9 +82,7 @@ describe("Booking notification creation", () => {
     expect(attempt.status).toBe("declined");
 
     const all = await notifications.list("all", { latencyMs: 0 });
-    expect(
-      all.filter((n) => n.type === "ticket_confirmed"),
-    ).toHaveLength(0);
+    expect(all.filter((n) => n.type === "ticket_confirmed")).toHaveLength(0);
   });
 
   it("does not duplicate notifications when the same attempt id is replayed", async () => {
@@ -106,16 +100,14 @@ describe("Booking notification creation", () => {
       attendeeName: "Keketso",
       quote,
       paymentMethodId: "pm-demo-visa-4242",
-      scenario: "normal",
+      scenario: "normal" as const,
     };
 
     await repo.simulatePayment(input);
     await repo.simulatePayment(input);
 
     const all = await notifications.list("all", { latencyMs: 0 });
-    expect(
-      all.filter((n) => n.type === "ticket_confirmed"),
-    ).toHaveLength(1);
+    expect(all.filter((n) => n.type === "ticket_confirmed")).toHaveLength(1);
   });
 
   it("creates a booking_confirmed notification on free registration", async () => {
@@ -168,8 +160,6 @@ describe("Booking notification creation", () => {
     expect(attempt.orderId).toBeUndefined();
 
     const all = await notifications.list("all", { latencyMs: 0 });
-    expect(
-      all.filter((n) => n.type === "ticket_confirmed"),
-    ).toHaveLength(0);
+    expect(all.filter((n) => n.type === "ticket_confirmed")).toHaveLength(0);
   });
 });

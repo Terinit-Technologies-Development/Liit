@@ -47,10 +47,9 @@ export default function NotificationsScreen() {
       case "message":
         void (async () => {
           try {
-            const conversation =
-              await mockSocialRepository.getConversation(
-                target.conversationId,
-              );
+            const conversation = await mockSocialRepository.getConversation(
+              target.conversationId,
+            );
             if (!conversation) {
               router.push(routeBuilders.inbox());
               return;

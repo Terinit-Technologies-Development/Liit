@@ -96,7 +96,7 @@ export default function InquiryThreadScreen() {
   const isTypingMap = useSocialStore((state) => state.isTypingMap);
   const setTyping = useSocialStore((state) => state.setTyping);
   const isTyping = Boolean(conversationId && isTypingMap[conversationId]);
-  const simulateHostReply = useSimulateHostReplyMutation();
+  const { mutate: simulateHostReply } = useSimulateHostReplyMutation();
 
   useEffect(() => {
     if (conversationId !== "conv-inquiry-club-vibez") return;

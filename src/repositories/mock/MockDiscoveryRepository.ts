@@ -226,10 +226,11 @@ export class MockDiscoveryRepository implements DiscoveryRepository {
           ? mockUpcomingFeedEntries
           : mockLiveRecentFeedEntries;
 
-      const items = applyFeedScenario(rawItems, request.scenario).map((entry) =>
-        entry.kind === "event"
-          ? { ...entry, event: applyEventStatusOverride(entry.event) }
-          : entry,
+      const items = applyFeedScenario(rawItems, request.scenario).map(
+        (entry) =>
+          entry.kind === "event"
+            ? { ...entry, event: applyEventStatusOverride(entry.event) }
+            : entry,
       );
 
       return {

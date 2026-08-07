@@ -221,10 +221,7 @@ export class MockSocialRepository implements SocialRepository {
       conv.updatedAt = reply.sentAt;
       conv.unreadCount = (conv.unreadCount ?? 0) + 1;
 
-      state.simulatedReplyConversationIds = [
-        ...simulated,
-        conversationId,
-      ];
+      state.simulatedReplyConversationIds = [...simulated, conversationId];
 
       await this.saveState(state);
       return structuredClone(reply);

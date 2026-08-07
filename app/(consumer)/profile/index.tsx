@@ -242,9 +242,7 @@ export default function ProfileScreen() {
                   variant="standard"
                   nowIso={nowIso}
                   isSaved
-                  onPress={() =>
-                    router.push(routeBuilders.eventDetail(evt.id))
-                  }
+                  onPress={() => router.push(routeBuilders.eventDetail(evt.id))}
                   onSave={() => toggleSaved(evt.id)}
                 />
               </View>
@@ -261,9 +259,8 @@ export default function ProfileScreen() {
         ) : activeTab === "following" ? (
           <View style={styles.tabSection}>
             {(followedHostsQuery.data ?? [])
-              .filter(
-                (profile): profile is NonNullable<typeof profile> =>
-                  Boolean(profile),
+              .filter((profile): profile is NonNullable<typeof profile> =>
+                Boolean(profile),
               )
               .map((profile) => (
                 <HostRow

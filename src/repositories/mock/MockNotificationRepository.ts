@@ -80,16 +80,14 @@ export class MockNotificationRepository implements NotificationRepository {
     }
   }
 
-  private async record(
-    input: {
-      type: ConsumerNotificationType;
-      title: string;
-      body: string;
-      target: NotificationTarget;
-      avatarImageKey?: NotificationItem["avatarImageKey"];
-      eventImageKey?: NotificationItem["eventImageKey"];
-    },
-  ): Promise<NotificationItem> {
+  private async record(input: {
+    type: ConsumerNotificationType;
+    title: string;
+    body: string;
+    target: NotificationTarget;
+    avatarImageKey?: NotificationItem["avatarImageKey"];
+    eventImageKey?: NotificationItem["eventImageKey"];
+  }): Promise<NotificationItem> {
     await this.loadState();
     const id = nextNotificationId(this.state.nextSequence);
     const item: NotificationItem = {

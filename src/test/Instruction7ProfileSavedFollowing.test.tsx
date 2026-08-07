@@ -56,9 +56,7 @@ describe("Profile saved/following state", () => {
   });
 
   it("reflects store saved counts and content on the Profile screen", async () => {
-    useDiscoveryStore
-      .getState()
-      .toggleSavedEvent("evt-jozi-run-club");
+    useDiscoveryStore.getState().toggleSavedEvent("evt-jozi-run-club");
 
     const screen = render(
       <QueryClientProvider client={queryClient}>
@@ -94,7 +92,9 @@ describe("Profile saved/following state", () => {
 
     await waitFor(() => {
       expect(
-        useDiscoveryStore.getState().savedEventIds.includes("evt-jozi-run-club"),
+        useDiscoveryStore
+          .getState()
+          .savedEventIds.includes("evt-jozi-run-club"),
       ).toBe(false);
     });
   });

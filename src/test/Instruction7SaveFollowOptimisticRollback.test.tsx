@@ -39,7 +39,9 @@ function Harness() {
         {savedEventIds.includes("evt-jozi-run-club") ? "saved" : "unsaved"}
       </Text>
       <Text testID="followed-state">
-        {followedHostIds.includes("host-club-vibez") ? "followed" : "unfollowed"}
+        {followedHostIds.includes("host-club-vibez")
+          ? "followed"
+          : "unfollowed"}
       </Text>
     </>
   );

@@ -67,9 +67,7 @@ describe("Prototype Controls", () => {
     fireEvent.press(screen.getByTestId("controls-save-follow-failure"));
 
     await waitFor(() => {
-      expect(
-        usePrototypeControlsStore.getState().saveFollowFailure,
-      ).toBe(true);
+      expect(usePrototypeControlsStore.getState().saveFollowFailure).toBe(true);
     });
   });
 
@@ -97,7 +95,9 @@ describe("Prototype Controls", () => {
     fireEvent.press(screen.getByText("Midnight Kinetic Grooves"));
 
     await waitFor(() => {
-      expect(screen.getByTestId("controls-event-status-cancelled")).toBeTruthy();
+      expect(
+        screen.getByTestId("controls-event-status-cancelled"),
+      ).toBeTruthy();
     });
 
     fireEvent.press(screen.getByTestId("controls-event-status-cancelled"));

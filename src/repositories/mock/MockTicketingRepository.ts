@@ -8,9 +8,7 @@ import {
   TicketingStorage,
 } from "../contracts/TicketingStorage";
 import { AsyncStorageTicketingStorage } from "./AsyncStorageTicketingStorage";
-import {
-  NotificationRepository,
-} from "../contracts/NotificationRepository";
+import { NotificationRepository } from "../contracts/NotificationRepository";
 import {
   PaymentAttempt,
   PaymentMethod,

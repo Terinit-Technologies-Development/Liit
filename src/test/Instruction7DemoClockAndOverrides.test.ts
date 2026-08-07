@@ -6,7 +6,10 @@
  * with persisted state.
  */
 
-import { demoNowIso, useDemoClockStore } from "../../src/state/useDemoClockStore";
+import {
+  demoNowIso,
+  useDemoClockStore,
+} from "../../src/state/useDemoClockStore";
 import { usePrototypeOverridesStore } from "../../src/state/usePrototypeOverridesStore";
 import { MockEventRepository } from "../../src/repositories/mock/MockEventRepository";
 import { MockDiscoveryRepository } from "../../src/repositories/mock/MockDiscoveryRepository";

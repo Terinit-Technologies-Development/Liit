@@ -11,8 +11,10 @@ import React from "react";
 import { render, fireEvent, waitFor } from "@testing-library/react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import NotificationsScreen from "../../app/(consumer)/notifications";
-import { MockNotificationRepository } from "../../src/repositories/mock/MockNotificationRepository";
-import { mockNotificationRepository } from "../../src/repositories/mock/MockNotificationRepository";
+import {
+  MockNotificationRepository,
+  mockNotificationRepository,
+} from "../../src/repositories/mock/MockNotificationRepository";
 import { useAppStore } from "../../src/state/useAppStore";
 import { useDemoClockStore } from "../../src/state/useDemoClockStore";
 
@@ -40,9 +42,7 @@ jest.mock("react-native-safe-area-context", () => ({
   useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
 }));
 
-async function listAll(
-  repo: MockNotificationRepository,
-): Promise<any[]> {
+async function listAll(repo: MockNotificationRepository): Promise<any[]> {
   return repo.list("all", { latencyMs: 0 });
 }
 
@@ -159,9 +159,7 @@ describe("Notification deep-link navigation", () => {
     fireEvent.press(screen.getByText("Booking Confirmed! 🎉"));
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith(
-        expect.stringContaining("tickets"),
-      );
+      expect(mockPush).toHaveBeenCalledWith(expect.stringContaining("tickets"));
     });
   });
 
@@ -198,9 +196,7 @@ describe("Notification deep-link navigation", () => {
     );
 
     await waitFor(() => {
-      expect(
-        screen.getByText("Groove Co. posted an update"),
-      ).toBeTruthy();
+      expect(screen.getByText("Groove Co. posted an update")).toBeTruthy();
     });
 
     fireEvent.press(screen.getByText("Groove Co. posted an update"));
@@ -223,9 +219,7 @@ describe("Notification deep-link navigation", () => {
     );
 
     await waitFor(() => {
-      expect(
-        screen.getByText("New message from Club Vibez"),
-      ).toBeTruthy();
+      expect(screen.getByText("New message from Club Vibez")).toBeTruthy();
     });
 
     fireEvent.press(screen.getByText("New message from Club Vibez"));

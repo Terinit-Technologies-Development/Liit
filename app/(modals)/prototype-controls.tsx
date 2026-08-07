@@ -20,7 +20,10 @@ import { useSocialStore } from "../../src/state/useSocialStore";
 import { useCreatorStore } from "../../src/state/useCreatorStore";
 import { usePrototypeControlsStore } from "../../src/state/usePrototypeControlsStore";
 import { usePrototypeOverridesStore } from "../../src/state/usePrototypeOverridesStore";
-import { demoNowIso, useDemoClockStore } from "../../src/state/useDemoClockStore";
+import {
+  demoNowIso,
+  useDemoClockStore,
+} from "../../src/state/useDemoClockStore";
 import { mockNotificationRepository } from "../../src/repositories/mock/MockNotificationRepository";
 import { mockTicketingRepository } from "../../src/repositories/mock/MockTicketingRepository";
 import { mockSocialRepository } from "../../src/repositories/mock/MockSocialRepository";
@@ -77,11 +80,8 @@ export default function PrototypeControlsScreen() {
     setCommentFailure,
   } = usePrototypeControlsStore();
 
-  const {
-    eventStatusOverrides,
-    setEventStatusOverride,
-    clearAllOverrides,
-  } = usePrototypeOverridesStore();
+  const { eventStatusOverrides, setEventStatusOverride, clearAllOverrides } =
+    usePrototypeOverridesStore();
 
   const { offsetMs, advanceClock, resetClock } = useDemoClockStore();
 
@@ -278,7 +278,9 @@ export default function PrototypeControlsScreen() {
                   <Chip
                     label="Clear"
                     selected={!eventStatusOverrides[overrideEventId]}
-                    onPress={() => setEventStatusOverride(overrideEventId, null)}
+                    onPress={() =>
+                      setEventStatusOverride(overrideEventId, null)
+                    }
                   />
                 </Row>
               </Stack>
@@ -303,7 +305,9 @@ export default function PrototypeControlsScreen() {
                   key={ticket.id}
                   label={`${ticket.eventSnapshot.title} (${ticket.status})`}
                   selected={ticketId === ticket.id}
-                  onPress={() => setTicketId(ticketId === ticket.id ? null : ticket.id)}
+                  onPress={() =>
+                    setTicketId(ticketId === ticket.id ? null : ticket.id)
+                  }
                 />
               ))}
             </Row>
@@ -328,12 +332,10 @@ export default function PrototypeControlsScreen() {
           <Stack gap="sm">
             <AppText variant="subheading">Demo Clock</AppText>
             <AppText variant="caption" color={theme.colors.textSecondary}>
-              Advances the fixed prototype clock. Wallet upcoming/past,
-              ticket validity and event statuses are classified against it.
+              Advances the fixed prototype clock. Wallet upcoming/past, ticket
+              validity and event statuses are classified against it.
             </AppText>
-            <AppText variant="body">
-              Demo now: {demoNowIso(offsetMs)}
-            </AppText>
+            <AppText variant="body">Demo now: {demoNowIso(offsetMs)}</AppText>
             <Row gap="xs" wrap>
               <Chip
                 label="+1 hour"

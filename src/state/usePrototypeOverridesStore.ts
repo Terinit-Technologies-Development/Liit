@@ -3,10 +3,7 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Event, EventStatus } from "../domain/events";
 
-type EventStatusOverride = Exclude<
-  EventStatus,
-  "draft" | "published"
->;
+type EventStatusOverride = Exclude<EventStatus, "draft" | "published">;
 
 interface PrototypeOverridesState {
   eventStatusOverrides: Record<string, EventStatusOverride>;

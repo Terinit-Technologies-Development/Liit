@@ -22,8 +22,7 @@ export const useDemoClockStore = create<DemoClockState>()(
     (set) => ({
       offsetMs: 0,
       hasHydrated: false,
-      advanceClock: (ms) =>
-        set((state) => ({ offsetMs: state.offsetMs + ms })),
+      advanceClock: (ms) => set((state) => ({ offsetMs: state.offsetMs + ms })),
       resetClock: () => set({ offsetMs: 0 }),
       setHasHydrated: (hasHydrated) => set({ hasHydrated }),
     }),

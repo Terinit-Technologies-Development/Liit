@@ -58,7 +58,9 @@ export default function FollowingScreen() {
               host={item.host}
               followed
               onToggleFollow={() => toggleFollow(item.host.id)}
-              onPress={() => router.push(routeBuilders.hostProfile(item.host.id))}
+              onPress={() =>
+                router.push(routeBuilders.hostProfile(item.host.id))
+              }
             />
           </View>
         )}
