@@ -139,9 +139,14 @@ export default function EventDetailScreen() {
 
   const displayStatus = getEventDisplayStatus(detail.event, nowIso);
 
+  // Session-created bookings (not seed history) determine the "already
+  // registered / you have tickets" conversion state so the accepted
+  // checkout entry flows for seeded wallet content remain unchanged.
   const ownedTickets = (walletQuery.data ?? []).filter(
     (ticket) =>
-      ticket.eventId === detail.event.id && ticket.status !== "cancelled",
+      ticket.eventId === detail.event.id &&
+      ticket.status !== "cancelled" &&
+      !ticket.id.startsWith("ticket-liit-seed-"),
   );
   const hasTicket = ownedTickets.length > 0;
   const firstOwnedTicket = ownedTickets[0];
