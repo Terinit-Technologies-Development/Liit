@@ -1,0 +1,69 @@
+appId: com.liit.app
+tags:
+  - instruction-07
+---
+# Instruction 7 — Free Event Registration (J4)
+# UNEXECUTED: Maestro runner and device emulator not available in this environment.
+# This file is structurally valid and targets the correct appId and test IDs.
+
+- launchApp:
+    clearState: true
+
+- startRecording: "artifacts/pr-07/free-registration.mp4"
+
+- runFlow:
+    file: "flows/authenticated-onboarding.yaml"
+
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Explore tab → free event
+- tapOn:
+    id: "tab-explore"
+
+- waitForAnimationToEnd
+
+- scrollUntilVisible:
+    element:
+      text: "Soweto Street Food & Craft Market"
+    direction: DOWN
+
+- tapOn:
+    text: "Soweto Street Food & Craft Market"
+
+- waitForAnimationToEnd
+
+- assertVisible:
+    text: "Register free"
+
+- tapOn:
+    id: "event-primary-action"
+
+- waitForAnimationToEnd
+
+# — Registration confirmation —
+- assertVisible:
+    text: "Register"
+
+- tapOn:
+    id: "checkout-tickets-continue"
+
+- waitForAnimationToEnd:
+    timeout: 5000
+
+- assertVisible:
+    id: "result-headline"
+
+- assertVisible:
+    text: "Registration confirmed!"
+
+# Wallet entry contains the registration pass
+- tapOn:
+    id: "result-go-to-wallet"
+
+- waitForAnimationToEnd
+
+- assertVisible:
+    text: "Soweto Street Food & Craft Market"
+
+- stopRecording

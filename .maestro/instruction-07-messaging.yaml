@@ -1,0 +1,57 @@
+appId: com.liit.app
+tags:
+  - instruction-07
+---
+# Instruction 7 — Social Coordination Messaging (J5)
+# UNEXECUTED: Maestro runner and device emulator not available in this environment.
+# This file is structurally valid and targets the correct appId and test IDs.
+
+- launchApp:
+    clearState: true
+
+- startRecording: "artifacts/pr-07/messaging.mp4"
+
+- runFlow:
+    file: "flows/authenticated-onboarding.yaml"
+
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Inbox → inquiry conversation (host reply simulation + booking offer)
+- tapOn:
+    id: "feed-open-inbox"
+
+- waitForAnimationToEnd
+
+- tapOn:
+    id: "inbox-tab-inquiry"
+
+- waitForAnimationToEnd
+
+- tapOn:
+    text: "Club Vibez JHB"
+
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "inquiry-thread-screen"
+
+# Send a local message; delivered state renders
+- tapOn:
+    id: "inquiry-message-composer"
+
+- inputText: "Hi! Is the VIP table still available?"
+
+- tapOn:
+    id: "composer-send-button"
+
+- waitForAnimationToEnd
+
+- assertVisible:
+    text: "Is the VIP table still available?"
+
+# Booking offer available in the inquiry context
+- assertVisible:
+    id: "inquiry-booking-link-card"
+
+- stopRecording

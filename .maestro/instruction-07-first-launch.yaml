@@ -1,0 +1,37 @@
+appId: com.liit.app
+tags:
+  - instruction-07
+---
+# Instruction 7 — First Launch Journey (J1)
+# UNEXECUTED: Maestro runner and device emulator not available in this environment.
+# This file is structurally valid and targets the correct appId and test IDs.
+
+- launchApp:
+    clearState: true
+
+- startRecording: "artifacts/pr-07/first-launch.mp4"
+
+# Fresh install replays onboarding (welcome → location → interests → sign-in)
+- runFlow:
+    file: "flows/authenticated-onboarding.yaml"
+
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Returning session state: Feed is reached and persists after restart
+- assertVisible:
+    text: "Live & Recent Pulse"
+
+- stopRecording
+
+# Relaunch WITHOUT clearState: onboarding must NOT replay; Feed opens directly
+- launchApp
+
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- assertNotVisible:
+    text: "Get Started"
+
+- assertVisible:
+    text: "Live & Recent Pulse"

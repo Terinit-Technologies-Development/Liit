@@ -1,0 +1,88 @@
+appId: com.liit.app
+tags:
+  - instruction-07
+---
+# Instruction 7 — Paid Ticket Booking Simulation (J3)
+# UNEXECUTED: Maestro runner and device emulator not available in this environment.
+# This file is structurally valid and targets the correct appId and test IDs.
+
+- launchApp:
+    clearState: true
+
+- startRecording: "artifacts/pr-07/paid-booking.mp4"
+
+- runFlow:
+    file: "flows/authenticated-onboarding.yaml"
+
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Feed → Event Detail for Midnight Kinetic Grooves
+- tapOn:
+    text: "Midnight Kinetic Grooves"
+
+- waitForAnimationToEnd
+
+- assertVisible:
+    text: "Choose tickets"
+
+- tapOn:
+    id: "event-primary-action"
+
+- waitForAnimationToEnd
+
+# — Ticket selection (quantity limits + order summary) —
+- assertVisible:
+    text: "Select Tickets"
+
+- tapOn:
+    id: "ticket-tier-tier-general-increment"
+
+- assertVisible:
+    id: "checkout-order-summary"
+
+- tapOn:
+    id: "checkout-tickets-continue"
+
+- waitForAnimationToEnd
+
+# — Payment (duplicate submission guarded by atomic attempt) —
+- assertVisible:
+    id: "checkout-payment-pay"
+
+- tapOn:
+    id: "checkout-payment-pay"
+
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# — Processing passes through visibly, then success —
+- assertVisible:
+    id: "result-headline"
+
+- assertVisible:
+    text: "Tickets confirmed!"
+
+# Paid success created a wallet ticket and a notification
+- tapOn:
+    id: "result-go-to-wallet"
+
+- waitForAnimationToEnd
+
+- assertVisible:
+    text: "Midnight Kinetic Grooves"
+
+# Notification auto-created for the booking
+- back
+
+- waitForAnimationToEnd
+
+- tapOn:
+    id: "feed-open-notifications"
+
+- waitForAnimationToEnd
+
+- assertVisible:
+    text: "Tickets confirmed"
+
+- stopRecording
