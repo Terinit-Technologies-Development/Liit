@@ -16,8 +16,16 @@ import { ROUTES } from "../../src/navigation/routes";
 import {
   usePublishEventMutation,
   useCreatorEvent,
+  useCreatorProfile,
 } from "../../src/hooks/creator/useCreatorQueries";
 import { PublishSimulationState } from "../../src/domain/creator";
+import { toJohannesburgIso } from "../../src/utils/johannesburg";
+
+interface ChecklistItem {
+  id: string;
+  label: string;
+  valid: boolean;
+}
 
 export default function PublishConfirmationModal() {
   const router = useRouter();
@@ -25,39 +33,121 @@ export default function PublishConfirmationModal() {
   const eventId = params.eventId || "evt-midnight-grooves";
 
   const { data: projection } = useCreatorEvent(eventId);
+  const { data: profile } = useCreatorProfile();
   const publishMutation = usePublishEventMutation();
 
   const [state, setState] = useState<PublishSimulationState>("review");
   const [forceFail, setForceFail] = useState(false);
 
-  const eventTitle = projection?.event.title || "Midnight Kinetic Grooves";
+  const draft = projection?.eventDraft;
+  const event = projection?.event;
+  const eventTitle = event?.title || "Untitled Draft";
 
-  const checklistItems = [
-    { label: "Media & Cover Poster Selected", valid: true },
-    { label: "Title & Detailed Description", valid: true },
-    { label: "SAST Event Schedule Configured", valid: true },
-    { label: "Venue Location Confirmed", valid: true },
-    { label: "Ticket Tiers & Capacity Coherent", valid: true },
-    { label: "Creator Identity Verified", valid: true },
-  ];
+  // Checklist validity is derived from the ACTUAL draft, never hardcoded.
+  const checklistItems: ChecklistItem[] = (() => {
+    if (!draft) {
+      return [
+        { id: "media", label: "Media & Cover Poster Selected", valid: false },
+        { id: "title", label: "Title & Detailed Description", valid: false },
+        {
+          id: "schedule",
+          label: "SAST Event Schedule Configured",
+          valid: false,
+        },
+        { id: "venue", label: "Venue Location Confirmed", valid: false },
+        {
+          id: "tiers",
+          label: "Ticket Tiers & Capacity Coherent",
+          valid: false,
+        },
+        { id: "verified", label: "Creator Identity Verified", valid: false },
+      ];
+    }
 
-  const handleConfirmPublish = () => {
+    const scheduleCoherent =
+      !!draft.startDate &&
+      !!draft.startTime &&
+      !!draft.endDate &&
+      !!draft.endTime &&
+      new Date(
+        toJohannesburgIso(draft.startDate, draft.startTime || "00:00"),
+      ).getTime() <
+        new Date(
+          toJohannesburgIso(draft.endDate, draft.endTime || "00:00"),
+        ).getTime();
+
+    const tiersCoherent =
+      draft.tiers.length > 0 &&
+      draft.tiers.every(
+        (t) =>
+          t.capacity > 0 &&
+          t.maxPerOrder > 0 &&
+          t.maxPerOrder <= t.capacity &&
+          (draft.isFree ? t.priceMinor === 0 : t.priceMinor >= 0),
+      );
+
+    return [
+      {
+        id: "media",
+        label: "Media & Cover Poster Selected",
+        valid: draft.posterUploaded,
+      },
+      {
+        id: "title",
+        label: "Title & Detailed Description",
+        valid: !!draft.title.trim() && !!draft.description.trim(),
+      },
+      {
+        id: "schedule",
+        label: "SAST Event Schedule Configured",
+        valid: scheduleCoherent,
+      },
+      {
+        id: "venue",
+        label: "Venue Location Confirmed",
+        valid: !!draft.venueName.trim(),
+      },
+      {
+        id: "tiers",
+        label: "Ticket Tiers & Capacity Coherent",
+        valid: tiersCoherent,
+      },
+      {
+        id: "verified",
+        label: "Creator Identity Verified",
+        valid: profile?.isVerified === true,
+      },
+    ];
+  })();
+
+  const allChecklistValid = checklistItems.every((item) => item.valid);
+  const pendingChecklist = checklistItems.filter((item) => !item.valid);
+
+  /**
+   * Deterministic publish simulation. `shouldFail` is an explicit parameter —
+   * Retry never relies on a stale closure around setForceFail.
+   */
+  const publishEvent = (shouldFail = forceFail) => {
     setState("processing");
 
-    setTimeout(() => {
-      if (forceFail) {
+    if (shouldFail) {
+      setState("failure");
+      return;
+    }
+
+    publishMutation.mutate(eventId, {
+      onSuccess: () => {
+        setState("success");
+      },
+      onError: () => {
         setState("failure");
-      } else {
-        publishMutation.mutate(eventId, {
-          onSuccess: () => {
-            setState("success");
-          },
-          onError: () => {
-            setState("failure");
-          },
-        });
-      }
-    }, 1200);
+      },
+    });
+  };
+
+  const handleConfirmPublish = () => {
+    if (!allChecklistValid) return;
+    publishEvent();
   };
 
   return (
@@ -91,9 +181,17 @@ export default function PublishConfirmationModal() {
               >
                 Publishing Readiness Checklist:
               </AppText>
-              {checklistItems.map((item, idx) => (
-                <View key={idx} style={styles.checkRow}>
-                  <Icon name="check" size="xs" color={theme.colors.success} />
+              {checklistItems.map((item) => (
+                <View key={item.id} style={styles.checkRow}>
+                  <Icon
+                    name={item.valid ? "check" : "close"}
+                    size="xs"
+                    color={
+                      item.valid
+                        ? theme.colors.success
+                        : theme.colors.destructive
+                    }
+                  />
                   <AppText
                     variant="caption"
                     color="textPrimary"
@@ -104,6 +202,21 @@ export default function PublishConfirmationModal() {
                 </View>
               ))}
             </View>
+
+            {!allChecklistValid && (
+              <View style={styles.invalidNotice}>
+                <Icon name="warning" size="xs" color={theme.colors.warning} />
+                <AppText
+                  variant="caption"
+                  color="textPrimary"
+                  style={{ flex: 1 }}
+                >
+                  Publishing is disabled — {pendingChecklist.length} checklist
+                  item(s) incomplete:{" "}
+                  {pendingChecklist.map((i) => i.label).join(", ")}.
+                </AppText>
+              </View>
+            )}
 
             {/* Prototype simulation disclaimer */}
             <View style={styles.disclosureCard}>
@@ -117,6 +230,7 @@ export default function PublishConfirmationModal() {
             <Pressable
               style={styles.failToggleRow}
               onPress={() => setForceFail(!forceFail)}
+              testID="publish-simulate-failure-toggle"
             >
               <View
                 style={[styles.checkbox, forceFail && styles.checkboxActive]}
@@ -130,10 +244,16 @@ export default function PublishConfirmationModal() {
 
             <View style={styles.actionRow}>
               <AppButton
-                label="Confirm & Publish Live"
+                label={
+                  allChecklistValid
+                    ? "Confirm & Publish Live"
+                    : "Publishing Unavailable"
+                }
                 variant="primary"
+                disabled={!allChecklistValid}
                 onPress={handleConfirmPublish}
                 style={{ flex: 1 }}
+                testID="confirm-publish-button"
               />
               <AppButton
                 label="Cancel"
@@ -161,8 +281,7 @@ export default function PublishConfirmationModal() {
               color="textMuted"
               style={{ marginTop: 4, textAlign: "center" }}
             >
-              Verifying SAST schedule &amp; indexation across LIIT discovery
-              services.
+              Verifying SAST schedule &amp; Creator-side status simulation.
             </AppText>
           </View>
         )}
@@ -178,15 +297,16 @@ export default function PublishConfirmationModal() {
               color="textPrimary"
               style={{ marginTop: theme.spacing.md }}
             >
-              Event Published Successfully!
+              Event Publish Simulated
             </AppText>
             <AppText
               variant="body"
               color="textMuted"
               style={{ marginTop: 6, textAlign: "center" }}
             >
-              &quot;{eventTitle}&quot; is now live and accessible in LIIT
-              Consumer Discovery.
+              LIIT PROTOTYPE — the Creator-side event status has been simulated
+              as Published. Consumer marketplace propagation is deferred to
+              Instruction 8.
             </AppText>
 
             <View style={styles.successActions}>
@@ -239,8 +359,9 @@ export default function PublishConfirmationModal() {
                 variant="primary"
                 onPress={() => {
                   setForceFail(false);
-                  handleConfirmPublish();
+                  publishEvent(false);
                 }}
+                testID="retry-publish-button"
               />
               <AppButton
                 label="Return to Edit Form"
@@ -277,6 +398,17 @@ const styles = StyleSheet.create({
     gap: theme.spacing.xs,
   },
   checkText: { flex: 1 },
+  invalidNotice: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 170, 0, 0.1)",
+    padding: theme.spacing.md,
+    borderRadius: theme.radii.md,
+    marginBottom: theme.spacing.md,
+    gap: theme.spacing.xs,
+    borderWidth: 1,
+    borderColor: theme.colors.warning,
+  },
   disclosureCard: {
     flexDirection: "row",
     alignItems: "center",

@@ -47,7 +47,7 @@ export default function EventOpsHub() {
           title="Event Operations Unavailable"
           description={`Unable to load operations for event ID "${eventId}".`}
           actionLabel="Return to Events"
-          onAction={() => router.replace(routeBuilders.events() as any)}
+          onAction={() => router.replace(routeBuilders.events())}
         />
       </Screen>
     );
@@ -67,42 +67,37 @@ export default function EventOpsHub() {
       title: "Analytics & Performance",
       subtitle: "Page views, sales progression & conversion",
       icon: "dashboard" as const,
-      onPress: () =>
-        router.push(routeBuilders.creatorEventAnalytics(eventId) as any),
+      onPress: () => router.push(routeBuilders.creatorEventAnalytics(eventId)),
     },
     {
       title: "Guest Roster & Check-In",
       subtitle: `${checkedInCount} checked in • Roster & CSV export`,
       icon: "tickets" as const,
-      onPress: () =>
-        router.push(routeBuilders.creatorEventGuests(eventId) as any),
+      onPress: () => router.push(routeBuilders.creatorEventGuests(eventId)),
     },
     {
       title: "Content & Announcements",
       subtitle: "Set times, pinned posts & story updates",
       icon: "feed" as const,
-      onPress: () =>
-        router.push(routeBuilders.creatorEventContent(eventId) as any),
+      onPress: () => router.push(routeBuilders.creatorEventContent(eventId)),
     },
     {
       title: "Edit Event & Tiers",
       subtitle: "Schedule, venue details & pricing tiers",
       icon: "create" as const,
-      onPress: () =>
-        router.push(routeBuilders.creatorEventEdit(eventId) as any),
+      onPress: () => router.push(routeBuilders.creatorEventEdit(eventId)),
     },
     {
       title: "Preview Event (Consumer Mode)",
       subtitle: "Inspect exact layout attendees see",
       icon: "explore" as const,
-      onPress: () =>
-        router.push(routeBuilders.creatorEventPreview(eventId) as any),
+      onPress: () => router.push(routeBuilders.creatorEventPreview(eventId)),
     },
     {
       title: "Event Notifications",
       subtitle: "Ticket sale alerts & attendee messages",
       icon: "bell" as const,
-      onPress: () => router.push(routeBuilders.creatorNotifications() as any),
+      onPress: () => router.push(routeBuilders.creatorNotifications()),
     },
   ];
 

@@ -112,7 +112,7 @@ export default function CreatorActivation() {
 
     saveDraftMutation.mutate(draft, {
       onSuccess: () => {
-        router.push(routeBuilders.creatorVerification() as any);
+        router.push(routeBuilders.creatorVerification());
       },
     });
   };

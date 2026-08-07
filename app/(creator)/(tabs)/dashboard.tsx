@@ -6,7 +6,7 @@ import {
   RefreshControl,
   Pressable,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, Href } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { Screen } from "../../../src/components/ui/Screen";
 import { AppHeader } from "../../../src/components/navigation/AppHeader";
@@ -28,7 +28,7 @@ import {
   CreatorStatCard,
   PayoutSummaryCard,
 } from "../../../src/components/creator";
-import { routeBuilders, ROUTES } from "../../../src/navigation/routes";
+import { routeBuilders } from "../../../src/navigation/routes";
 import { formatCurrency } from "../../../src/utils/format";
 import { EmptyState } from "../../../src/components/feedback/EmptyState";
 
@@ -38,8 +38,8 @@ export default function CreatorDashboard() {
 
   const [period, setPeriod] = useState<"30d" | "7d" | "all">("30d");
 
-  const { data: profile, isLoading: isProfileLoading } = useCreatorProfile();
-  const { data: stats, isLoading: isStatsLoading } = useCreatorStats(period);
+  const { data: profile } = useCreatorProfile();
+  const { data: stats } = useCreatorStats(period);
   const { data: activeEvents } = useActiveEventProgress();
   const { data: alerts } = usePriorityAlerts();
   const { data: payouts } = usePayoutsOverview();
@@ -57,8 +57,6 @@ export default function CreatorDashboard() {
     setIsRefreshing(false);
   };
 
-  const isLoading = isProfileLoading || isStatsLoading;
-
   return (
     <Screen style={styles.container} testID="creator-dashboard-screen">
       <AppHeader
@@ -67,9 +65,7 @@ export default function CreatorDashboard() {
         rightElement={
           <Pressable
             style={styles.iconBtn}
-            onPress={() =>
-              router.push(routeBuilders.creatorNotifications() as any)
-            }
+            onPress={() => router.push(routeBuilders.creatorNotifications())}
             hitSlop={8}
             accessibilityLabel="Notifications"
           >
@@ -121,7 +117,7 @@ export default function CreatorDashboard() {
           <AppButton
             label="+ Create New Event"
             variant="primary"
-            onPress={() => router.push(ROUTES.creator.create as any)}
+            onPress={() => router.push(routeBuilders.creatorCreate())}
             style={{ marginTop: theme.spacing.md }}
           />
         </View>
@@ -140,7 +136,7 @@ export default function CreatorDashboard() {
                 ]}
                 onPress={() => {
                   if (alert.targetRoute) {
-                    router.push(alert.targetRoute as any);
+                    router.push(alert.targetRoute as Href);
                   }
                 }}
               >
@@ -222,9 +218,7 @@ export default function CreatorDashboard() {
             <AppText variant="heading" color="textPrimary">
               Active Events Sales Progress
             </AppText>
-            <Pressable
-              onPress={() => router.push(ROUTES.creator.events as any)}
-            >
+            <Pressable onPress={() => router.push(routeBuilders.events())}>
               <AppText variant="caption" color="accentStart">
                 View All →
               </AppText>
@@ -242,9 +236,7 @@ export default function CreatorDashboard() {
                   key={evt.eventId}
                   style={styles.activeEventCard}
                   onPress={() =>
-                    router.push(
-                      routeBuilders.creatorEventOpsHub(evt.eventId) as any,
-                    )
+                    router.push(routeBuilders.creatorEventOpsHub(evt.eventId))
                   }
                 >
                   <View style={styles.eventTitleRow}>
@@ -301,7 +293,7 @@ export default function CreatorDashboard() {
                 Payouts Overview
               </AppText>
               <Pressable
-                onPress={() => router.push(ROUTES.creator.payouts as any)}
+                onPress={() => router.push(routeBuilders.creatorPayouts())}
               >
                 <AppText variant="caption" color="accentStart">
                   Full Payout History →

@@ -8,6 +8,7 @@ import {
   PayoutSummary,
   PayoutsOverview,
   CreatorContentPost,
+  CreatorContentDraft,
   EventAnalytics,
   CreatorGuest,
   CreatorNotification,
@@ -25,7 +26,7 @@ export interface CreatorRepository {
   getPayoutsOverview(): Promise<PayoutsOverview>;
   getPayoutHistory(): Promise<PayoutSummary[]>;
   getContentPosts(eventId?: string): Promise<CreatorContentPost[]>;
-  getEventAnalytics(eventId: string): Promise<EventAnalytics>;
+  getEventAnalytics(eventId: string): Promise<EventAnalytics | null>;
   getEventGuests(
     eventId: string,
     filter?: string,
@@ -49,4 +50,12 @@ export interface CreatorRepository {
   markCreatorNotificationRead(notificationId: string): Promise<void>;
   markAllCreatorNotificationsRead(): Promise<void>;
   toggleGuestCheckIn(eventId: string, guestId: string): Promise<CreatorGuest>;
+  createContentPost(draft: CreatorContentDraft): Promise<CreatorContentPost>;
+  updateContentPost(
+    postId: string,
+    patch: Partial<CreatorContentPost>,
+  ): Promise<CreatorContentPost>;
+  toggleContentPin(postId: string): Promise<CreatorContentPost>;
+  toggleContentVisibility(postId: string): Promise<CreatorContentPost>;
+  deleteContentPost(postId: string): Promise<void>;
 }

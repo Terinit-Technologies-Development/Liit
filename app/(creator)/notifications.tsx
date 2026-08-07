@@ -1,9 +1,16 @@
 import React, { useState } from "react";
-import { View, StyleSheet, ScrollView, Pressable } from "react-native";
-import { useRouter } from "expo-router";
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  Pressable,
+  ActivityIndicator,
+} from "react-native";
+import { useRouter, Href } from "expo-router";
 import { Screen } from "../../src/components/ui/Screen";
 import { AppHeader } from "../../src/components/navigation/AppHeader";
 import { AppText } from "../../src/components/ui/AppText";
+import { AppButton } from "../../src/components/ui/AppButton";
 import { Chip } from "../../src/components/ui/Chip";
 import { Icon } from "../../src/design-system/icons/Icon";
 import { theme } from "../../src/design-system/theme";
@@ -20,14 +27,19 @@ export default function CreatorNotifications() {
   const router = useRouter();
   const [category, setCategory] = useState("All");
 
-  const { data: notifications } = useCreatorNotifications(category);
+  const {
+    data: notifications,
+    isLoading,
+    isError,
+    refetch,
+  } = useCreatorNotifications(category);
   const markReadMutation = useMarkNotificationReadMutation();
   const markAllReadMutation = useMarkAllNotificationsReadMutation();
 
   const handlePressNotif = (id: string, targetRoute?: string) => {
     markReadMutation.mutate(id);
     if (targetRoute) {
-      router.push(targetRoute as any);
+      router.push(targetRoute as Href);
     }
   };
 
@@ -61,8 +73,31 @@ export default function CreatorNotifications() {
           ))}
         </View>
 
-        {/* Notifications List */}
-        {notifications && notifications.length > 0 ? (
+        {isLoading ? (
+          <View style={styles.stateArea}>
+            <ActivityIndicator color={theme.colors.accentStart} size="large" />
+          </View>
+        ) : isError ? (
+          <View style={styles.stateArea}>
+            <AppText variant="heading" color="textPrimary">
+              Notifications Unavailable
+            </AppText>
+            <AppText
+              variant="caption"
+              color="textMuted"
+              style={{ marginTop: 4, textAlign: "center" }}
+            >
+              Simulated failure while loading notifications. Retry to reload.
+            </AppText>
+            <AppButton
+              label="Retry"
+              variant="primary"
+              onPress={() => refetch()}
+              style={{ marginTop: theme.spacing.md }}
+              testID="notifications-retry-button"
+            />
+          </View>
+        ) : notifications && notifications.length > 0 ? (
           notifications.map((n) => (
             <Pressable
               key={n.id}
@@ -142,6 +177,7 @@ const styles = StyleSheet.create({
     gap: theme.spacing.xs,
     marginBottom: theme.spacing.md,
   },
+  stateArea: { padding: theme.spacing.xxl, alignItems: "center" },
   notifCard: {
     flexDirection: "row",
     backgroundColor: theme.colors.surfaceElevated,

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { mockCreatorRepository } from "../../repositories/mock/MockCreatorRepository";
 import {
   CreatorActivationDraft,
+  CreatorContentDraft,
   CreatorEventProjection,
 } from "../../domain/creator";
 
@@ -28,16 +29,25 @@ export const creatorKeys = {
       : ([...creatorKeys.all, "contentPosts"] as const),
   eventAnalytics: (eventId: string) =>
     [...creatorKeys.all, "eventAnalytics", eventId] as const,
+  /**
+   * Family root for a single Event's guest queries. Every filter/search
+   * variant extends this root so check-in mutations invalidate the family.
+   */
+  eventGuestsRoot: (eventId: string) =>
+    [...creatorKeys.all, "eventGuests", eventId] as const,
   eventGuests: (eventId: string, filter?: string, search?: string) =>
     [
-      ...creatorKeys.all,
-      "eventGuests",
-      eventId,
+      ...creatorKeys.eventGuestsRoot(eventId),
       filter || "all",
       search || "",
     ] as const,
+  /**
+   * Family root for creator notifications. Every category key extends this
+   * root so mark-read mutations invalidate every category cache.
+   */
+  notificationsRoot: () => [...creatorKeys.all, "notifications"] as const,
   notifications: (category?: string) =>
-    [...creatorKeys.all, "notifications", category || "all"] as const,
+    [...creatorKeys.notificationsRoot(), category || "all"] as const,
   verification: () => [...creatorKeys.all, "verification"] as const,
 };
 
@@ -170,6 +180,8 @@ export function useSaveEventDraftMutation() {
     mutationFn: (draft: Partial<CreatorEventProjection>) =>
       mockCreatorRepository.saveEventDraft(draft),
     onSuccess: (data) => {
+      // Invalidate the whole events family (every status-filter variant) plus
+      // the single-event cache.
       queryClient.invalidateQueries({ queryKey: creatorKeys.events() });
       queryClient.invalidateQueries({
         queryKey: creatorKeys.event(data.event.id),
@@ -210,7 +222,9 @@ export function useMarkNotificationReadMutation() {
     mutationFn: (id: string) =>
       mockCreatorRepository.markCreatorNotificationRead(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: creatorKeys.notifications() });
+      queryClient.invalidateQueries({
+        queryKey: creatorKeys.notificationsRoot(),
+      });
     },
   });
 }
@@ -220,7 +234,9 @@ export function useMarkAllNotificationsReadMutation() {
   return useMutation({
     mutationFn: () => mockCreatorRepository.markAllCreatorNotificationsRead(),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: creatorKeys.notifications() });
+      queryClient.invalidateQueries({
+        queryKey: creatorKeys.notificationsRoot(),
+      });
     },
   });
 }
@@ -231,11 +247,89 @@ export function useToggleGuestCheckInMutation() {
     mutationFn: ({ eventId, guestId }: { eventId: string; guestId: string }) =>
       mockCreatorRepository.toggleGuestCheckIn(eventId, guestId),
     onSuccess: (_, { eventId }) => {
+      // Invalidate every filter/search variant for this Event.
       queryClient.invalidateQueries({
-        queryKey: creatorKeys.eventGuests(eventId),
+        queryKey: creatorKeys.eventGuestsRoot(eventId),
       });
       queryClient.invalidateQueries({
         queryKey: creatorKeys.eventAnalytics(eventId),
+      });
+    },
+  });
+}
+
+// --- Content mutations ---
+
+export function useCreateContentPostMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (draft: CreatorContentDraft) =>
+      mockCreatorRepository.createContentPost(draft),
+    onSuccess: (post) => {
+      queryClient.invalidateQueries({
+        queryKey: creatorKeys.contentPosts(post.eventId),
+      });
+      queryClient.invalidateQueries({
+        queryKey: creatorKeys.contentPosts(),
+      });
+      queryClient.invalidateQueries({ queryKey: creatorKeys.events() });
+    },
+  });
+}
+
+export function useUpdateContentPostMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      postId,
+      patch,
+    }: {
+      postId: string;
+      patch: Partial<import("../../domain/creator").CreatorContentPost>;
+    }) => mockCreatorRepository.updateContentPost(postId, patch),
+    onSuccess: (post) => {
+      queryClient.invalidateQueries({
+        queryKey: creatorKeys.contentPosts(post.eventId),
+      });
+    },
+  });
+}
+
+export function useToggleContentPinMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (postId: string) =>
+      mockCreatorRepository.toggleContentPin(postId),
+    onSuccess: (post) => {
+      queryClient.invalidateQueries({
+        queryKey: creatorKeys.contentPosts(post.eventId),
+      });
+      queryClient.invalidateQueries({ queryKey: creatorKeys.events() });
+    },
+  });
+}
+
+export function useToggleContentVisibilityMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (postId: string) =>
+      mockCreatorRepository.toggleContentVisibility(postId),
+    onSuccess: (post) => {
+      queryClient.invalidateQueries({
+        queryKey: creatorKeys.contentPosts(post.eventId),
+      });
+    },
+  });
+}
+
+export function useDeleteContentPostMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (postId: string) =>
+      mockCreatorRepository.deleteContentPost(postId),
+    onSuccess: (_, postId) => {
+      queryClient.invalidateQueries({
+        queryKey: creatorKeys.contentPosts(),
       });
     },
   });

@@ -127,10 +127,7 @@ export interface CheckoutProcessingRouteParams {
 }
 
 export type CheckoutResultKind =
-  | "paid_success"
-  | "free_success"
-  | "declined"
-  | "network_error";
+  "paid_success" | "free_success" | "declined" | "network_error";
 
 export interface CheckoutResultRouteParams {
   eventId: string;
@@ -306,6 +303,24 @@ export const routeBuilders = {
   },
 
   // --- Creator Route Builders ---
+
+  creatorDashboard() {
+    return {
+      pathname: ROUTES.creator.dashboard,
+    } as const;
+  },
+
+  creatorCreate() {
+    return {
+      pathname: ROUTES.creator.create,
+    } as const;
+  },
+
+  creatorProfile() {
+    return {
+      pathname: ROUTES.creator.profile,
+    } as const;
+  },
 
   events() {
     return {

@@ -19,6 +19,7 @@ import { theme } from "../../../../src/design-system/theme";
 import {
   useEventGuests,
   useToggleGuestCheckInMutation,
+  useCreatorEvent,
 } from "../../../../src/hooks/creator/useCreatorQueries";
 import { EmptyState } from "../../../../src/components/feedback/EmptyState";
 
@@ -31,8 +32,19 @@ export default function EventGuestsScreen() {
   const [filter, setFilter] = useState("All");
   const [search, setSearch] = useState("");
 
-  const { data: guests, isLoading } = useEventGuests(eventId, filter, search);
+  const {
+    data: guests,
+    isLoading,
+    isError,
+    refetch,
+  } = useEventGuests(eventId, filter, search);
+  const { data: projection, isLoading: isEventLoading } =
+    useCreatorEvent(eventId);
   const toggleCheckInMutation = useToggleGuestCheckInMutation();
+
+  // Capture "now" once via a lazy initializer so the not-started comparison
+  // stays pure during render.
+  const [nowMs] = useState(() => Date.now());
 
   const handleToggleCheckIn = (guestId: string) => {
     toggleCheckInMutation.mutate({ eventId, guestId });
@@ -44,6 +56,10 @@ export default function EventGuestsScreen() {
       "LIIT PROTOTYPE — Simulated CSV export of attendee roster completed. No real file exported to disk.",
     );
   };
+
+  const notStarted =
+    projection &&
+    new Date(projection.event.occurrence.startTime).getTime() > nowMs;
 
   return (
     <Screen style={styles.container} testID="creator-guests-screen">
@@ -64,125 +80,166 @@ export default function EventGuestsScreen() {
       />
 
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Search Bar */}
-        <View style={styles.searchSection}>
-          <TextField
-            placeholder="Search guest name or reference (e.g. LIIT-REF-9901)..."
-            value={search}
-            onChangeText={setSearch}
-          />
-        </View>
-
-        {/* Filter Chips */}
-        <View style={styles.chipRow}>
-          {FILTER_CHIPS.map((chip) => (
-            <Chip
-              key={chip}
-              label={chip}
-              selected={filter === chip}
-              onPress={() => setFilter(chip)}
-            />
-          ))}
-        </View>
-
-        {/* Roster Items */}
-        {isLoading ? (
+        {isLoading || isEventLoading ? (
           <View style={styles.loadingArea}>
             <ActivityIndicator color={theme.colors.accentStart} size="large" />
           </View>
-        ) : guests && guests.length > 0 ? (
-          guests.map((guest) => {
-            const isCheckedIn = guest.checkInStatus === "checked_in";
-            return (
-              <View key={guest.id} style={styles.guestCard}>
-                <View style={styles.guestMain}>
-                  <View style={styles.avatarCircle}>
-                    <AppText variant="label" color="accentStart">
-                      {guest.displayName.charAt(0)}
-                    </AppText>
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <View
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        gap: 6,
-                      }}
-                    >
-                      <AppText variant="label" color="textPrimary">
-                        {guest.displayName}
-                      </AppText>
-                      <View
-                        style={[
-                          styles.statusBadge,
-                          guest.registrationStatus === "confirmed"
-                            ? styles.badgeConfirmed
-                            : guest.registrationStatus === "pending"
-                              ? styles.badgePending
-                              : styles.badgeCancelled,
-                        ]}
-                      >
-                        <AppText variant="caption" style={styles.badgeText}>
-                          {guest.registrationStatus.toUpperCase()}
+        ) : isError ? (
+          <View style={styles.stateArea}>
+            <AppText variant="heading" color="textPrimary">
+              Guest Roster Unavailable
+            </AppText>
+            <AppText
+              variant="caption"
+              color="textMuted"
+              style={{ marginTop: 4, textAlign: "center" }}
+            >
+              Simulated failure while loading the roster. Retry to reload.
+            </AppText>
+            <AppButton
+              label="Retry"
+              variant="primary"
+              onPress={() => refetch()}
+              style={{ marginTop: theme.spacing.md }}
+              testID="guests-retry-button"
+            />
+          </View>
+        ) : !projection ? (
+          <EmptyState
+            title="Event Not Found"
+            description={`No Event exists for ID "${eventId}". Guest rosters are only available for real Events.`}
+            icon="warning"
+          />
+        ) : notStarted ? (
+          <EmptyState
+            title="Event Has Not Started"
+            description={`"${projection.event.title}" has not started yet — no attendee check-ins can occur.`}
+            icon="calendar"
+          />
+        ) : (
+          <>
+            {/* Search Bar */}
+            <View style={styles.searchSection}>
+              <TextField
+                placeholder="Search guest name or reference (e.g. LIIT-REF-9901)..."
+                value={search}
+                onChangeText={setSearch}
+              />
+            </View>
+
+            {/* Filter Chips */}
+            <View style={styles.chipRow}>
+              {FILTER_CHIPS.map((chip) => (
+                <Chip
+                  key={chip}
+                  label={chip}
+                  selected={filter === chip}
+                  onPress={() => setFilter(chip)}
+                />
+              ))}
+            </View>
+
+            {/* Roster Items */}
+            {guests && guests.length > 0 ? (
+              guests.map((guest) => {
+                const isCheckedIn = guest.checkInStatus === "checked_in";
+                return (
+                  <View key={guest.id} style={styles.guestCard}>
+                    <View style={styles.guestMain}>
+                      <View style={styles.avatarCircle}>
+                        <AppText variant="label" color="accentStart">
+                          {guest.displayName.charAt(0)}
                         </AppText>
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                        >
+                          <AppText variant="label" color="textPrimary">
+                            {guest.displayName}
+                          </AppText>
+                          <View
+                            style={[
+                              styles.statusBadge,
+                              guest.registrationStatus === "confirmed"
+                                ? styles.badgeConfirmed
+                                : guest.registrationStatus === "pending"
+                                  ? styles.badgePending
+                                  : styles.badgeCancelled,
+                            ]}
+                          >
+                            <AppText variant="caption" style={styles.badgeText}>
+                              {guest.registrationStatus.toUpperCase()}
+                            </AppText>
+                          </View>
+                        </View>
+
+                        <AppText
+                          variant="caption"
+                          color="textMuted"
+                          style={{ marginTop: 2 }}
+                        >
+                          {guest.ticketType} • Ref: {guest.mockReference}
+                        </AppText>
+
+                        {isCheckedIn && (
+                          <AppText
+                            variant="caption"
+                            color="success"
+                            style={{ marginTop: 2 }}
+                          >
+                            Checked in at {guest.checkInTime || "21:15 SAST"}
+                          </AppText>
+                        )}
                       </View>
                     </View>
 
-                    <AppText
-                      variant="caption"
-                      color="textMuted"
-                      style={{ marginTop: 2 }}
+                    <Pressable
+                      style={[
+                        styles.checkInBtn,
+                        isCheckedIn
+                          ? styles.btnCheckedIn
+                          : styles.btnNotCheckedIn,
+                      ]}
+                      onPress={() => handleToggleCheckIn(guest.id)}
+                      testID={`check-in-${guest.id}`}
                     >
-                      {guest.ticketType} • Ref: {guest.mockReference}
-                    </AppText>
-
-                    {isCheckedIn && (
+                      <Icon
+                        name={isCheckedIn ? "check" : "add"}
+                        size="xs"
+                        color={isCheckedIn ? "#FFF" : theme.colors.textPrimary}
+                      />
                       <AppText
                         variant="caption"
-                        color="success"
-                        style={{ marginTop: 2 }}
+                        style={{
+                          color: isCheckedIn
+                            ? "#FFF"
+                            : theme.colors.textPrimary,
+                          fontWeight: "bold",
+                        }}
                       >
-                        Checked in at {guest.checkInTime || "21:15 SAST"}
+                        {isCheckedIn ? "Checked In" : "Check In"}
                       </AppText>
-                    )}
+                    </Pressable>
                   </View>
-                </View>
-
-                <Pressable
-                  style={[
-                    styles.checkInBtn,
-                    isCheckedIn ? styles.btnCheckedIn : styles.btnNotCheckedIn,
-                  ]}
-                  onPress={() => handleToggleCheckIn(guest.id)}
-                >
-                  <Icon
-                    name={isCheckedIn ? "check" : "add"}
-                    size="xs"
-                    color={isCheckedIn ? "#FFF" : theme.colors.textPrimary}
-                  />
-                  <AppText
-                    variant="caption"
-                    style={{
-                      color: isCheckedIn ? "#FFF" : theme.colors.textPrimary,
-                      fontWeight: "bold",
-                    }}
-                  >
-                    {isCheckedIn ? "Checked In" : "Check In"}
-                  </AppText>
-                </Pressable>
-              </View>
-            );
-          })
-        ) : (
-          <EmptyState
-            title="No Guests Found"
-            description={
-              search
-                ? `No guests match "${search}".`
-                : `No ${filter} guests found for this event.`
-            }
-            icon="tickets"
-          />
+                );
+              })
+            ) : (
+              <EmptyState
+                title="No Guests Found"
+                description={
+                  search
+                    ? `No guests match "${search}".`
+                    : `No ${filter} guests found for this event.`
+                }
+                icon="tickets"
+              />
+            )}
+          </>
         )}
       </ScrollView>
     </Screen>
@@ -201,6 +258,7 @@ const styles = StyleSheet.create({
     marginBottom: theme.spacing.md,
   },
   loadingArea: { padding: theme.spacing.xxl, alignItems: "center" },
+  stateArea: { padding: theme.spacing.xxl, alignItems: "center" },
   guestCard: {
     backgroundColor: theme.colors.surfaceElevated,
     padding: theme.spacing.md,

@@ -50,127 +50,107 @@ describe("InboxScreen & Social Feed Rendered Integration Tests", () => {
     mockSetOptions.mockClear();
   });
 
-  it(
-    "Renders Inbox screen with conversation list and segmented tabs",
-    async () => {
-      const screen = render(
-        <SafeAreaProvider initialMetrics={safeAreaMetrics}>
-          <QueryClientProvider client={queryClient}>
-            <InboxScreen />
-          </QueryClientProvider>
-        </SafeAreaProvider>,
-      );
+  it("Renders Inbox screen with conversation list and segmented tabs", async () => {
+    const screen = render(
+      <SafeAreaProvider initialMetrics={safeAreaMetrics}>
+        <QueryClientProvider client={queryClient}>
+          <InboxScreen />
+        </QueryClientProvider>
+      </SafeAreaProvider>,
+    );
 
-      expect(screen.getByTestId("inbox-screen")).toBeTruthy();
-      expect(screen.getByTestId("inbox-segmented-control")).toBeTruthy();
+    expect(screen.getByTestId("inbox-screen")).toBeTruthy();
+    expect(screen.getByTestId("inbox-segmented-control")).toBeTruthy();
 
-      await waitFor(
-        () => {
-          expect(screen.getByText("Alex Khumalo")).toBeTruthy();
-        },
-        { timeout: 10000 },
-      );
-    },
-    15000,
-  );
+    await waitFor(
+      () => {
+        expect(screen.getByText("Alex Khumalo")).toBeTruthy();
+      },
+      { timeout: 10000 },
+    );
+  }, 15000);
 
-  it(
-    "Switches between Direct and Hosts & Events tabs",
-    async () => {
-      const screen = render(
-        <SafeAreaProvider initialMetrics={safeAreaMetrics}>
-          <QueryClientProvider client={queryClient}>
-            <InboxScreen />
-          </QueryClientProvider>
-        </SafeAreaProvider>,
-      );
+  it("Switches between Direct and Hosts & Events tabs", async () => {
+    const screen = render(
+      <SafeAreaProvider initialMetrics={safeAreaMetrics}>
+        <QueryClientProvider client={queryClient}>
+          <InboxScreen />
+        </QueryClientProvider>
+      </SafeAreaProvider>,
+    );
 
-      await waitFor(
-        () => {
-          expect(screen.getByText("Alex Khumalo")).toBeTruthy();
-        },
-        { timeout: 10000 },
-      );
+    await waitFor(
+      () => {
+        expect(screen.getByText("Alex Khumalo")).toBeTruthy();
+      },
+      { timeout: 10000 },
+    );
 
-      const hostTabBtn = screen.getByText("Hosts & Events");
-      fireEvent.press(hostTabBtn);
+    const hostTabBtn = screen.getByText("Hosts & Events");
+    fireEvent.press(hostTabBtn);
 
-      await waitFor(
-        () => {
-          expect(screen.getByText("Club Vibez JHB")).toBeTruthy();
-        },
-        { timeout: 10000 },
-      );
-    },
-    15000,
-  );
+    await waitFor(
+      () => {
+        expect(screen.getByText("Club Vibez JHB")).toBeTruthy();
+      },
+      { timeout: 10000 },
+    );
+  }, 15000);
 
-  it(
-    "Navigates to direct thread when direct item is tapped",
-    async () => {
-      const screen = render(
-        <SafeAreaProvider initialMetrics={safeAreaMetrics}>
-          <QueryClientProvider client={queryClient}>
-            <InboxScreen />
-          </QueryClientProvider>
-        </SafeAreaProvider>,
-      );
+  it("Navigates to direct thread when direct item is tapped", async () => {
+    const screen = render(
+      <SafeAreaProvider initialMetrics={safeAreaMetrics}>
+        <QueryClientProvider client={queryClient}>
+          <InboxScreen />
+        </QueryClientProvider>
+      </SafeAreaProvider>,
+    );
 
-      await waitFor(
-        () => {
-          expect(screen.getByText("Alex Khumalo")).toBeTruthy();
-        },
-        { timeout: 10000 },
-      );
+    await waitFor(
+      () => {
+        expect(screen.getByText("Alex Khumalo")).toBeTruthy();
+      },
+      { timeout: 10000 },
+    );
 
-      const row = screen.getByTestId("inbox-item-conv-direct-alex");
-      fireEvent.press(row);
+    const row = screen.getByTestId("inbox-item-conv-direct-alex");
+    fireEvent.press(row);
 
-      expect(mockPush).toHaveBeenCalledWith({
-        pathname: "/(consumer)/inbox/direct/[conversationId]",
-        params: { conversationId: "conv-direct-alex" },
-      });
-    },
-    15000,
-  );
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: "/(consumer)/inbox/direct/[conversationId]",
+      params: { conversationId: "conv-direct-alex" },
+    });
+  }, 15000);
 
-  it(
-    "Navigates to new message composer modal when compose button is pressed",
-    async () => {
-      const screen = render(
-        <SafeAreaProvider initialMetrics={safeAreaMetrics}>
-          <QueryClientProvider client={queryClient}>
-            <InboxScreen />
-          </QueryClientProvider>
-        </SafeAreaProvider>,
-      );
+  it("Navigates to new message composer modal when compose button is pressed", async () => {
+    const screen = render(
+      <SafeAreaProvider initialMetrics={safeAreaMetrics}>
+        <QueryClientProvider client={queryClient}>
+          <InboxScreen />
+        </QueryClientProvider>
+      </SafeAreaProvider>,
+    );
 
-      const composeBtn = screen.getByTestId("inbox-compose-button");
-      fireEvent.press(composeBtn);
+    const composeBtn = screen.getByTestId("inbox-compose-button");
+    fireEvent.press(composeBtn);
 
-      expect(mockPush).toHaveBeenCalledWith("/(modals)/new-message");
-    },
-    15000,
-  );
+    expect(mockPush).toHaveBeenCalledWith("/(modals)/new-message");
+  }, 15000);
 
-  it(
-    "Renders unread badge for conversation with unread messages",
-    async () => {
-      const screen = render(
-        <SafeAreaProvider initialMetrics={safeAreaMetrics}>
-          <QueryClientProvider client={queryClient}>
-            <InboxScreen />
-          </QueryClientProvider>
-        </SafeAreaProvider>,
-      );
+  it("Renders unread badge for conversation with unread messages", async () => {
+    const screen = render(
+      <SafeAreaProvider initialMetrics={safeAreaMetrics}>
+        <QueryClientProvider client={queryClient}>
+          <InboxScreen />
+        </QueryClientProvider>
+      </SafeAreaProvider>,
+    );
 
-      await waitFor(
-        () => {
-          expect(screen.getByTestId("unread-badge-2")).toBeTruthy();
-        },
-        { timeout: 10000 },
-      );
-    },
-    15000,
-  );
+    await waitFor(
+      () => {
+        expect(screen.getByTestId("unread-badge-2")).toBeTruthy();
+      },
+      { timeout: 10000 },
+    );
+  }, 15000);
 });

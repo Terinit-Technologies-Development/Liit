@@ -25,7 +25,11 @@ export default function EventEdit() {
         {isLoading ? (
           <View style={styles.loadingArea}>
             <ActivityIndicator color={theme.colors.accentStart} size="large" />
-            <AppText variant="caption" color="textMuted" style={{ marginTop: 8 }}>
+            <AppText
+              variant="caption"
+              color="textMuted"
+              style={{ marginTop: 8 }}
+            >
               Loading event draft...
             </AppText>
           </View>

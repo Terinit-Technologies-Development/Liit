@@ -1,13 +1,39 @@
 appId: com.liit.app
+tags:
+  - instruction-06
 ---
-- launchApp
+- launchApp:
+    clearState: true
+- runFlow:
+    file: flows/authenticated-onboarding.yaml
+
+- tapOn: "CONSUMER"
+- tapOn: "Creator Mode"
+- assertVisible: "Creator Dashboard"
+
+# 1. Events list
 - tapOn: "Events"
-- assertVisible: "All"
+- assertVisible: "Midnight Kinetic Grooves"
+
+# 2. Operations Hub
 - tapOn: "Midnight Kinetic Grooves"
 - assertVisible: "Operations Hub"
+- assertVisible: "Analytics & Performance"
+
+# 3. Analytics
 - tapOn: "Analytics & Performance"
 - assertVisible: "Key Performance Indicators"
-- tapOn: "Back"
+- assertVisible: "Ticket Sales Over Time"
+- tapOn: "Navigate back"
+
+# 4. Guest Roster
 - tapOn: "Guest Roster & Check-In"
 - assertVisible: "Guest Roster"
-- tapOn: "Back"
+- assertVisible: "Sibusiso Dlamini"
+- tapOn: "Navigate back"
+
+# 5. Content
+- tapOn: "Content & Announcements"
+- assertVisible: "Event Content & Posts"
+- assertVisible: "DJ Lineup Announcement & Set Times"
+- tapOn: "Navigate back"

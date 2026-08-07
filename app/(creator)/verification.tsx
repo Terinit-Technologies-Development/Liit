@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { View, StyleSheet, ScrollView, Alert, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { Screen } from "../../src/components/ui/Screen";
@@ -7,48 +7,103 @@ import { AppText } from "../../src/components/ui/AppText";
 import { AppButton } from "../../src/components/ui/AppButton";
 import { Icon } from "../../src/design-system/icons/Icon";
 import { theme } from "../../src/design-system/theme";
-import { ROUTES } from "../../src/navigation/routes";
+import { routeBuilders } from "../../src/navigation/routes";
 import { useCreatorStore } from "../../src/state/useCreatorStore";
 import {
   useVerificationChecklist,
   useCompleteActivationMutation,
 } from "../../src/hooks/creator/useCreatorQueries";
+import { VerificationState } from "../../src/domain/creator";
+
+const VERIFICATION_STATES: VerificationState[] = [
+  "not_started",
+  "incomplete",
+  "under_review",
+  "verified",
+  "rejected",
+];
+
+const STATE_META: Record<
+  VerificationState,
+  { icon: "check" | "calendar" | "close" | "info"; color: string; copy: string }
+> = {
+  verified: {
+    icon: "check",
+    color: theme.colors.success,
+    copy: "Your creator profile is verified and ready to publish events.",
+  },
+  under_review: {
+    icon: "calendar",
+    color: theme.colors.accentEnd,
+    copy: "Checklist submitted. Automated simulation review in progress.",
+  },
+  rejected: {
+    icon: "close",
+    color: theme.colors.destructive,
+    copy: "The simulation rejected this verification. Update details and resubmit.",
+  },
+  incomplete: {
+    icon: "close",
+    color: theme.colors.destructive,
+    copy: "Please complete all checklist items below to activate.",
+  },
+  not_started: {
+    icon: "info",
+    color: theme.colors.warning,
+    copy: "Verification has not started. Complete the checklist to begin.",
+  },
+};
 
 export default function CreatorVerification() {
   const router = useRouter();
-  const { setActivationStatus } = useCreatorStore();
+  const {
+    verificationState,
+    setVerificationState,
+    completedVerificationItems,
+    setCompletedVerificationItems,
+    setActivationStatus,
+  } = useCreatorStore();
   const { data: checklist } = useVerificationChecklist();
   const completeMutation = useCompleteActivationMutation();
 
-  const [verificationState, setVerificationState] = useState<
-    "not_started" | "incomplete" | "under_review" | "verified" | "rejected"
-  >("verified");
+  const allItemsComplete =
+    (checklist?.every((item) => completedVerificationItems.includes(item.id)) ??
+      false) &&
+    completedVerificationItems.length > 0;
 
-  const [completedItemIds, setCompletedItemIds] = useState<string[]>([
-    "vcheck-1",
-    "vcheck-2",
-    "vcheck-3",
-    "vcheck-4",
-    "vcheck-5",
-    "vcheck-6",
-  ]);
+  const canComplete = verificationState === "verified" && allItemsComplete;
+
+  const gateReason = (() => {
+    if (verificationState !== "verified") {
+      return `Completion is disabled while verification is ${verificationState.replace("_", " ")}.`;
+    }
+    if (!allItemsComplete) {
+      return "Complete every checklist item before finishing verification.";
+    }
+    return null;
+  })();
 
   const toggleItem = (id: string) => {
-    if (completedItemIds.includes(id)) {
-      setCompletedItemIds(completedItemIds.filter((item) => item !== id));
+    if (completedVerificationItems.includes(id)) {
+      setCompletedVerificationItems(
+        completedVerificationItems.filter((item) => item !== id),
+      );
     } else {
-      setCompletedItemIds([...completedItemIds, id]);
+      setCompletedVerificationItems([...completedVerificationItems, id]);
     }
   };
 
   const handleComplete = () => {
+    if (!canComplete) return;
     setActivationStatus("verified");
     completeMutation.mutate(undefined, {
       onSuccess: () => {
-        router.replace(ROUTES.creator.dashboard as any);
+        router.replace(routeBuilders.creatorDashboard());
       },
     });
   };
+
+  const meta = STATE_META[verificationState];
 
   return (
     <Screen style={styles.container} testID="creator-verification-screen">
@@ -79,34 +134,14 @@ export default function CreatorVerification() {
           ]}
         >
           <View style={styles.statusHeader}>
-            <Icon
-              name={
-                verificationState === "verified"
-                  ? "check"
-                  : verificationState === "under_review"
-                    ? "calendar"
-                    : "close"
-              }
-              size="md"
-              color={
-                verificationState === "verified"
-                  ? theme.colors.success
-                  : verificationState === "under_review"
-                    ? theme.colors.accentEnd
-                    : theme.colors.destructive
-              }
-            />
+            <Icon name={meta.icon} size="md" color={meta.color} />
             <View style={{ flex: 1 }}>
               <AppText variant="label" color="textPrimary">
                 Verification Status:{" "}
                 {verificationState.replace("_", " ").toUpperCase()}
               </AppText>
               <AppText variant="caption" color="textMuted">
-                {verificationState === "verified"
-                  ? "Your creator profile is verified and ready to publish events."
-                  : verificationState === "under_review"
-                    ? "Checklist submitted. Automated simulation review in progress."
-                    : "Please complete all checklist items below to activate."}
+                {meta.copy}
               </AppText>
             </View>
           </View>
@@ -122,12 +157,13 @@ export default function CreatorVerification() {
         </AppText>
 
         {checklist?.map((item) => {
-          const isDone = completedItemIds.includes(item.id);
+          const isDone = completedVerificationItems.includes(item.id);
           return (
             <View key={item.id} style={styles.checkCard}>
               <Pressable
                 style={styles.checkboxTouch}
                 onPress={() => toggleItem(item.id)}
+                testID={`verification-item-${item.id}`}
               >
                 <View
                   style={[styles.checkbox, isDone && styles.checkboxChecked]}
@@ -196,7 +232,7 @@ export default function CreatorVerification() {
             SIMULATION STATUS TOGGLE (PROTOTYPE):
           </AppText>
           <View style={styles.scenarioRow}>
-            {(["verified", "under_review", "incomplete"] as const).map((st) => (
+            {VERIFICATION_STATES.map((st) => (
               <Pressable
                 key={st}
                 style={[
@@ -204,6 +240,7 @@ export default function CreatorVerification() {
                   verificationState === st && styles.scenarioBtnActive,
                 ]}
                 onPress={() => setVerificationState(st)}
+                testID={`verification-scenario-${st}`}
               >
                 <AppText
                   variant="caption"
@@ -214,20 +251,42 @@ export default function CreatorVerification() {
                         : theme.colors.textMuted,
                   }}
                 >
-                  {st.toUpperCase()}
+                  {st.replace("_", " ").toUpperCase()}
                 </AppText>
               </Pressable>
             ))}
           </View>
         </View>
 
+        {/* Completion gate */}
+        {gateReason && (
+          <View style={styles.gateNotice}>
+            <Icon name="info" size="xs" color={theme.colors.warning} />
+            <AppText variant="caption" color="textPrimary" style={{ flex: 1 }}>
+              {gateReason}
+            </AppText>
+          </View>
+        )}
+
         {/* Action Button */}
         <View style={styles.actionArea}>
           <AppButton
             label="Complete Verification & Enter Dashboard"
             onPress={handleComplete}
+            disabled={!canComplete}
             loading={completeMutation.isPending}
+            testID="complete-verification-button"
           />
+          {!canComplete && (
+            <AppText
+              variant="caption"
+              color="textMuted"
+              style={{ textAlign: "center", marginTop: theme.spacing.sm }}
+            >
+              Set the status to VERIFIED and complete all checklist items to
+              enable this action.
+            </AppText>
+          )}
         </View>
       </ScrollView>
     </Screen>
@@ -316,16 +375,31 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: theme.colors.borderSubtle,
   },
-  scenarioRow: { flexDirection: "row", gap: theme.spacing.xs },
+  scenarioRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: theme.spacing.xs,
+  },
   scenarioBtn: {
-    flex: 1,
     paddingVertical: 6,
+    paddingHorizontal: 8,
     alignItems: "center",
     backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderRadius: theme.radii.sm,
   },
   scenarioBtnActive: {
     backgroundColor: theme.colors.accentStart,
+  },
+  gateNotice: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255, 170, 0, 0.1)",
+    padding: theme.spacing.md,
+    borderRadius: theme.radii.md,
+    marginTop: theme.spacing.lg,
+    gap: theme.spacing.xs,
+    borderWidth: 1,
+    borderColor: theme.colors.warning,
   },
   actionArea: { marginTop: theme.spacing.xl },
 });

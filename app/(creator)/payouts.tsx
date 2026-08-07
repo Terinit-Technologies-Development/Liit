@@ -6,7 +6,7 @@ import { AppHeader } from "../../src/components/navigation/AppHeader";
 import { AppText } from "../../src/components/ui/AppText";
 import { AppButton } from "../../src/components/ui/AppButton";
 import { theme } from "../../src/design-system/theme";
-import { ROUTES } from "../../src/navigation/routes";
+import { routeBuilders } from "../../src/navigation/routes";
 import {
   usePayoutsOverview,
   usePayoutHistory,
@@ -77,7 +77,7 @@ export default function CreatorPayouts() {
         <AppButton
           label="Request Payout"
           variant="primary"
-          onPress={() => router.push(ROUTES.modals.requestPayout as any)}
+          onPress={() => router.push(routeBuilders.requestPayoutModal())}
         />
       </ScrollView>
     </Screen>

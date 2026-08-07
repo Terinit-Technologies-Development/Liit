@@ -5,15 +5,32 @@ import { Card } from "../ui/Card";
 import { AppText } from "../ui/AppText";
 import { Icon } from "../../design-system/icons/Icon";
 import { formatCurrency, formatDate } from "../../utils/format";
+import { formatJohannesburgTime } from "../../utils/johannesburg";
 import { theme } from "../../design-system/theme";
 
 export interface EventMetadataGridProps {
   event: Event;
 }
 
+/**
+ * Render the wall-clock time as written in the stored timestamp when it
+ * carries an explicit SAST offset (Creator drafts). Legacy UTC "Z" consumer
+ * timestamps keep the existing device-local formatting.
+ */
+function formatScheduleTime(iso: string): string {
+  if (iso.includes("+02:00")) {
+    return formatJohannesburgTime(iso, false);
+  }
+  return new Date(iso).toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
+
 export function EventMetadataGrid({ event }: EventMetadataGridProps) {
   const dateStr = formatDate(event.occurrence.startTime);
-  const timeStr = `${new Date(event.occurrence.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })} - ${new Date(event.occurrence.endTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })}`;
+  const timeStr = `${formatScheduleTime(event.occurrence.startTime)} - ${formatScheduleTime(event.occurrence.endTime)}`;
   const priceStr =
     event.startingPriceMinor === 0
       ? "Free Entry"

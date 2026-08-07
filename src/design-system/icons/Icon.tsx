@@ -34,6 +34,8 @@ export type SemanticIconName =
   | "sparkles"
   | "chevronRight"
   | "chevronLeft"
+  | "chevronUp"
+  | "chevronDown"
   | "music"
   | "bookmark"
   | "bookmarkFilled"
@@ -93,6 +95,8 @@ const iconNameMap: Record<SemanticIconName, keyof typeof Ionicons.glyphMap> = {
   sparkles: "sparkles-outline",
   chevronRight: "chevron-forward-outline",
   chevronLeft: "chevron-back-outline",
+  chevronUp: "chevron-up-outline",
+  chevronDown: "chevron-down-outline",
   music: "musical-notes-outline",
   bookmark: "bookmark-outline",
   bookmarkFilled: "bookmark",

@@ -4,7 +4,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Screen } from "../../../src/components/ui/Screen";
 import { AppHeader } from "../../../src/components/navigation/AppHeader";
-import { AppText } from "../../../src/components/ui/AppText";
 import { theme } from "../../../src/design-system/theme";
 import { useCreatorEvents } from "../../../src/hooks/creator/useCreatorQueries";
 import { EventCreatorRow } from "../../../src/components/creator";

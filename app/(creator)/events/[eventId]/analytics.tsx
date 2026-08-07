@@ -1,15 +1,19 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, StyleSheet, ScrollView, ActivityIndicator } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { Screen } from "../../../../src/components/ui/Screen";
 import { AppHeader } from "../../../../src/components/navigation/AppHeader";
 import { AppText } from "../../../../src/components/ui/AppText";
+import { AppButton } from "../../../../src/components/ui/AppButton";
 import {
   CreatorStatCard,
   AnalyticsChart,
 } from "../../../../src/components/creator";
 import { theme } from "../../../../src/design-system/theme";
-import { useEventAnalytics } from "../../../../src/hooks/creator/useCreatorQueries";
+import {
+  useEventAnalytics,
+  useCreatorEvent,
+} from "../../../../src/hooks/creator/useCreatorQueries";
 import { formatCurrency } from "../../../../src/utils/format";
 import { EmptyState } from "../../../../src/components/feedback/EmptyState";
 
@@ -17,9 +21,20 @@ export default function EventAnalyticsScreen() {
   const params = useLocalSearchParams<{ eventId?: string }>();
   const eventId = params.eventId || "evt-midnight-grooves";
 
-  const { data: analytics, isLoading } = useEventAnalytics(eventId);
+  const {
+    data: analytics,
+    isLoading,
+    isError,
+    refetch,
+  } = useEventAnalytics(eventId);
+  const { data: projection, isLoading: isEventLoading } =
+    useCreatorEvent(eventId);
 
-  if (isLoading) {
+  // Capture "now" once via a lazy initializer so the not-started comparison
+  // stays pure during render.
+  const [nowMs] = useState(() => Date.now());
+
+  if (isLoading || isEventLoading) {
     return (
       <Screen style={styles.container}>
         <AppHeader title="Event Analytics" />
@@ -30,13 +45,61 @@ export default function EventAnalyticsScreen() {
     );
   }
 
+  if (isError) {
+    return (
+      <Screen style={styles.container}>
+        <AppHeader title="Event Analytics" />
+        <View style={styles.stateArea}>
+          <AppText variant="heading" color="textPrimary">
+            Analytics Unavailable
+          </AppText>
+          <AppText
+            variant="caption"
+            color="textMuted"
+            style={{ marginTop: 4, textAlign: "center" }}
+          >
+            Simulated failure while loading analytics. Retry to reload.
+          </AppText>
+          <AppButton
+            label="Retry"
+            variant="primary"
+            onPress={() => refetch()}
+            style={{ marginTop: theme.spacing.md }}
+            testID="analytics-retry-button"
+          />
+        </View>
+      </Screen>
+    );
+  }
+
+  if (!projection) {
+    return (
+      <Screen style={styles.container}>
+        <AppHeader title="Event Analytics" />
+        <EmptyState
+          title="Event Not Found"
+          description={`No Event exists for ID "${eventId}". Analytics are only available for real Events.`}
+          icon="warning"
+        />
+      </Screen>
+    );
+  }
+
+  const notStarted =
+    new Date(projection.event.occurrence.startTime).getTime() > nowMs;
+
   if (!analytics) {
     return (
       <Screen style={styles.container}>
         <AppHeader title="Event Analytics" />
         <EmptyState
-          title="No Analytics Available"
-          description={`No sales or view metrics recorded yet for "${eventId}".`}
+          title={notStarted ? "Event Has Not Started" : "No Analytics Yet"}
+          description={
+            notStarted
+              ? `Analytics begin recording when "${projection.event.title}" goes live.`
+              : `No sales or view metrics recorded yet for "${projection.event.title}".`
+          }
+          icon="dashboard"
         />
       </Screen>
     );
@@ -190,6 +253,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.canvas },
   content: { padding: theme.spacing.md, paddingBottom: theme.spacing.xxxl * 2 },
   loadingArea: { padding: theme.spacing.xxl, alignItems: "center" },
+  stateArea: { padding: theme.spacing.xxl, alignItems: "center" },
   sectionTitle: { marginBottom: theme.spacing.sm },
   kpiGrid: {
     flexDirection: "row",

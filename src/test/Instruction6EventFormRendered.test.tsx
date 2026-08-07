@@ -52,7 +52,7 @@ describe("LIIT Instruction 6: Event Builder, Preview & Publish Modal Tests", () 
     );
 
     expect(getByTestId("creator-preview-screen")).toBeTruthy();
-    expect(getByText(/PREVIEW MODE — Unsaved Draft/i)).toBeTruthy();
+    expect(getByText(/PREVIEW MODE — Draft Preview/i)).toBeTruthy();
     expect(getByText(/Checkout Disabled \(Preview Mode\)/i)).toBeTruthy();
     expect(getByText(/Return to Edit Form/i)).toBeTruthy();
   });
@@ -73,6 +73,7 @@ describe("LIIT Instruction 6: Event Builder, Preview & Publish Modal Tests", () 
 
     expect(getByTestId("publish-confirmation-modal")).toBeTruthy();
     expect(getByText(/Confirm Event Publishing/i)).toBeTruthy();
-    expect(getByText(/Confirm & Publish Live/i)).toBeTruthy();
+    expect(getByText(/Publishing Readiness Checklist/i)).toBeTruthy();
+    expect(getByTestId("confirm-publish-button")).toBeTruthy();
   });
 });

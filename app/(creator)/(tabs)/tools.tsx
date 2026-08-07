@@ -108,9 +108,7 @@ export default function CreatorToolsScreen() {
           <Pressable
             onPress={() =>
               router.push(
-                routeBuilders.creatorEventContent(
-                  "evt-midnight-grooves",
-                ) as any,
+                routeBuilders.creatorEventContent("evt-midnight-grooves"),
               )
             }
           >

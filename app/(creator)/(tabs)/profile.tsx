@@ -6,17 +6,15 @@ import { AppHeader } from "../../../src/components/navigation/AppHeader";
 import { AppText } from "../../../src/components/ui/AppText";
 import { theme } from "../../../src/design-system/theme";
 import { useCreatorProfile } from "../../../src/hooks/creator/useCreatorQueries";
-import { ROUTES, routeBuilders } from "../../../src/navigation/routes";
+import { routeBuilders } from "../../../src/navigation/routes";
 import { Icon } from "../../../src/design-system/icons/Icon";
-import { useSessionStore } from "../../../src/state/useSessionStore";
 
 export default function CreatorProfileScreen() {
   const router = useRouter();
-  const sessionUser = useSessionStore((s) => s.user);
   const { data: creatorProfile } = useCreatorProfile();
 
   const handleSwitchToConsumer = () => {
-    router.replace(ROUTES.consumer.feed as any);
+    router.replace(routeBuilders.feed());
   };
 
   return (
@@ -90,9 +88,21 @@ export default function CreatorProfileScreen() {
 
         <Pressable
           style={styles.row}
-          onPress={() =>
-            router.push(routeBuilders.creatorVerification() as any)
-          }
+          onPress={() => router.push(routeBuilders.creatorActivation())}
+          testID="profile-activation-row"
+        >
+          <View style={styles.rowLeft}>
+            <Icon name="create" size="sm" color={theme.colors.accentStart} />
+            <AppText variant="body" color="textPrimary">
+              Account Activation & Brand Profile
+            </AppText>
+          </View>
+          <Icon name="chevronRight" size="sm" color={theme.colors.textMuted} />
+        </Pressable>
+
+        <Pressable
+          style={styles.row}
+          onPress={() => router.push(routeBuilders.creatorVerification())}
         >
           <View style={styles.rowLeft}>
             <Icon name="check" size="sm" color={theme.colors.success} />
@@ -105,7 +115,7 @@ export default function CreatorProfileScreen() {
 
         <Pressable
           style={styles.row}
-          onPress={() => router.push(ROUTES.creator.payouts as any)}
+          onPress={() => router.push(routeBuilders.creatorPayouts())}
         >
           <View style={styles.rowLeft}>
             <Icon name="card" size="sm" color={theme.colors.accentStart} />
@@ -163,9 +173,7 @@ export default function CreatorProfileScreen() {
 
         <Pressable
           style={styles.row}
-          onPress={() =>
-            router.push(routeBuilders.creatorNotifications() as any)
-          }
+          onPress={() => router.push(routeBuilders.creatorNotifications())}
         >
           <View style={styles.rowLeft}>
             <Icon name="bell" size="sm" color={theme.colors.textMuted} />

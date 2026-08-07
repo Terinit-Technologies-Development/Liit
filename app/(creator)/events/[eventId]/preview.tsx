@@ -14,35 +14,33 @@ import { Icon } from "../../../../src/design-system/icons/Icon";
 import { theme } from "../../../../src/design-system/theme";
 import { useCreatorEvent } from "../../../../src/hooks/creator/useCreatorQueries";
 import { TicketTier } from "../../../../src/domain/event-detail";
+import { formatJohannesburgTime } from "../../../../src/utils/johannesburg";
 
 export default function EventPreview() {
   const router = useRouter();
   const params = useLocalSearchParams<{ eventId?: string }>();
-  const eventId = params.eventId || "evt-midnight-grooves";
+  const eventId = params.eventId || "evt-draft-001";
 
-  const { data: projection } = useCreatorEvent(eventId);
+  const { data: projection, isLoading } = useCreatorEvent(eventId);
   const event = projection?.event;
 
-  const sampleTiers: TicketTier[] = [
-    {
-      id: "tier-1",
-      name: "Early Bird Pass",
-      priceMinor: event?.startingPriceMinor || 25000,
+  const showPreviewFeedback = (message: string) => {
+    Alert.alert("Event Preview", message);
+  };
+
+  const draftTiers: TicketTier[] =
+    projection?.eventDraft?.tiers.map((t) => ({
+      id: t.id,
+      name: t.name,
+      description: t.description,
+      priceMinor: t.priceMinor,
       currency: "ZAR",
-      remaining: 100,
-      state: "available",
-      maxPerOrder: 4,
-    },
-    {
-      id: "tier-2",
-      name: "General Admission",
-      priceMinor: (event?.startingPriceMinor || 25000) + 10000,
-      currency: "ZAR",
-      remaining: 150,
-      state: "available",
-      maxPerOrder: 4,
-    },
-  ];
+      remaining: t.capacity,
+      state: t.availability,
+      maxPerOrder: t.maxPerOrder,
+    })) || [];
+
+  const isFreeEvent = projection?.eventDraft?.isFree === true;
 
   return (
     <Screen style={styles.container} testID="creator-preview-screen">
@@ -51,21 +49,68 @@ export default function EventPreview() {
       <View style={styles.previewBanner}>
         <Icon name="info" size="xs" color="#fff" />
         <AppText variant="label" style={styles.bannerText}>
-          PREVIEW MODE — Unsaved Draft
+          PREVIEW MODE — Draft Preview
         </AppText>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        {event ? (
+        {isLoading ? (
+          <View style={styles.loadingArea}>
+            <AppText variant="body" color="textMuted">
+              Loading draft preview...
+            </AppText>
+          </View>
+        ) : !event ? (
+          <View style={styles.loadingArea}>
+            <AppText variant="heading" color="textPrimary">
+              Draft Not Found
+            </AppText>
+            <AppText variant="body" color="textMuted" style={{ marginTop: 4 }}>
+              No saved draft exists for event ID &quot;{eventId}&quot;. Save the
+              Event draft first, then preview again.
+            </AppText>
+            <AppButton
+              label="Return to Edit Form"
+              variant="secondary"
+              onPress={() => router.back()}
+              style={{ marginTop: theme.spacing.md }}
+            />
+          </View>
+        ) : (
           <>
             <EventHero
               event={event}
               onBack={() => router.back()}
               isSaved={false}
-              onToggleSaved={() => {}}
-              onShare={() => {}}
-              onReport={() => {}}
+              onToggleSaved={() =>
+                showPreviewFeedback(
+                  "Saving is unavailable in Event Preview. Draft events are not part of the Consumer saved-event collection.",
+                )
+              }
+              onShare={() =>
+                showPreviewFeedback(
+                  "Sharing is disabled in Event Preview. Sharing becomes available once the Event is published.",
+                )
+              }
+              onReport={() =>
+                showPreviewFeedback(
+                  "Reporting is disabled in Event Preview. Reporting applies to published Consumer events.",
+                )
+              }
             />
+
+            <View style={styles.metaPadding}>
+              <AppText variant="heading" color="textPrimary">
+                {event.title}
+              </AppText>
+              <AppText
+                variant="caption"
+                color="textMuted"
+                style={{ marginTop: 2 }}
+              >
+                {event.venue.name}, {event.venue.suburb}
+              </AppText>
+            </View>
 
             <View style={styles.metaPadding}>
               <EventMetadataGrid event={event} />
@@ -87,23 +132,53 @@ export default function EventPreview() {
               <ExpandableDescription text={event.description} />
             </View>
 
+            {/* Schedule fidelity line */}
             <View style={styles.sectionMargin}>
-              <AppText variant="heading" style={{ marginBottom: theme.spacing.sm }}>
-                Ticket Tiers (Preview)
+              <AppText variant="caption" color="textMuted">
+                SAST Schedule:{" "}
+                {formatJohannesburgTime(event.occurrence.startTime)} →{" "}
+                {formatJohannesburgTime(event.occurrence.endTime)}
               </AppText>
-              <TicketTierPreview
-                tiers={sampleTiers}
-                selectedTierId={null}
-                onSelectTier={() => {}}
-              />
+            </View>
+
+            <View style={styles.sectionMargin}>
+              <AppText
+                variant="heading"
+                style={{ marginBottom: theme.spacing.sm }}
+              >
+                {isFreeEvent
+                  ? "Registration (Free Event)"
+                  : "Ticket Tiers (Preview)"}
+              </AppText>
+              {isFreeEvent ? (
+                <View style={styles.freeCard}>
+                  <Icon name="check" size="sm" color={theme.colors.success} />
+                  <View style={{ flex: 1 }}>
+                    <AppText variant="label" color="textPrimary">
+                      Free Registration
+                    </AppText>
+                    <AppText variant="caption" color="textMuted">
+                      This Event is a free registration event. No paid tiers.
+                    </AppText>
+                  </View>
+                </View>
+              ) : draftTiers.length > 0 ? (
+                <TicketTierPreview
+                  tiers={draftTiers}
+                  selectedTierId={null}
+                  onSelectTier={() =>
+                    showPreviewFeedback(
+                      "Ticket selection is non-interactive in Preview. Selection applies during Consumer checkout after publishing.",
+                    )
+                  }
+                />
+              ) : (
+                <AppText variant="caption" color="textMuted">
+                  No ticket tiers configured for this draft.
+                </AppText>
+              )}
             </View>
           </>
-        ) : (
-          <View style={styles.loadingArea}>
-            <AppText variant="body" color="textMuted">
-              Loading draft preview...
-            </AppText>
-          </View>
         )}
 
         {/* Action Controls */}
@@ -144,7 +219,10 @@ const styles = StyleSheet.create({
   },
   bannerText: { color: "#FFF", fontWeight: "bold" },
   content: { paddingBottom: theme.spacing.xxxl * 2 },
-  metaPadding: { paddingHorizontal: theme.spacing.md, marginTop: theme.spacing.md },
+  metaPadding: {
+    paddingHorizontal: theme.spacing.md,
+    marginTop: theme.spacing.md,
+  },
   sectionMargin: {
     paddingHorizontal: theme.spacing.md,
     marginTop: theme.spacing.lg,
@@ -152,6 +230,14 @@ const styles = StyleSheet.create({
   loadingArea: {
     padding: theme.spacing.xxl,
     alignItems: "center",
+  },
+  freeCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: theme.colors.surfaceElevated,
+    padding: theme.spacing.md,
+    borderRadius: theme.radii.lg,
+    gap: theme.spacing.sm,
   },
   actionContainer: {
     paddingHorizontal: theme.spacing.md,

@@ -17,6 +17,7 @@ import { useDiscoveryStore } from "../../src/state/useDiscoveryStore";
 import { useMapDiscoveryStore } from "../../src/state/useMapDiscoveryStore";
 import { useCheckoutStore } from "../../src/state/useCheckoutStore";
 import { useSocialStore } from "../../src/state/useSocialStore";
+import { useCreatorStore } from "../../src/state/useCreatorStore";
 import { mockNotificationRepository } from "../../src/repositories/mock/MockNotificationRepository";
 import { mockTicketingRepository } from "../../src/repositories/mock/MockTicketingRepository";
 import { mockSocialRepository } from "../../src/repositories/mock/MockSocialRepository";
@@ -43,6 +44,7 @@ export default function PrototypeControlsScreen() {
   const resetMapDiscovery = useMapDiscoveryStore((s) => s.resetMapDiscovery);
   const resetCheckout = useCheckoutStore((s) => s.resetCheckout);
   const resetSocial = useSocialStore((s) => s.resetSocial);
+  const resetCreator = useCreatorStore((s) => s.resetCreatorStore);
 
   const handleModeSwitch = (mode: "consumer" | "creator") => {
     setActiveMode(mode);
@@ -60,6 +62,11 @@ export default function PrototypeControlsScreen() {
     resetMapDiscovery();
     resetCheckout();
     resetSocial();
+    // Creator mode: activation, verification, event draft, dirty state,
+    // publish state, filters, payout simulation, content + guest mutations,
+    // repository state (resetCreatorStore resets MockCreatorRepository) and
+    // the React Query cache below.
+    resetCreator();
     mockNotificationRepository.reset();
     await mockTicketingRepository.reset();
     await mockSocialRepository.reset();

@@ -54,7 +54,9 @@ describe("LIIT Instruction 6: Activation & Verification Rendered Tests", () => {
     await waitFor(() => {
       expect(getByText(/Creator Profile Complete/i)).toBeTruthy();
       expect(getByText(/Payout Account Connected/i)).toBeTruthy();
-      expect(getByText(/Complete Verification & Enter Dashboard/i)).toBeTruthy();
+      expect(
+        getByText(/Complete Verification & Enter Dashboard/i),
+      ).toBeTruthy();
     });
   });
 });

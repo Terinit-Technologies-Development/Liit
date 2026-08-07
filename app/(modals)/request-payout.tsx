@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, StyleSheet, ActivityIndicator } from "react-native";
+import { View, StyleSheet, ActivityIndicator, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { AppText } from "../../src/components/ui/AppText";
 import { AppButton } from "../../src/components/ui/AppButton";
@@ -19,11 +19,13 @@ export default function RequestPayoutModal() {
   const { data: overview } = usePayoutsOverview();
   const requestMutation = useRequestPayoutMutation();
 
-  const availableMinor = overview?.availableMinor || 1500000; // R15,000.00
+  // `??` (not `||`): a legitimate zero balance must stay zero.
+  const availableMinor = overview?.availableMinor ?? 1500000;
   const [amountZar, setAmountZar] = useState("");
   const [state, setState] = useState<PayoutRequestState>("editing");
   const [errorMessage, setErrorMessage] = useState("");
   const [payoutReference, setPayoutReference] = useState("");
+  const [forceFail, setForceFail] = useState(false);
 
   const parsedAmountZar = parseFloat(amountZar || "0");
   const amountMinor = Math.round(parsedAmountZar * 100);
@@ -33,14 +35,26 @@ export default function RequestPayoutModal() {
     parsedAmountZar > 0 &&
     amountMinor <= availableMinor;
 
-  const handleSubmit = () => {
+  /**
+   * Deterministic payout simulation. `shouldFail` is an explicit parameter so
+   * Retry never depends on stale closure state.
+   */
+  const submitRequest = (shouldFail = forceFail) => {
     if (!isValidAmount) return;
     setState("processing");
     setErrorMessage("");
 
+    if (shouldFail) {
+      setState("failure");
+      setErrorMessage(
+        "Simulated banking communication failure for reviewer testing.",
+      );
+      return;
+    }
+
     requestMutation.mutate(amountMinor, {
       onSuccess: (data) => {
-        setPayoutReference(data.reference || "PAY-REQ-9921");
+        setPayoutReference(data.reference || "PAY-REQ-0001");
         setState("success");
       },
       onError: (err: any) => {
@@ -48,6 +62,13 @@ export default function RequestPayoutModal() {
         setState("failure");
       },
     });
+  };
+
+  const handleSubmit = () => submitRequest();
+
+  const handleRetry = () => {
+    setForceFail(false);
+    submitRequest(false);
   };
 
   return (
@@ -62,7 +83,7 @@ export default function RequestPayoutModal() {
             Request Payout
           </AppText>
           <AppText variant="caption" color="textMuted">
-            Transfer cleared earnings to linked bank account
+            Request payout of cleared earnings (simulated — no bank transfer)
           </AppText>
         </View>
 
@@ -76,6 +97,11 @@ export default function RequestPayoutModal() {
               <AppText variant="title" color="success" style={{ marginTop: 2 }}>
                 {formatCurrency(availableMinor, "ZAR")}
               </AppText>
+              {availableMinor === 0 && (
+                <AppText variant="caption" color="textMuted">
+                  Your cleared balance is R 0.00 — no payout can be requested.
+                </AppText>
+              )}
             </View>
 
             <View style={styles.fieldGroup}>
@@ -116,6 +142,22 @@ export default function RequestPayoutModal() {
               </View>
             </View>
 
+            {/* Deterministic failure scenario toggle for testing */}
+            <Pressable
+              style={styles.failToggleRow}
+              onPress={() => setForceFail(!forceFail)}
+              testID="payout-simulate-failure-toggle"
+            >
+              <View
+                style={[styles.checkbox, forceFail && styles.checkboxActive]}
+              >
+                {forceFail && <Icon name="check" size="xs" color="#fff" />}
+              </View>
+              <AppText variant="caption" color="textMuted">
+                Simulate Banking Failure Scenario (Testing)
+              </AppText>
+            </Pressable>
+
             {/* Prototype Disclosure Banner */}
             <View style={styles.disclosureBanner}>
               <Icon name="info" size="xs" color={theme.colors.accentStart} />
@@ -131,6 +173,7 @@ export default function RequestPayoutModal() {
                 onPress={handleSubmit}
                 disabled={!isValidAmount}
                 style={{ flex: 1 }}
+                testID="submit-payout-button"
               />
               <AppButton
                 label="Cancel"
@@ -158,7 +201,7 @@ export default function RequestPayoutModal() {
               color="textMuted"
               style={{ marginTop: 4 }}
             >
-              Communicating with South African clearing simulation.
+              Recording the request in the local payout simulation.
             </AppText>
           </View>
         )}
@@ -174,22 +217,23 @@ export default function RequestPayoutModal() {
               color="textPrimary"
               style={{ marginTop: theme.spacing.md }}
             >
-              Payout Requested!
+              Payout Request Recorded
             </AppText>
             <AppText
               variant="body"
               color="textMuted"
               style={{ marginTop: 4, textAlign: "center" }}
             >
-              {formatCurrency(amountMinor, "ZAR")} is being transferred to
-              Standard Bank (•••• 4092).
+              LIIT PROTOTYPE — payout request recorded in the local simulation.
+              No bank transfer has occurred.
             </AppText>
             <AppText
               variant="caption"
               color="textMuted"
               style={{ marginTop: 4 }}
             >
-              Reference ID: {payoutReference}
+              Amount: {formatCurrency(amountMinor, "ZAR")} • Reference ID:{" "}
+              {payoutReference}
             </AppText>
 
             <View style={{ width: "100%", marginTop: theme.spacing.xl }}>
@@ -233,7 +277,8 @@ export default function RequestPayoutModal() {
               <AppButton
                 label="Retry Payout Request"
                 variant="primary"
-                onPress={() => setState("editing")}
+                onPress={handleRetry}
+                testID="retry-payout-button"
               />
               <AppButton
                 label="Cancel"
@@ -268,6 +313,25 @@ const styles = StyleSheet.create({
     borderRadius: theme.radii.md,
     marginBottom: theme.spacing.md,
     gap: theme.spacing.md,
+  },
+  failToggleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.xs,
+    marginBottom: theme.spacing.md,
+  },
+  checkbox: {
+    width: 18,
+    height: 18,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: theme.colors.borderSubtle,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkboxActive: {
+    backgroundColor: theme.colors.destructive,
+    borderColor: theme.colors.destructive,
   },
   disclosureBanner: {
     flexDirection: "row",

@@ -9,6 +9,7 @@ import {
   PayoutSummary,
   PayoutsOverview,
   CreatorContentPost,
+  CreatorContentDraft,
   EventAnalytics,
   CreatorGuest,
   CreatorNotification,
@@ -18,7 +19,6 @@ import {
 import {
   MOCK_CREATOR_PROFILE,
   MOCK_CREATOR_EVENT_PROJECTIONS,
-  MOCK_CREATOR_EVENTS_SUMMARY,
   MOCK_CREATOR_STATS,
   MOCK_ACTIVE_EVENTS_PROGRESS,
   MOCK_PRIORITY_ALERTS,
@@ -53,6 +53,33 @@ export class MockCreatorRepository implements CreatorRepository {
   private verificationState: VerificationChecklistItem[] = JSON.parse(
     JSON.stringify(MOCK_VERIFICATION_CHECKLIST),
   );
+  private simulatedErrorKeys = new Set<string>();
+
+  /** Deterministic reviewer/test failure injection, e.g. "analytics". */
+  simulateErrorFor(key: string, enabled = true): void {
+    if (enabled) {
+      this.simulatedErrorKeys.add(key);
+    } else {
+      this.simulatedErrorKeys.delete(key);
+    }
+  }
+
+  /** Reviewer/test override to simulate a zero or arbitrary payout balance. */
+  overridePayoutsOverviewForTest(overview: PayoutsOverview): void {
+    this.payoutsOverviewState = { ...overview };
+  }
+
+  private checkSimulatedError(key: string): void {
+    if (this.simulatedErrorKeys.has(key)) {
+      throw new Error(
+        `Simulated failure for creator domain "${key}" (reviewer test scenario).`,
+      );
+    }
+  }
+
+  private knownEvent(eventId: string): boolean {
+    return this.projectionsState.some((p) => p.event.id === eventId);
+  }
 
   async getCreatorProfile(options?: MockOptions): Promise<CreatorProfile> {
     return simulateMockOperation(() => ({ ...this.profileState }), options);
@@ -139,6 +166,7 @@ export class MockCreatorRepository implements CreatorRepository {
     options?: MockOptions,
   ): Promise<CreatorContentPost[]> {
     return simulateMockOperation(() => {
+      this.checkSimulatedError("content");
       if (eventId) {
         return this.contentPostsState.filter((p) => p.eventId === eventId);
       }
@@ -149,26 +177,20 @@ export class MockCreatorRepository implements CreatorRepository {
   async getEventAnalytics(
     eventId: string,
     options?: MockOptions,
-  ): Promise<EventAnalytics> {
+  ): Promise<EventAnalytics | null> {
     return simulateMockOperation(() => {
+      this.checkSimulatedError("analytics");
       const analytics = MOCK_EVENT_ANALYTICS[eventId];
       if (analytics) {
         return JSON.parse(JSON.stringify(analytics));
       }
-      // Fallback default analytics for draft/new events
-      return {
-        eventId,
-        eventTitle: "Event Analytics",
-        pageViews: 0,
-        ticketsDistributed: 0,
-        grossRevenueMinor: 0,
-        conversionRate: 0,
-        checkedInCount: 0,
-        totalCapacity: 100,
-        salesOverTime: [],
-        checkInProgression: [],
-        tierDistribution: [],
-      };
+      // Unknown events (and known events with no recorded metrics) must NOT
+      // silently receive fabricated zero analytics. Return null so the UI can
+      // distinguish "no analytics yet" from "event does not exist".
+      if (!this.knownEvent(eventId)) {
+        return null;
+      }
+      return null;
     }, options);
   }
 
@@ -179,6 +201,7 @@ export class MockCreatorRepository implements CreatorRepository {
     options?: MockOptions,
   ): Promise<CreatorGuest[]> {
     return simulateMockOperation(() => {
+      this.checkSimulatedError("guests");
       let list = this.guestsState[eventId] || [];
       if (filter && filter.toLowerCase() !== "all") {
         const lowerFilter = filter.toLowerCase();
@@ -215,6 +238,7 @@ export class MockCreatorRepository implements CreatorRepository {
     options?: MockOptions,
   ): Promise<CreatorNotification[]> {
     return simulateMockOperation(() => {
+      this.checkSimulatedError("notifications");
       if (category && category.toLowerCase() !== "all") {
         return this.notificationsState.filter(
           (n) => n.category === category.toLowerCase(),
@@ -266,7 +290,8 @@ export class MockCreatorRepository implements CreatorRepository {
     options?: MockOptions,
   ): Promise<CreatorEventProjection> {
     return simulateMockOperation(() => {
-      const eventId = draft.event?.id || `evt-draft-${Date.now()}`;
+      // Deterministic draft identity for review fixtures — never Date.now().
+      const eventId = draft.event?.id || "evt-draft-001";
       let existingIndex = this.projectionsState.findIndex(
         (p) => p.event.id === eventId,
       );
@@ -322,6 +347,7 @@ export class MockCreatorRepository implements CreatorRepository {
         checkedInCount: 0,
         contentSummary: { totalPosts: 0, pinnedCount: 0 },
         completionPercentage: 50,
+        eventDraft: draft.eventDraft,
         lastEditedAt: new Date().toISOString(),
       };
 
@@ -358,8 +384,9 @@ export class MockCreatorRepository implements CreatorRepository {
       this.payoutsOverviewState.availableMinor -= amountMinor;
       this.payoutsOverviewState.pendingMinor += amountMinor;
 
+      const sequence = this.payoutHistoryState.length + 1;
       const newPayout: PayoutSummary = {
-        payoutId: `pay-req-${Date.now()}`,
+        payoutId: `pay-req-${String(sequence).padStart(3, "0")}`,
         amountMinor,
         currency: "ZAR",
         status: "processing",
@@ -372,7 +399,7 @@ export class MockCreatorRepository implements CreatorRepository {
       return {
         success: true,
         amountMinor,
-        reference: `PAY-REQ-${Math.floor(1000 + Math.random() * 9000)}`,
+        reference: `PAY-REQ-${String(sequence).padStart(4, "0")}`,
       };
     }, options);
   }
@@ -422,6 +449,92 @@ export class MockCreatorRepository implements CreatorRepository {
     }, options);
   }
 
+  async createContentPost(
+    draft: CreatorContentDraft,
+    options?: MockOptions,
+  ): Promise<CreatorContentPost> {
+    return simulateMockOperation(() => {
+      const post: CreatorContentPost = {
+        id: `creator-post-${this.contentPostsState.length + 1}`,
+        eventId: draft.eventId,
+        eventTitle: draft.eventTitle,
+        title: draft.title,
+        body: draft.body,
+        type: draft.type,
+        state: draft.state,
+        createdAt: new Date().toISOString(),
+        scheduledFor: draft.scheduledFor,
+        views: 0,
+        likes: 0,
+        isPinned: draft.autoPin || draft.state === "pinned",
+        commentsEnabled: draft.commentsEnabled,
+      };
+      if (post.isPinned && post.state === "public") {
+        post.state = "pinned";
+      }
+      this.contentPostsState.unshift(post);
+      return { ...post };
+    }, options);
+  }
+
+  async updateContentPost(
+    postId: string,
+    patch: Partial<CreatorContentPost>,
+    options?: MockOptions,
+  ): Promise<CreatorContentPost> {
+    return simulateMockOperation(() => {
+      const index = this.contentPostsState.findIndex((p) => p.id === postId);
+      if (index < 0) throw new Error("Content post not found");
+      this.contentPostsState[index] = {
+        ...this.contentPostsState[index],
+        ...patch,
+      };
+      return { ...this.contentPostsState[index] };
+    }, options);
+  }
+
+  async toggleContentPin(
+    postId: string,
+    options?: MockOptions,
+  ): Promise<CreatorContentPost> {
+    return simulateMockOperation(() => {
+      const index = this.contentPostsState.findIndex((p) => p.id === postId);
+      if (index < 0) throw new Error("Content post not found");
+      const post = this.contentPostsState[index];
+      post.isPinned = !post.isPinned;
+      if (post.isPinned && post.state === "public") {
+        post.state = "pinned";
+      } else if (!post.isPinned && post.state === "pinned") {
+        post.state = "public";
+      }
+      return { ...post };
+    }, options);
+  }
+
+  async toggleContentVisibility(
+    postId: string,
+    options?: MockOptions,
+  ): Promise<CreatorContentPost> {
+    return simulateMockOperation(() => {
+      const index = this.contentPostsState.findIndex((p) => p.id === postId);
+      if (index < 0) throw new Error("Content post not found");
+      const post = this.contentPostsState[index];
+      post.state = post.state === "hidden" ? "public" : "hidden";
+      return { ...post };
+    }, options);
+  }
+
+  async deleteContentPost(
+    postId: string,
+    options?: MockOptions,
+  ): Promise<void> {
+    return simulateMockOperation(() => {
+      this.contentPostsState = this.contentPostsState.filter(
+        (p) => p.id !== postId,
+      );
+    }, options);
+  }
+
   resetState(): void {
     this.profileState = { ...MOCK_CREATOR_PROFILE };
     this.projectionsState = JSON.parse(
@@ -437,6 +550,7 @@ export class MockCreatorRepository implements CreatorRepository {
     this.verificationState = JSON.parse(
       JSON.stringify(MOCK_VERIFICATION_CHECKLIST),
     );
+    this.simulatedErrorKeys.clear();
   }
 }
 

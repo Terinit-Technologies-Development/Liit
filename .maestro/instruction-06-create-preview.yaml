@@ -1,14 +1,43 @@
 appId: com.liit.app
+tags:
+  - instruction-06
 ---
-- launchApp
+- launchApp:
+    clearState: true
+- runFlow:
+    file: flows/authenticated-onboarding.yaml
+
+- tapOn: "CONSUMER"
+- tapOn: "Creator Mode"
+- assertVisible: "Creator Dashboard"
+
+# 1. Create Event with the builder
 - tapOn: "Create"
 - assertVisible: "1. Event Media & Poster"
-- tapOn: "Event Title *"
+- assertVisible: "SAST Johannesburg Timezone (UTC+2)"
+
+# Edit the Event Title deterministically.
+- tapOn: "e.g. Midnight Kinetic Grooves"
+- eraseText
 - inputText: "Amapiano Rooftop Kinetic Session"
+
+# 2. Preview must show the actual draft
 - tapOn: "Preview"
-- assertVisible: "PREVIEW MODE — Unsaved Draft"
+- assertVisible: "PREVIEW MODE — Draft Preview"
+- assertVisible: "Amapiano Rooftop Kinetic Session"
+- assertVisible: "18:00 SAST"
 - tapOn: "Return to Edit Form"
+
+# 3. Publish — deterministic failure then retry then success
 - tapOn: "Publish"
 - assertVisible: "Confirm Event Publishing"
-- tapOn: "Confirm & Publish Live"
-- assertVisible: "Event Published Successfully!"
+- assertVisible: "Publishing Readiness Checklist"
+- tapOn:
+    id: "publish-simulate-failure-toggle"
+- tapOn:
+    id: "confirm-publish-button"
+- assertVisible: "Publishing Failed"
+- tapOn:
+    id: "retry-publish-button"
+- assertVisible: "Event Publish Simulated"
+- assertVisible: "Consumer marketplace propagation is deferred to Instruction 8"

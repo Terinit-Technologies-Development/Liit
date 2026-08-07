@@ -6,6 +6,8 @@ import {
   Pressable,
   Alert,
   Modal,
+  Switch,
+  ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import { Screen } from "../../../../src/components/ui/Screen";
@@ -15,44 +17,128 @@ import { AppButton } from "../../../../src/components/ui/AppButton";
 import { TextField } from "../../../../src/components/forms/TextField";
 import { Icon } from "../../../../src/design-system/icons/Icon";
 import { theme } from "../../../../src/design-system/theme";
-import { useContentPosts } from "../../../../src/hooks/creator/useCreatorQueries";
-import { CreatorContentPost } from "../../../../src/domain/creator";
+import {
+  useContentPosts,
+  useCreateContentPostMutation,
+  useToggleContentPinMutation,
+  useToggleContentVisibilityMutation,
+  useDeleteContentPostMutation,
+  useUpdateContentPostMutation,
+  useCreatorEvent,
+} from "../../../../src/hooks/creator/useCreatorQueries";
+import {
+  CreatorContentPost,
+  ContentState,
+} from "../../../../src/domain/creator";
 import { EmptyState } from "../../../../src/components/feedback/EmptyState";
 
 export default function EventContentScreen() {
   const params = useLocalSearchParams<{ eventId?: string }>();
   const eventId = params.eventId || "evt-midnight-grooves";
 
-  const { data: rawPosts } = useContentPosts(eventId);
+  const { data: posts, isLoading, isError, refetch } = useContentPosts(eventId);
+  const { data: projection, isLoading: isEventLoading } =
+    useCreatorEvent(eventId);
 
-  const [posts, setPosts] = useState<CreatorContentPost[]>(rawPosts || []);
+  const createMutation = useCreateContentPostMutation();
+  const updateMutation = useUpdateContentPostMutation();
+  const togglePinMutation = useToggleContentPinMutation();
+  const toggleVisibilityMutation = useToggleContentVisibilityMutation();
+  const deleteMutation = useDeleteContentPostMutation();
+
   const [showEditor, setShowEditor] = useState(false);
+  const [editingPost, setEditingPost] = useState<CreatorContentPost | null>(
+    null,
+  );
   const [newTitle, setNewTitle] = useState("");
   const [newBody, setNewBody] = useState("");
+  const [newCommentsEnabled, setNewCommentsEnabled] = useState(true);
+  const [newAutoPin, setNewAutoPin] = useState(false);
+  const [newScheduledFor, setNewScheduledFor] = useState("");
 
-  const togglePin = (postId: string) => {
-    setPosts((prev) =>
-      prev.map((p) =>
-        p.id === postId
-          ? {
-              ...p,
-              isPinned: !p.isPinned,
-              state: !p.isPinned ? "pinned" : "public",
-            }
-          : p,
-      ),
+  const openCreateEditor = () => {
+    setEditingPost(null);
+    setNewTitle("");
+    setNewBody("");
+    setNewCommentsEnabled(true);
+    setNewAutoPin(false);
+    setNewScheduledFor("");
+    setShowEditor(true);
+  };
+
+  const openEditEditor = (post: CreatorContentPost) => {
+    setEditingPost(post);
+    setNewTitle(post.title);
+    setNewBody(post.body);
+    setNewCommentsEnabled(post.commentsEnabled);
+    setNewAutoPin(post.isPinned);
+    setNewScheduledFor(post.scheduledFor || "");
+    setShowEditor(true);
+  };
+
+  const persistPost = (state: ContentState) => {
+    if (!newTitle.trim() || !newBody.trim()) {
+      Alert.alert("Missing Fields", "Title and Body are required.");
+      return;
+    }
+    const eventTitle = projection?.event?.title || eventId;
+
+    if (editingPost) {
+      updateMutation.mutate(
+        {
+          postId: editingPost.id,
+          patch: {
+            title: newTitle.trim(),
+            body: newBody.trim(),
+            commentsEnabled: newCommentsEnabled,
+            state,
+            scheduledFor:
+              state === "scheduled" ? newScheduledFor.trim() : undefined,
+            isPinned:
+              state === "scheduled"
+                ? editingPost.isPinned
+                : newAutoPin || state === "pinned",
+          },
+        },
+        {
+          onSuccess: () => {
+            setShowEditor(false);
+          },
+        },
+      );
+      return;
+    }
+
+    createMutation.mutate(
+      {
+        title: newTitle.trim(),
+        body: newBody.trim(),
+        eventId,
+        eventTitle,
+        type: "announcement",
+        state,
+        commentsEnabled: newCommentsEnabled,
+        autoPin: newAutoPin,
+        scheduledFor:
+          state === "scheduled" ? newScheduledFor.trim() : undefined,
+      },
+      {
+        onSuccess: () => {
+          setShowEditor(false);
+        },
+      },
     );
   };
 
-  const toggleHide = (postId: string) => {
-    setPosts((prev) =>
-      prev.map((p) =>
-        p.id === postId
-          ? { ...p, state: p.state === "hidden" ? "public" : "hidden" }
-          : p,
-      ),
-    );
+  const handleSaveDraft = () => persistPost("draft");
+  const handleSchedule = () => {
+    if (!newScheduledFor.trim()) {
+      Alert.alert("Schedule Required", "Enter a schedule date (YYYY-MM-DD).");
+      return;
+    }
+    persistPost("scheduled");
   };
+  const handlePublish = () => persistPost("public");
 
   const handleDelete = (postId: string) => {
     Alert.alert(
@@ -63,42 +149,18 @@ export default function EventContentScreen() {
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => {
-            setPosts((prev) => prev.filter((p) => p.id !== postId));
-          },
+          onPress: () => deleteMutation.mutate(postId),
         },
       ],
     );
   };
 
-  const handleCreatePost = () => {
-    if (!newTitle.trim() || !newBody.trim()) {
-      Alert.alert("Missing Fields", "Title and Body are required.");
-      return;
-    }
-
-    const created: CreatorContentPost = {
-      id: `post-${Date.now()}`,
-      eventId,
-      eventTitle: "Midnight Kinetic Grooves",
-      title: newTitle.trim(),
-      body: newBody.trim(),
-      type: "announcement",
-      state: "public",
-      createdAt: new Date().toISOString(),
-      views: 0,
-      likes: 0,
-      isPinned: false,
-      commentsEnabled: true,
-    };
-
-    setPosts([created, ...posts]);
-    setNewTitle("");
-    setNewBody("");
-    setShowEditor(false);
-  };
-
-  const activePosts = posts.length > 0 ? posts : rawPosts || [];
+  const anyMutationPending =
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    togglePinMutation.isPending ||
+    toggleVisibilityMutation.isPending ||
+    deleteMutation.isPending;
 
   return (
     <Screen style={styles.container} testID="creator-content-screen">
@@ -107,7 +169,8 @@ export default function EventContentScreen() {
         rightElement={
           <Pressable
             style={styles.createBtn}
-            onPress={() => setShowEditor(true)}
+            onPress={openCreateEditor}
+            testID="new-content-post-button"
           >
             <Icon name="add" size="xs" color={theme.colors.accentStart} />
             <AppText
@@ -122,11 +185,44 @@ export default function EventContentScreen() {
       />
 
       <ScrollView contentContainerStyle={styles.content}>
-        {activePosts && activePosts.length > 0 ? (
-          activePosts.map((post) => (
+        {isLoading || isEventLoading ? (
+          <View style={styles.loadingArea}>
+            <ActivityIndicator color={theme.colors.accentStart} size="large" />
+          </View>
+        ) : isError ? (
+          <View style={styles.stateArea}>
+            <AppText variant="heading" color="textPrimary">
+              Content Unavailable
+            </AppText>
+            <AppText
+              variant="caption"
+              color="textMuted"
+              style={{ marginTop: 4, textAlign: "center" }}
+            >
+              Simulated failure while loading content posts. Retry to reload.
+            </AppText>
+            <AppButton
+              label="Retry"
+              variant="primary"
+              onPress={() => refetch()}
+              style={{ marginTop: theme.spacing.md }}
+              testID="content-retry-button"
+            />
+          </View>
+        ) : !projection ? (
+          <EmptyState
+            title="Event Not Found"
+            description={`No Event exists for ID "${eventId}". Content can only be managed for a real Event.`}
+            icon="warning"
+          />
+        ) : posts && posts.length > 0 ? (
+          posts.map((post) => (
             <View key={post.id} style={styles.postCard}>
               <View style={styles.postHeader}>
-                <View style={{ flex: 1 }}>
+                <Pressable
+                  style={{ flex: 1 }}
+                  onPress={() => openEditEditor(post)}
+                >
                   <View
                     style={{
                       flexDirection: "row",
@@ -144,7 +240,11 @@ export default function EventContentScreen() {
                           ? styles.badgePinned
                           : post.state === "hidden"
                             ? styles.badgeHidden
-                            : styles.badgePublic,
+                            : post.state === "scheduled"
+                              ? styles.badgeScheduled
+                              : post.state === "draft"
+                                ? styles.badgeDraft
+                                : styles.badgePublic,
                       ]}
                     >
                       <AppText variant="caption" style={styles.badgeText}>
@@ -160,13 +260,17 @@ export default function EventContentScreen() {
                   >
                     {post.body}
                   </AppText>
-                </View>
+                </Pressable>
               </View>
 
               <View style={styles.postStatsRow}>
                 <AppText variant="caption" color="textMuted">
                   {post.views} views • {post.likes} reactions •{" "}
                   {post.type.toUpperCase()}
+                  {post.state === "scheduled" && post.scheduledFor
+                    ? ` • Scheduled ${post.scheduledFor}`
+                    : ""}
+                  {post.isPinned ? " • PINNED" : ""}
                 </AppText>
               </View>
 
@@ -174,7 +278,8 @@ export default function EventContentScreen() {
               <View style={styles.actionRow}>
                 <Pressable
                   style={styles.actionBtn}
-                  onPress={() => togglePin(post.id)}
+                  onPress={() => togglePinMutation.mutate(post.id)}
+                  testID={`toggle-pin-${post.id}`}
                 >
                   <Icon name="pin" size="xs" color={theme.colors.textMuted} />
                   <AppText variant="caption" color="textMuted">
@@ -184,7 +289,8 @@ export default function EventContentScreen() {
 
                 <Pressable
                   style={styles.actionBtn}
-                  onPress={() => toggleHide(post.id)}
+                  onPress={() => toggleVisibilityMutation.mutate(post.id)}
+                  testID={`toggle-visibility-${post.id}`}
                 >
                   <Icon name="close" size="xs" color={theme.colors.textMuted} />
                   <AppText variant="caption" color="textMuted">
@@ -195,6 +301,7 @@ export default function EventContentScreen() {
                 <Pressable
                   style={styles.actionBtn}
                   onPress={() => handleDelete(post.id)}
+                  testID={`delete-post-${post.id}`}
                 >
                   <Icon
                     name="close"
@@ -214,6 +321,15 @@ export default function EventContentScreen() {
             description="Create an announcement or story for attendees."
           />
         )}
+
+        {anyMutationPending && (
+          <View style={styles.mutationPendingRow}>
+            <ActivityIndicator size="small" color={theme.colors.accentStart} />
+            <AppText variant="caption" color="textMuted">
+              Updating content store...
+            </AppText>
+          </View>
+        )}
       </ScrollView>
 
       {/* Content Editor Modal */}
@@ -222,38 +338,105 @@ export default function EventContentScreen() {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <AppText variant="heading" color="textPrimary">
-                Create Event Post
+                {editingPost ? "Edit Content Post" : "Create Event Post"}
               </AppText>
               <Pressable onPress={() => setShowEditor(false)}>
                 <Icon name="close" size="sm" color={theme.colors.textMuted} />
               </Pressable>
             </View>
 
-            <View style={{ marginBottom: theme.spacing.md }}>
-              <AppText variant="label" style={{ marginBottom: 4 }}>
-                Post Title *
-              </AppText>
-              <TextField
-                placeholder="e.g. Set Times & DJ Lineup"
-                value={newTitle}
-                onChangeText={setNewTitle}
-              />
-            </View>
+            <ScrollView>
+              <View style={{ marginBottom: theme.spacing.md }}>
+                <AppText variant="label" style={{ marginBottom: 4 }}>
+                  Post Title *
+                </AppText>
+                <TextField
+                  placeholder="e.g. Set Times & DJ Lineup"
+                  value={newTitle}
+                  onChangeText={setNewTitle}
+                />
+              </View>
 
-            <View style={{ marginBottom: theme.spacing.lg }}>
-              <AppText variant="label" style={{ marginBottom: 4 }}>
-                Post Body / Caption *
-              </AppText>
-              <TextField
-                placeholder="Write update for event attendees..."
-                value={newBody}
-                onChangeText={setNewBody}
-                multiline
-                style={{ minHeight: 90 }}
-              />
-            </View>
+              <View style={{ marginBottom: theme.spacing.md }}>
+                <AppText variant="label" style={{ marginBottom: 4 }}>
+                  Post Body / Caption *
+                </AppText>
+                <TextField
+                  placeholder="Write update for event attendees..."
+                  value={newBody}
+                  onChangeText={setNewBody}
+                  multiline
+                  style={{ minHeight: 80 }}
+                />
+              </View>
 
-            <AppButton label="Publish Post" onPress={handleCreatePost} />
+              <View style={styles.switchRow}>
+                <View style={{ flex: 1 }}>
+                  <AppText variant="label" color="textPrimary">
+                    Comments Enabled
+                  </AppText>
+                  <AppText variant="caption" color="textMuted">
+                    Allow attendees to react and reply.
+                  </AppText>
+                </View>
+                <Switch
+                  value={newCommentsEnabled}
+                  onValueChange={setNewCommentsEnabled}
+                  testID="content-comments-toggle"
+                />
+              </View>
+
+              <View style={styles.switchRow}>
+                <View style={{ flex: 1 }}>
+                  <AppText variant="label" color="textPrimary">
+                    Auto-Pin on Publish
+                  </AppText>
+                  <AppText variant="caption" color="textMuted">
+                    Pin this post to the top of the Event feed.
+                  </AppText>
+                </View>
+                <Switch
+                  value={newAutoPin}
+                  onValueChange={setNewAutoPin}
+                  testID="content-autopin-toggle"
+                />
+              </View>
+
+              <View style={{ marginBottom: theme.spacing.md }}>
+                <AppText variant="label" style={{ marginBottom: 4 }}>
+                  Schedule Date (YYYY-MM-DD)
+                </AppText>
+                <TextField
+                  placeholder="2026-08-20"
+                  value={newScheduledFor}
+                  onChangeText={setNewScheduledFor}
+                />
+              </View>
+
+              <View style={styles.editorActions}>
+                <AppButton
+                  label="Save Draft"
+                  variant="secondary"
+                  onPress={handleSaveDraft}
+                  style={{ flex: 1 }}
+                  testID="content-save-draft"
+                />
+                <AppButton
+                  label="Schedule"
+                  variant="secondary"
+                  onPress={handleSchedule}
+                  style={{ flex: 1 }}
+                  testID="content-schedule"
+                />
+              </View>
+              <AppButton
+                label="Publish (Simulated)"
+                variant="primary"
+                onPress={handlePublish}
+                style={{ marginTop: theme.spacing.sm }}
+                testID="content-publish"
+              />
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -265,6 +448,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.canvas },
   content: { padding: theme.spacing.md, paddingBottom: theme.spacing.xxxl * 2 },
   createBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
+  loadingArea: { padding: theme.spacing.xxl, alignItems: "center" },
+  stateArea: { padding: theme.spacing.xxl, alignItems: "center" },
   postCard: {
     backgroundColor: theme.colors.surfaceElevated,
     padding: theme.spacing.md,
@@ -276,6 +461,8 @@ const styles = StyleSheet.create({
   badgePinned: { backgroundColor: "rgba(149, 145, 255, 0.2)" },
   badgePublic: { backgroundColor: "rgba(0, 200, 120, 0.15)" },
   badgeHidden: { backgroundColor: "rgba(255, 255, 255, 0.08)" },
+  badgeScheduled: { backgroundColor: "rgba(255, 170, 0, 0.2)" },
+  badgeDraft: { backgroundColor: "rgba(255, 255, 255, 0.15)" },
   badgeText: {
     fontSize: 9,
     fontWeight: "bold",
@@ -289,6 +476,13 @@ const styles = StyleSheet.create({
   },
   actionRow: { flexDirection: "row", gap: theme.spacing.md },
   actionBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
+  mutationPendingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: theme.spacing.sm,
+    paddingVertical: theme.spacing.md,
+  },
   modalBackdrop: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.7)",
@@ -299,11 +493,25 @@ const styles = StyleSheet.create({
     padding: theme.spacing.xl,
     borderTopLeftRadius: theme.radii.xl,
     borderTopRightRadius: theme.radii.xl,
+    maxHeight: "85%",
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: theme.spacing.lg,
+  },
+  switchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: theme.colors.surfaceElevated,
+    padding: theme.spacing.md,
+    borderRadius: theme.radii.md,
+    marginBottom: theme.spacing.md,
+    gap: theme.spacing.md,
+  },
+  editorActions: {
+    flexDirection: "row",
+    gap: theme.spacing.sm,
   },
 });

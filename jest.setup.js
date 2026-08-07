@@ -1,5 +1,9 @@
 import '@testing-library/jest-native/extend-expect';
 
+// Creator repository simulations and mock queries use real timers; give the
+// behavioural suites headroom above the default 5s test timeout.
+jest.setTimeout(30000);
+
 // Mock AsyncStorage
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock')

@@ -1,4 +1,4 @@
-import { Event, HostSummary } from "../events";
+import { Event, EventCategory, HostSummary } from "../events";
 
 /**
  * Creator Domain Models
@@ -10,6 +10,9 @@ export type CreatorActivationStatus =
   | "verification_pending"
   | "verified"
   | "rejected";
+
+export type VerificationState =
+  "not_started" | "incomplete" | "under_review" | "verified" | "rejected";
 
 export interface CreatorProfile {
   id: string; // Matches host.id or user.id
@@ -56,6 +59,53 @@ export interface VerificationChecklistItem {
   actionLabel?: string;
 }
 
+/**
+ * Persisted Event Builder draft. Every field exposed by the Creator Event
+ * Builder is captured here so Preview/Edit reconstruct the exact user input.
+ */
+export interface EventTierDraft {
+  id: string;
+  name: string;
+  description?: string;
+  priceMinor: number;
+  capacity: number;
+  salesStart?: string;
+  salesEnd?: string;
+  maxPerOrder: number;
+  availability: "available" | "selling_fast" | "sold_out";
+}
+
+export interface EventDraft {
+  title: string;
+  description: string;
+  category: EventCategory;
+  visibility: "Public" | "Private" | "Unlisted";
+  ageGuidance: "18+" | "21+" | "All Ages";
+  posterUploaded: boolean;
+  startDate: string;
+  startTime: string;
+  endDate: string;
+  endTime: string;
+  venueName: string;
+  venueAddress: string;
+  venueSuburb: string;
+  venueCity: string;
+  isFree: boolean;
+  tiers: EventTierDraft[];
+}
+
+export interface CreatorContentDraft {
+  title: string;
+  body: string;
+  eventId: string;
+  eventTitle?: string;
+  type: "post" | "story" | "highlight" | "announcement";
+  state: ContentState;
+  commentsEnabled: boolean;
+  autoPin: boolean;
+  scheduledFor?: string;
+}
+
 export type EventStatus =
   "draft" | "published" | "live" | "completed" | "cancelled";
 
@@ -79,6 +129,8 @@ export interface CreatorEventProjection {
   contentSummary: CreatorContentSummary;
   completionPercentage?: number;
   lastEditedAt?: string;
+  /** Persisted Event Builder draft fields (full form state) */
+  eventDraft?: EventDraft;
 }
 
 export interface CreatorEventSummary {
