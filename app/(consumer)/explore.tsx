@@ -20,11 +20,10 @@ import { VenueCard } from "../../src/components/discovery/VenueCard";
 import { useExploreQuery } from "../../src/hooks/discovery/useExploreQuery";
 import { useDiscoveryStore } from "../../src/state/useDiscoveryStore";
 import { useAppStore } from "../../src/state/useAppStore";
+import { useSaveFollowActions } from "../../src/hooks/useSaveFollowActions";
+import { useDemoNowIso } from "../../src/hooks/useDemoNowIso";
 import { useToast } from "../../src/hooks/useToast";
-import {
-  DEMO_NOW_ISO,
-  discoveryCategories,
-} from "../../src/fixtures/discovery";
+import { discoveryCategories } from "../../src/fixtures/discovery";
 import { EventCategory } from "../../src/domain/events";
 import { routeBuilders, ROUTES } from "../../src/navigation/routes";
 import { theme } from "../../src/design-system/theme";
@@ -45,7 +44,9 @@ export default function ExploreScreen() {
   const { showToast } = useToast();
   const exploreQuery = useExploreQuery();
   const scenario = useAppStore((state) => state.scenario);
-  const { filters, setFilters } = useDiscoveryStore();
+  const { filters, setFilters, savedEventIds } = useDiscoveryStore();
+  const { toggleSaved } = useSaveFollowActions();
+  const nowIso = useDemoNowIso();
 
   const handleEventPress = (eventId: string) => {
     router.push(routeBuilders.eventDetail(eventId));
@@ -171,8 +172,13 @@ export default function ExploreScreen() {
                 <EventCard
                   event={evt}
                   variant="standard"
-                  nowIso={DEMO_NOW_ISO}
+                  nowIso={nowIso}
+
                   onPress={() => handleEventPress(evt.id)}
+
+                  isSaved={savedEventIds.includes(evt.id)}
+
+                  onSave={() => toggleSaved(evt.id)}
                 />
               )}
             />
@@ -200,8 +206,13 @@ export default function ExploreScreen() {
                 <EventCard
                   event={evt}
                   variant="standard"
-                  nowIso={DEMO_NOW_ISO}
+                  nowIso={nowIso}
+
                   onPress={() => handleEventPress(evt.id)}
+
+                  isSaved={savedEventIds.includes(evt.id)}
+
+                  onSave={() => toggleSaved(evt.id)}
                 />
               )}
             />
@@ -217,8 +228,13 @@ export default function ExploreScreen() {
                 <EventCard
                   event={evt}
                   variant="standard"
-                  nowIso={DEMO_NOW_ISO}
+                  nowIso={nowIso}
+
                   onPress={() => handleEventPress(evt.id)}
+
+                  isSaved={savedEventIds.includes(evt.id)}
+
+                  onSave={() => toggleSaved(evt.id)}
                 />
               )}
             />
@@ -234,8 +250,13 @@ export default function ExploreScreen() {
                 <EventCard
                   event={evt}
                   variant="standard"
-                  nowIso={DEMO_NOW_ISO}
+                  nowIso={nowIso}
+
                   onPress={() => handleEventPress(evt.id)}
+
+                  isSaved={savedEventIds.includes(evt.id)}
+
+                  onSave={() => toggleSaved(evt.id)}
                 />
               )}
             />

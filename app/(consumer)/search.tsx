@@ -17,11 +17,10 @@ import { VenueCard } from "../../src/components/discovery/VenueCard";
 import { useDiscoverySearchQuery } from "../../src/hooks/discovery/useDiscoverySearchQuery";
 import { useDebouncedValue } from "../../src/hooks/discovery/useDebouncedValue";
 import { useDiscoveryStore } from "../../src/state/useDiscoveryStore";
+import { useSaveFollowActions } from "../../src/hooks/useSaveFollowActions";
+import { useDemoNowIso } from "../../src/hooks/useDemoNowIso";
 import { useToast } from "../../src/hooks/useToast";
-import {
-  DEMO_NOW_ISO,
-  discoveryCategories,
-} from "../../src/fixtures/discovery";
+import { discoveryCategories } from "../../src/fixtures/discovery";
 import {
   DiscoveryFilters,
   DiscoverySearchRouteParams,
@@ -66,8 +65,10 @@ export default function SearchScreen() {
     filters,
     setFilters,
     followedHostIds,
-    toggleHostFollow,
   } = useDiscoveryStore();
+  const { toggleSaved, toggleFollow } = useSaveFollowActions();
+  const savedEventIds = useDiscoveryStore((state) => state.savedEventIds);
+  const nowIso = useDemoNowIso();
 
   useEffect(() => {
     if (params.category || params.collection) {
@@ -304,8 +305,11 @@ export default function SearchScreen() {
                   <EventCard
                     event={item}
                     variant="compact"
-                    nowIso={DEMO_NOW_ISO}
+                    nowIso={nowIso}
+                    isSaved={savedEventIds.includes(item.id)}
                     onPress={() => handleEventPress(item.id)}
+                    onSave={() => toggleSaved(item.id)}
+                    saveTestID={`search-event-save-${item.id}`}
                   />
                 </View>
               )}
@@ -330,7 +334,7 @@ export default function SearchScreen() {
                   <HostRow
                     host={item}
                     followed={followedHostIds.includes(item.id)}
-                    onToggleFollow={() => toggleHostFollow(item.id)}
+                    onToggleFollow={() => toggleFollow(item.id)}
                     onPress={() => handleHostPress(item.id)}
                   />
                 </View>

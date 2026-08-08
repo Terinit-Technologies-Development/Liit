@@ -15,6 +15,9 @@ export function usePaymentSimulationMutation() {
         await queryClient.invalidateQueries({
           queryKey: queryKeys.ticketing.all,
         });
+        await queryClient.invalidateQueries({
+          queryKey: queryKeys.notifications.all,
+        });
       }
     },
   });

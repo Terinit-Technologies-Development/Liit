@@ -62,6 +62,7 @@ export const ROUTES = {
     profile: "/(consumer)/profile",
     savedEvents: "/(consumer)/profile/saved",
     activity: "/(consumer)/profile/activity",
+    following: "/(consumer)/profile/following",
     settings: "/(consumer)/settings",
     search: "/(consumer)/search",
     notifications: "/(consumer)/notifications",
@@ -173,6 +174,9 @@ export const routeBuilders = {
   },
   activity() {
     return { pathname: ROUTES.consumer.activity } as const;
+  },
+  following() {
+    return { pathname: ROUTES.consumer.following } as const;
   },
   settings() {
     return { pathname: ROUTES.consumer.settings } as const;

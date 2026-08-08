@@ -51,4 +51,17 @@ export const mockConsumerNotifications: NotificationItem[] = [
     target: { kind: "event", eventId: "evt-rosebank-art-jazz" },
     eventImageKey: "eventRosebankArtJazz",
   },
+  {
+    id: "notif-6",
+    type: "social_message",
+    title: "New message from Club Vibez",
+    body: "“Hi! Yes, VIP tables are still available for Midnight Kinetic Grooves.”",
+    createdAt: "2026-07-30T19:10:00.000Z",
+    readState: "unread",
+    target: {
+      kind: "message",
+      conversationId: "conv-inquiry-club-vibez",
+    },
+    avatarImageKey: "hostGrooveCo",
+  },
 ];

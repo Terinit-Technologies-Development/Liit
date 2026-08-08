@@ -32,9 +32,14 @@ import { TicketTier } from "../../../src/domain/event-detail";
 import { routeBuilders, ROUTES } from "../../../src/navigation/routes";
 import { showToast } from "../../../src/components/ui/Toast";
 import { getEventDisplayStatus } from "../../../src/domain/discovery/event-presentation";
-import { DEMO_NOW_ISO } from "../../../src/fixtures/discovery";
+import { SecondaryButton } from "../../../src/components/ui/SecondaryButton";
 import { theme } from "../../../src/design-system/theme";
 import { useCheckoutStore } from "../../../src/state/useCheckoutStore";
+import { useTicketWalletQuery } from "../../../src/hooks/ticketing/useTicketWalletQuery";
+import { useSaveFollowActions } from "../../../src/hooks/useSaveFollowActions";
+import { useDemoNowIso } from "../../../src/hooks/useDemoNowIso";
+import { useAppStore } from "../../../src/state/useAppStore";
+import { mockSocialRepository } from "../../../src/repositories/mock/MockSocialRepository";
 
 function normaliseRouteId(value: string | string[] | undefined): string | null {
   if (typeof value === "string" && value.trim().length > 0) {
@@ -55,9 +60,13 @@ export default function EventDetailScreen() {
   const relatedQuery = useRelatedEventsQuery(eventId);
 
   const savedEventIds = useDiscoveryStore((state) => state.savedEventIds);
-  const toggleSavedEvent = useDiscoveryStore((state) => state.toggleSavedEvent);
+  const { toggleSaved } = useSaveFollowActions();
 
   const beginCheckout = useCheckoutStore((state) => state.beginCheckout);
+
+  const scenario = useAppStore((state) => state.scenario);
+  const walletQuery = useTicketWalletQuery(scenario);
+  const nowIso = useDemoNowIso();
 
   const [selectedTierId, setSelectedTierId] = useState<string | null>(null);
   const [userReacted, setUserReacted] = useState(false);
@@ -119,14 +128,57 @@ export default function EventDetailScreen() {
     );
   }
 
-  const conversion = getEventConversionModel(detail);
+  const baseConversion = getEventConversionModel(detail);
   const selectedTier =
     detail.ticketTiers.find((t: TicketTier) => t.id === selectedTierId) ??
     detail.ticketTiers[0];
 
-  const displayStatus = getEventDisplayStatus(detail.event, DEMO_NOW_ISO);
+  const displayStatus = getEventDisplayStatus(detail.event, nowIso);
+
+  // Session-created bookings (not seed history) determine the "already
+  // registered / you have tickets" conversion state so the accepted
+  // checkout entry flows for seeded wallet content remain unchanged.
+  const ownedTickets = (walletQuery.data ?? []).filter(
+    (ticket) =>
+      ticket.eventId === detail.event.id &&
+      ticket.status !== "cancelled" &&
+      !ticket.id.startsWith("ticket-liit-seed-"),
+  );
+  const hasTicket = ownedTickets.length > 0;
+  const firstOwnedTicket = ownedTickets[0];
+
+  const conversion: EventConversionModel = hasTicket
+    ? {
+        ...baseConversion,
+        primaryLabel:
+          firstOwnedTicket?.source === "free_registration"
+            ? "View your pass"
+            : "View your ticket",
+        supportingLabel:
+          baseConversion.mode === "none"
+            ? "This event has ended"
+            : "You already have tickets for this event",
+        disabled: baseConversion.mode === "none",
+      }
+    : baseConversion;
+
+  const handleAskAboutEvent = async () => {
+    // Resolve the canonical host inquiry context so Event Detail, Host
+    // Profile, New Message, Inquiry Thread and Notifications all agree on
+    // the same host + event identity.
+    const conversation = await mockSocialRepository.getOrCreateInquiryContext({
+      hostId: detail.event.host.id,
+      eventId: detail.event.id,
+    });
+    router.push(routeBuilders.inquiryThread(conversation.id));
+  };
 
   const handlePrimaryAction = (model: EventConversionModel) => {
+    if (hasTicket && firstOwnedTicket) {
+      router.push(routeBuilders.fullTicket(firstOwnedTicket.id));
+      return;
+    }
+
     switch (model.mode) {
       case "paid": {
         const tierId =
@@ -165,7 +217,7 @@ export default function EventDetailScreen() {
           event={detail.event}
           onBack={() => router.back()}
           isSaved={savedEventIds.includes(detail.event.id)}
-          onToggleSaved={() => toggleSavedEvent(detail.event.id)}
+          onToggleSaved={() => toggleSaved(detail.event.id)}
           onShare={() => router.push(routeBuilders.eventShare(detail.event.id))}
           onReport={() =>
             router.push(
@@ -212,6 +264,15 @@ export default function EventDetailScreen() {
           onPress={() =>
             router.push(routeBuilders.hostProfile(detail.event.host.id))
           }
+        />
+
+        <SecondaryButton
+          label="Ask about this event"
+          leftIcon="messageCircle"
+          fullWidth
+          onPress={handleAskAboutEvent}
+          accessibilityLabel="Ask the host about this event"
+          testID="event-detail-ask-question"
         />
 
         {detail.modules.lineup ? <LineupRail members={detail.lineup} /> : null}

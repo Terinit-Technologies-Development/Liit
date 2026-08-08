@@ -15,9 +15,10 @@ import {
   usePublicHostQuery,
 } from "../../../src/hooks/hosts/usePublicHostQuery";
 import { useDiscoveryStore } from "../../../src/state/useDiscoveryStore";
+import { useSaveFollowActions } from "../../../src/hooks/useSaveFollowActions";
 import { routeBuilders, ROUTES } from "../../../src/navigation/routes";
-import { showToast } from "../../../src/components/ui/Toast";
 import { theme } from "../../../src/design-system/theme";
+import { mockSocialRepository } from "../../../src/repositories/mock/MockSocialRepository";
 
 function normaliseRouteId(value: string | string[] | undefined): string | null {
   if (typeof value === "string" && value.trim().length > 0) {
@@ -38,7 +39,7 @@ export default function PublicHostProfileScreen() {
   const upcomingEventsQuery = useHostUpcomingEventsQuery(hostId);
 
   const followedHostIds = useDiscoveryStore((state) => state.followedHostIds);
-  const toggleHostFollow = useDiscoveryStore((state) => state.toggleHostFollow);
+  const { toggleFollow } = useSaveFollowActions();
 
   if (!hostId) {
     return (
@@ -97,6 +98,16 @@ export default function PublicHostProfileScreen() {
   const followed = followedHostIds.includes(profile.host.id);
   const upcomingEvents = upcomingEventsQuery.data ?? [];
 
+  const handleMessage = async () => {
+    // Preserve the canonical host identity; scope the inquiry to the host's
+    // first upcoming event when one exists.
+    const conversation = await mockSocialRepository.getOrCreateInquiryContext({
+      hostId: profile.host.id,
+      eventId: upcomingEvents[0]?.id,
+    });
+    router.push(routeBuilders.inquiryThread(conversation.id));
+  };
+
   return (
     <Screen safeAreaEdges={[]} style={styles.screen}>
       <ScrollView contentContainerStyle={styles.content}>
@@ -104,14 +115,8 @@ export default function PublicHostProfileScreen() {
           profile={profile}
           followed={followed}
           onBack={() => router.back()}
-          onToggleFollow={() => toggleHostFollow(profile.host.id)}
-          onMessage={() =>
-            showToast(
-              "Messaging",
-              "Host messaging arrives in a later LIIT instruction.",
-              "info",
-            )
-          }
+          onToggleFollow={() => toggleFollow(profile.host.id)}
+          onMessage={handleMessage}
           onOpenMenu={() =>
             router.push(
               routeBuilders.reportTarget({

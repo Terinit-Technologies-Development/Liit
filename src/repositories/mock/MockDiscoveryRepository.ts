@@ -21,6 +21,10 @@ import {
 } from "../../fixtures/discovery";
 import { MockOptions, simulateMockOperation } from "../../utils/mock-operation";
 import { DiscoveryRepository } from "../contracts/DiscoveryRepository";
+import {
+  applyEventStatusOverride,
+  applyEventStatusOverrides,
+} from "../../state/usePrototypeOverridesStore";
 
 const JOHANNESBURG_CENTRE = {
   latitude: -26.2041,
@@ -222,7 +226,12 @@ export class MockDiscoveryRepository implements DiscoveryRepository {
           ? mockUpcomingFeedEntries
           : mockLiveRecentFeedEntries;
 
-      const items = applyFeedScenario(rawItems, request.scenario);
+      const items = applyFeedScenario(rawItems, request.scenario).map(
+        (entry) =>
+          entry.kind === "event"
+            ? { ...entry, event: applyEventStatusOverride(entry.event) }
+            : entry,
+      );
 
       return {
         items,
@@ -237,7 +246,9 @@ export class MockDiscoveryRepository implements DiscoveryRepository {
   ): Promise<ExplorePayload> {
     return simulateMockOperation(() => {
       const scenario = request.scenario ?? "normal";
-      const baseEvents = applyEventScenario(discoveryEvents, scenario);
+      const baseEvents = applyEventStatusOverrides(
+        applyEventScenario(discoveryEvents, scenario),
+      );
 
       return {
         trending: baseEvents.filter((evt) =>
@@ -278,7 +289,9 @@ export class MockDiscoveryRepository implements DiscoveryRepository {
       }
 
       const query = normalise(input.query);
-      const baseEvents = applyEventScenario(discoveryEvents, scenario);
+      const baseEvents = applyEventStatusOverrides(
+        applyEventScenario(discoveryEvents, scenario),
+      );
 
       const events = baseEvents.filter((event) => {
         const matchesQuery =

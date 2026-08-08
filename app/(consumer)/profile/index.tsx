@@ -13,17 +13,21 @@ import { EmptyState } from "../../../src/components/feedback/EmptyState";
 import { Icon } from "../../../src/design-system/icons/Icon";
 import { useSessionStore } from "../../../src/state/useSessionStore";
 import { useAppStore } from "../../../src/state/useAppStore";
+import { useDiscoveryStore } from "../../../src/state/useDiscoveryStore";
 import { useToast } from "../../../src/hooks/useToast";
-import {
-  mockProfileStats,
-  mockIdentityUser,
-} from "../../../src/fixtures/identity";
-import { mockEvents } from "../../../src/fixtures";
-import { formatCurrency, formatDate } from "../../../src/utils/format";
-import { ROUTES } from "../../../src/navigation/routes";
+import { mockIdentityUser } from "../../../src/fixtures/identity";
+import { useTicketWalletQuery } from "../../../src/hooks/ticketing/useTicketWalletQuery";
+import { useDemoNowIso } from "../../../src/hooks/useDemoNowIso";
+import { useEventsByIdsQuery } from "../../../src/hooks/events/useEventDetailQuery";
+import { usePublicHostsByIdsQuery } from "../../../src/hooks/hosts/usePublicHostQuery";
+import { HostRow } from "../../../src/components/discovery/HostRow";
+import { useSaveFollowActions } from "../../../src/hooks/useSaveFollowActions";
+import { classifyWalletTicket } from "../../../src/domain/ticketing/wallet";
+import { EventCard } from "../../../src/components/discovery/EventCard";
+import { routeBuilders, ROUTES } from "../../../src/navigation/routes";
 import { theme } from "../../../src/design-system/theme";
 
-type SegmentTab = "attended" | "saved" | "activity";
+type SegmentTab = "attended" | "saved" | "following" | "activity";
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -32,10 +36,25 @@ export default function ProfileScreen() {
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<SegmentTab>("saved");
 
+  const savedEventIds = useDiscoveryStore((state) => state.savedEventIds);
+  const followedHostIds = useDiscoveryStore((state) => state.followedHostIds);
+  const { toggleSaved, toggleFollow } = useSaveFollowActions();
+  const nowIso = useDemoNowIso();
+
+  const scenario = useAppStore((s) => s.scenario);
+  const walletQuery = useTicketWalletQuery(scenario);
+  const savedEventsQuery = useEventsByIdsQuery(savedEventIds);
+  const followedHostsQuery = usePublicHostsByIdsQuery(followedHostIds);
+
   const currentUser = user || mockIdentityUser;
   const isGuest = status === "guest";
 
-  const savedEvents = mockEvents.filter((evt) => evt.isSaved);
+  const attendedCount = (walletQuery.data ?? []).filter(
+    (ticket) => classifyWalletTicket(ticket, nowIso) === "past",
+  ).length;
+  const savedCount = savedEventIds.length;
+  const followingCount = followedHostIds.length;
+
   const recentActivities = [
     {
       id: "act_1",
@@ -131,7 +150,7 @@ export default function ProfileScreen() {
           <View style={styles.statsRow}>
             <View style={styles.statBox}>
               <AppText variant="display" color={theme.colors.accentStart}>
-                {isGuest ? 0 : mockProfileStats.attendedCount}
+                {isGuest ? 0 : attendedCount}
               </AppText>
               <AppText variant="label" color={theme.colors.textMuted}>
                 Attended
@@ -140,7 +159,7 @@ export default function ProfileScreen() {
             <View style={styles.statDivider} />
             <View style={styles.statBox}>
               <AppText variant="display" color={theme.colors.accentStart}>
-                {isGuest ? 0 : mockProfileStats.savedCount}
+                {isGuest ? 0 : savedCount}
               </AppText>
               <AppText variant="label" color={theme.colors.textMuted}>
                 Saved
@@ -149,7 +168,7 @@ export default function ProfileScreen() {
             <View style={styles.statDivider} />
             <View style={styles.statBox}>
               <AppText variant="display" color={theme.colors.accentStart}>
-                {isGuest ? 0 : mockProfileStats.followingCount}
+                {isGuest ? 0 : followingCount}
               </AppText>
               <AppText variant="label" color={theme.colors.textMuted}>
                 Following
@@ -190,17 +209,19 @@ export default function ProfileScreen() {
 
         {/* Segmented Control */}
         <View style={styles.segmentedRow}>
-          {(["saved", "activity", "attended"] as SegmentTab[]).map((tab) => {
-            const isActive = activeTab === tab;
-            return (
-              <Chip
-                key={tab}
-                label={tab.charAt(0).toUpperCase() + tab.slice(1)}
-                selected={isActive}
-                onPress={() => setActiveTab(tab)}
-              />
-            );
-          })}
+          {(["saved", "following", "activity", "attended"] as SegmentTab[]).map(
+            (tab) => {
+              const isActive = activeTab === tab;
+              return (
+                <Chip
+                  key={tab}
+                  label={tab.charAt(0).toUpperCase() + tab.slice(1)}
+                  selected={isActive}
+                  onPress={() => setActiveTab(tab)}
+                />
+              );
+            },
+          )}
         </View>
 
         {/* Tab Contents */}
@@ -214,31 +235,17 @@ export default function ProfileScreen() {
           />
         ) : activeTab === "saved" ? (
           <View style={styles.tabSection}>
-            {savedEvents.map((evt) => (
-              <SurfaceCard key={evt.id} style={styles.eventCard}>
-                <View style={styles.eventCardContent}>
-                  <View style={styles.eventCardText}>
-                    <StatusPill
-                      label={evt.status}
-                      type={evt.status === "live" ? "live" : "verified"}
-                    />
-                    <AppText variant="heading" style={styles.eventTitle}>
-                      {evt.title}
-                    </AppText>
-                    <AppText variant="label" color={theme.colors.textSecondary}>
-                      {evt.venue.name} • {evt.venue.suburb}
-                    </AppText>
-                    <AppText
-                      variant="caption"
-                      color={theme.colors.accentStart}
-                      style={styles.eventTime}
-                    >
-                      {formatDate(evt.occurrence.startTime)} •{" "}
-                      {formatCurrency(evt.startingPriceMinor, evt.currency)}
-                    </AppText>
-                  </View>
-                </View>
-              </SurfaceCard>
+            {(savedEventsQuery.data ?? []).map((evt) => (
+              <View key={evt.id}>
+                <EventCard
+                  event={evt}
+                  variant="standard"
+                  nowIso={nowIso}
+                  isSaved
+                  onPress={() => router.push(routeBuilders.eventDetail(evt.id))}
+                  onSave={() => toggleSaved(evt.id)}
+                />
+              </View>
             ))}
             <Pressable
               onPress={() => router.push(ROUTES.consumer.savedEvents)}
@@ -246,6 +253,32 @@ export default function ProfileScreen() {
             >
               <AppText variant="label" color={theme.colors.accentStart}>
                 View All Saved Events →
+              </AppText>
+            </Pressable>
+          </View>
+        ) : activeTab === "following" ? (
+          <View style={styles.tabSection}>
+            {(followedHostsQuery.data ?? [])
+              .filter((profile): profile is NonNullable<typeof profile> =>
+                Boolean(profile),
+              )
+              .map((profile) => (
+                <HostRow
+                  key={profile.host.id}
+                  host={profile.host}
+                  followed
+                  onToggleFollow={() => toggleFollow(profile.host.id)}
+                  onPress={() =>
+                    router.push(routeBuilders.hostProfile(profile.host.id))
+                  }
+                />
+              ))}
+            <Pressable
+              onPress={() => router.push(ROUTES.consumer.following)}
+              style={styles.viewAllBtn}
+            >
+              <AppText variant="label" color={theme.colors.accentStart}>
+                View All Following →
               </AppText>
             </Pressable>
           </View>

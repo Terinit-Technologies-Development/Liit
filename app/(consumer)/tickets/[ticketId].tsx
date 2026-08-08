@@ -17,10 +17,12 @@ import { TicketStatusPill } from "../../../src/components/ticketing/TicketStatus
 import { QrPlaceholder } from "../../../src/components/ticketing/QrPlaceholder";
 import { ErrorState } from "../../../src/components/ui/ErrorState";
 import { useTicketQuery } from "../../../src/hooks/ticketing/useTicketQuery";
-import { WalletTicket, TicketStatus } from "../../../src/domain/ticketing";
+import { WalletTicket } from "../../../src/domain/ticketing";
+import { getEffectiveTicketState } from "../../../src/domain/ticketing/wallet";
 import { formatDate, formatTime } from "../../../src/utils/format";
 import { theme } from "../../../src/design-system/theme";
 import { ROUTES } from "../../../src/navigation/routes";
+import { useDemoNowIso } from "../../../src/hooks/useDemoNowIso";
 
 function normaliseId(value: string | string[] | undefined): string | null {
   if (typeof value === "string" && value.trim().length > 0) return value;
@@ -35,12 +37,19 @@ interface EntryPresentation {
 
 export function getTicketEntryPresentation(
   ticket: WalletTicket,
+  nowIso: string,
 ): EntryPresentation {
-  switch (ticket.status as TicketStatus) {
+  const effectiveState = getEffectiveTicketState(ticket, nowIso);
+  switch (effectiveState) {
     case "valid":
       return {
         canDisplayEntryCode: ticket.entryMode === "qr_placeholder",
         message: "Simulated entry code. Not valid for admission.",
+      };
+    case "expired":
+      return {
+        canDisplayEntryCode: false,
+        message: "This pass expired when the event ended.",
       };
     case "pending":
       return {
@@ -73,6 +82,7 @@ export default function FullTicketScreen() {
 
   const ticketQuery = useTicketQuery(ticketId);
   const ticket = ticketQuery.data;
+  const nowIso = useDemoNowIso();
 
   const [highBrightness, setHighBrightness] = useState(false);
 
@@ -113,9 +123,11 @@ export default function FullTicketScreen() {
   }
 
   const isFreeRegistration = ticket.source === "free_registration";
-  const entryPresentation = getTicketEntryPresentation(ticket);
+  const entryPresentation = getTicketEntryPresentation(ticket, nowIso);
   const isProfileVerification = ticket.entryMode === "profile_verification";
-  const canVerifyProfile = isProfileVerification && ticket.status === "valid";
+  const canVerifyProfile =
+    isProfileVerification &&
+    getEffectiveTicketState(ticket, nowIso) === "valid";
 
   const passPalette = highBrightness
     ? {

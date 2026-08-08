@@ -1,6 +1,10 @@
 import { Event } from "../events";
 import { ImageAssetKey } from "../../assets/image-registry";
 import { formatCurrency, formatDateRange } from "../../utils/format";
+import {
+  EventStatusOverride,
+  getPrototypeEventStatusOverride,
+} from "../../state/usePrototypeOverridesStore";
 
 const SELLING_FAST_RATIO = 0.2;
 
@@ -13,10 +17,28 @@ export type EventDisplayStatus =
   | "Completed"
   | "Cancelled";
 
+const OVERRIDE_DISPLAY_STATUS: Record<EventStatusOverride, EventDisplayStatus> =
+  {
+    live: "Live",
+    sold_out: "Sold Out",
+    completed: "Completed",
+    cancelled: "Cancelled",
+  };
+
 export function getEventDisplayStatus(
   event: Event,
   nowIso: string,
+  forcedStatus?: EventStatusOverride,
 ): EventDisplayStatus {
+  // Prototype Controls overrides are authoritative: they win over derived
+  // presentation state (elapsed end times, zero remaining inventory, live
+  // timing windows) for both the shared forced status passed in and the
+  // persisted prototype override for this event.
+  const forced = forcedStatus ?? getPrototypeEventStatusOverride(event.id);
+  if (forced) {
+    return OVERRIDE_DISPLAY_STATUS[forced];
+  }
+
   const now = Date.parse(nowIso);
   const start = Date.parse(event.occurrence.startTime);
   const end = Date.parse(event.occurrence.endTime);
@@ -76,6 +98,7 @@ export function toEventCardViewModel(
   options: {
     nowIso: string;
     attendeeCount?: number;
+    isSaved?: boolean;
   },
 ): EventCardViewModel {
   const status = getEventDisplayStatus(event, options.nowIso);
@@ -106,7 +129,7 @@ export function toEventCardViewModel(
     venueLine: `${event.venue.name}, ${event.venue.suburb}`,
     dateLabel,
     priceLabel,
-    isSaved: Boolean(event.isSaved),
+    isSaved: options.isSaved ?? Boolean(event.isSaved),
     imageKey,
     attendeeCount: options.attendeeCount ?? 0,
   };

@@ -1,9 +1,11 @@
 import React from "react";
 import { render, fireEvent } from "@testing-library/react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import ProfileScreen from "../../app/(consumer)/profile/index";
 import ModeSwitchModal from "../../app/(modals)/mode-switch";
 import { useAppStore } from "../../src/state/useAppStore";
+import { useSessionStore } from "../../src/state/useSessionStore";
 
 // Mock expo-router
 jest.mock("expo-router", () => ({
@@ -20,16 +22,24 @@ const initialMetrics = {
 };
 
 describe("Profile Mode Switch Rendered Flow", () => {
+  let queryClient: QueryClient;
+
   beforeEach(() => {
     useAppStore.setState({ activeMode: "consumer" });
+    useSessionStore.getState().setAuthenticatedUser();
+    queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
   });
 
   it("preserves Consumer mode when opening switcher, selecting Creator, and cancelling", () => {
     // 1. Render Consumer Profile
     const { getByText: getProfileText } = render(
-      <SafeAreaProvider initialMetrics={initialMetrics}>
-        <ProfileScreen />
-      </SafeAreaProvider>,
+      <QueryClientProvider client={queryClient}>
+        <SafeAreaProvider initialMetrics={initialMetrics}>
+          <ProfileScreen />
+        </SafeAreaProvider>
+      </QueryClientProvider>,
     );
     expect(getProfileText("Thabo Mbeki")).toBeTruthy();
 

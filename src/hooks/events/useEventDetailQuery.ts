@@ -17,3 +17,11 @@ export function useRelatedEventsQuery(eventId: string | null) {
     enabled: Boolean(eventId),
   });
 }
+
+export function useEventsByIdsQuery(ids: string[]) {
+  return useQuery({
+    queryKey: queryKeys.events.byIds(ids),
+    queryFn: () => mockEventRepository.listEventsByIds(ids),
+    enabled: ids.length > 0,
+  });
+}

@@ -7,11 +7,16 @@ export type ConsumerNotificationType =
   | "host_post"
   | "social_follow"
   | "social_reaction"
+  | "social_message"
   | "booking_confirmed";
 
 export type NotificationTarget =
   | {
       kind: "tickets";
+    }
+  | {
+      kind: "ticket";
+      ticketId: string;
     }
   | {
       kind: "event";
@@ -20,6 +25,10 @@ export type NotificationTarget =
   | {
       kind: "host";
       hostId: string;
+    }
+  | {
+      kind: "message";
+      conversationId: string;
     }
   | {
       kind: "search";

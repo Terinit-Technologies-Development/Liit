@@ -3,6 +3,7 @@ import {
   PaymentAttempt,
   PaymentMethod,
   TicketOrder,
+  TicketStatus,
   WalletTicket,
 } from "../../domain/ticketing";
 import { PrototypeScenario } from "../../state/useAppStore";
@@ -35,5 +36,10 @@ export interface TicketingRepository {
   getOrder(orderId: string): Promise<TicketOrder | null>;
   listWalletTickets(): Promise<WalletTicket[]>;
   getTicket(ticketId: string): Promise<WalletTicket | null>;
+  getTierAvailability(eventId: string): Promise<Record<string, number>>;
+  setTicketStatus(
+    ticketId: string,
+    status: TicketStatus,
+  ): Promise<WalletTicket | null>;
   reset(): Promise<void>;
 }

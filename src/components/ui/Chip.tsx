@@ -12,6 +12,7 @@ export interface ChipProps {
   onPress?: () => void;
   icon?: SemanticIconName;
   style?: StyleProp<ViewStyle>;
+  testID?: string;
 }
 
 export const Chip: React.FC<ChipProps> = ({
@@ -22,6 +23,7 @@ export const Chip: React.FC<ChipProps> = ({
   onPress,
   icon,
   style,
+  testID,
 }) => {
   const isSelected = selected || active;
 
@@ -29,6 +31,7 @@ export const Chip: React.FC<ChipProps> = ({
     <Pressable
       onPress={onPress}
       disabled={!onPress}
+      testID={testID}
       accessibilityRole="button"
       accessibilityState={{ selected: isSelected }}
       style={({ pressed }) => [

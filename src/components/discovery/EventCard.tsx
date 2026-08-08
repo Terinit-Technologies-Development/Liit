@@ -22,8 +22,11 @@ export interface EventCardProps {
   nowIso: string;
   attendeeCount?: number;
   attendeeAvatarKeys?: string[];
+  isSaved?: boolean;
   onPress(): void;
   onSave?(): void;
+  /** Optional event-specific testID for the save control, e.g. `search-event-save-<eventId>`. */
+  saveTestID?: string;
   testID?: string;
 }
 
@@ -52,13 +55,16 @@ export function EventCard({
   nowIso,
   attendeeCount = 0,
   attendeeAvatarKeys = [],
+  isSaved,
   onPress,
   onSave,
+  saveTestID,
   testID,
 }: EventCardProps) {
   const model = toEventCardViewModel(event, {
     nowIso,
     attendeeCount,
+    isSaved,
   });
 
   const imageSource = getImageSource(model.imageKey);
@@ -93,6 +99,21 @@ export function EventCard({
             {model.dateLabel} • {model.venueLine}
           </AppText>
         </View>
+        {onSave ? (
+          <IconButton
+            icon={model.isSaved ? "bookmarkFilled" : "bookmark"}
+            onPress={onSave}
+            accessibilityLabel={
+              model.isSaved
+                ? `Remove ${model.title} from saved events`
+                : `Save ${model.title}`
+            }
+            accessibilityState={{ selected: model.isSaved }}
+            variant="surface"
+            size="md"
+            testID={saveTestID ?? `event-save-${event.id}`}
+          />
+        ) : null}
       </Pressable>
     );
   }

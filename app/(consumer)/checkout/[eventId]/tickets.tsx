@@ -16,6 +16,7 @@ import { useCheckoutStore } from "../../../../src/state/useCheckoutStore";
 import { useSessionStore } from "../../../../src/state/useSessionStore";
 import { buildCheckoutQuote } from "../../../../src/domain/ticketing/quote";
 import { mockTicketingRepository } from "../../../../src/repositories/mock/MockTicketingRepository";
+import { useTierAvailabilityQuery } from "../../../../src/hooks/ticketing/useTierAvailabilityQuery";
 import { routeBuilders, ROUTES } from "../../../../src/navigation/routes";
 import { queryKeys } from "../../../../src/state/query-keys";
 import { nanoid } from "../../../../src/utils/nanoid";
@@ -42,6 +43,7 @@ export default function CheckoutTicketsScreen() {
 
   const detailQuery = useEventDetailQuery(eventId);
   const detail = detailQuery.data;
+  const availabilityQuery = useTierAvailabilityQuery(eventId);
 
   const user = useSessionStore((s) => s.user);
   const draftQuantities = useCheckoutStore((s) => s.draft?.quantities);
@@ -75,14 +77,32 @@ export default function CheckoutTicketsScreen() {
     [setQuantity],
   );
 
+  const liveTiers = useMemo(() => {
+    if (!detail) return [];
+    const tierAvailability = availabilityQuery.data ?? {};
+    // Overlay the repository-owned persisted inventory on the fixture tiers
+    // so reopened checkout observes reduced supply after successful bookings.
+    return detail.ticketTiers.map((tier) => {
+      const remaining = tierAvailability[tier.id];
+      if (remaining === undefined) {
+        return tier;
+      }
+      return {
+        ...tier,
+        remaining,
+        state: remaining <= 0 ? ("sold_out" as const) : tier.state,
+      };
+    });
+  }, [detail, availabilityQuery.data]);
+
   const quote = useMemo(() => {
     if (!detail) return null;
     try {
-      return buildCheckoutQuote(eventId ?? "", detail.ticketTiers, quantities);
+      return buildCheckoutQuote(eventId ?? "", liveTiers, quantities);
     } catch {
       return null;
     }
-  }, [detail, eventId, quantities]);
+  }, [detail, eventId, quantities, liveTiers]);
 
   const isFreeFlow = detail?.event?.startingPriceMinor === 0;
   const hasSelection = (quote?.totalQuantity ?? 0) > 0;
@@ -119,6 +139,9 @@ export default function CheckoutTicketsScreen() {
 
         await queryClient.invalidateQueries({
           queryKey: queryKeys.ticketing.all,
+        });
+        await queryClient.invalidateQueries({
+          queryKey: queryKeys.notifications.all,
         });
 
         clearCheckout();
@@ -214,7 +237,7 @@ export default function CheckoutTicketsScreen() {
       >
         <PrototypeBadge />
 
-        {detail?.ticketTiers.map((tier) => (
+        {liveTiers.map((tier) => (
           <TicketTierSelector
             key={tier.id}
             tier={tier}

@@ -9,16 +9,15 @@ import { NotificationRow } from "../../src/components/notifications/Notification
 import { SecondaryButton } from "../../src/components/ui/SecondaryButton";
 import { useNotificationsQuery } from "../../src/hooks/discovery/useNotificationsQuery";
 import { useAppStore } from "../../src/state/useAppStore";
-import { useToast } from "../../src/hooks/useToast";
 import { NotificationFilter } from "../../src/repositories/contracts/NotificationRepository";
 import { NotificationTarget } from "../../src/domain/notifications";
-import { ROUTES } from "../../src/navigation/routes";
+import { mockSocialRepository } from "../../src/repositories/mock/MockSocialRepository";
+import { routeBuilders, ROUTES } from "../../src/navigation/routes";
 import { theme } from "../../src/design-system/theme";
 import { Icon } from "../../src/design-system/icons/Icon";
 
 export default function NotificationsScreen() {
   const router = useRouter();
-  const { showToast } = useToast();
   const [filter, setFilter] = useState<NotificationFilter>("all");
   const scenario = useAppStore((state) => state.scenario);
 
@@ -39,19 +38,34 @@ export default function NotificationsScreen() {
       case "tickets":
         router.push(ROUTES.consumer.tickets as any);
         break;
+      case "ticket":
+        router.push(routeBuilders.fullTicket(target.ticketId));
+        break;
       case "event":
-        showToast(
-          "Event Target",
-          `Opening event details for ${target.eventId}`,
-          "info",
-        );
+        router.push(routeBuilders.eventDetail(target.eventId));
         break;
       case "host":
-        showToast(
-          "Host Target",
-          `Opening host profile for ${target.hostId}`,
-          "info",
-        );
+        router.push(routeBuilders.hostProfile(target.hostId));
+        break;
+      case "message":
+        void (async () => {
+          try {
+            const conversation = await mockSocialRepository.getConversation(
+              target.conversationId,
+            );
+            if (!conversation) {
+              router.push(routeBuilders.inbox());
+              return;
+            }
+            router.push(
+              conversation.kind === "inquiry"
+                ? routeBuilders.inquiryThread(conversation.id)
+                : routeBuilders.directThread(conversation.id),
+            );
+          } catch {
+            router.push(routeBuilders.inbox());
+          }
+        })();
         break;
       case "search":
         router.push({

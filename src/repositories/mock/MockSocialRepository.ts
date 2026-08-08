@@ -3,6 +3,7 @@ import {
   Comment,
   Conversation,
   ConversationKind,
+  HostInquiryConversation,
   Message,
   MessageRecipient,
   PostCommentInput,
@@ -10,6 +11,7 @@ import {
   SendMessageInput,
 } from "../../domain/social";
 import {
+  GetOrCreateInquiryContextInput,
   SocialRepository,
   SocialRepositoryState,
 } from "../contracts/SocialRepository";
@@ -19,8 +21,15 @@ import {
   seedInquiryConversations,
   seedMessagesMap,
 } from "../../fixtures/social/conversations";
+import { demoNowIso, useDemoClockStore } from "../../state/useDemoClockStore";
+import { usePrototypeControlsStore } from "../../state/usePrototypeControlsStore";
+import { useSocialStore } from "../../state/useSocialStore";
+import { discoveryEvents } from "../../fixtures/discovery";
 
 const STORAGE_KEY = "liit-social-state-v1";
+
+export const HOST_TYPING_INDICATOR_MS = 1200;
+export const HOST_REPLY_GAP_MS = 1800;
 
 function createSeedSocialState(): SocialRepositoryState {
   return {
@@ -32,7 +41,49 @@ function createSeedSocialState(): SocialRepositoryState {
     comments: structuredClone(seedComments),
     blockedUserIds: ["usr-sipho-mthethwa"],
     failedCommentAttempts: {},
+    simulatedReplyConversationIds: [],
   };
+}
+
+const SIMULATED_HOST_REPLIES: Record<string, string> = {
+  "conv-inquiry-club-vibez":
+    "Hi! Thanks for the message — VIP tables are still available for Midnight Kinetic Grooves. Complete your booking and we'll keep the table aside for you.",
+  "conv-inquiry-soweto-market":
+    "Sawubona! Yes, the market stall is confirmed for Saturday. You can register for free and we'll see you in Soweto.",
+};
+
+/**
+ * Resolves the deterministic prototype host reply from the inquiry's
+ * canonical context (hostId + optional eventId) rather than from exact
+ * seeded conversation ids, so conversations created through
+ * getOrCreateInquiryContext (Event Detail / Host Profile) reply too.
+ * Seeded fixture hosts keep their historical canned texts.
+ */
+export function getPrototypeHostReply(
+  conversation: HostInquiryConversation,
+): string | null {
+  const eventId = conversation.eventContext.eventId;
+
+  switch (conversation.hostId) {
+    case "host-club-vibez":
+      return SIMULATED_HOST_REPLIES["conv-inquiry-club-vibez"] ?? null;
+    case "host-soweto-collective":
+      return SIMULATED_HOST_REPLIES["conv-inquiry-soweto-market"] ?? null;
+    case "host-groove-co":
+      return eventId === "evt-deep-house-rooftop"
+        ? "The rooftop doors are open and the vinyl sets are spinning. Grab your ticket and pull up before the vibe peaks!"
+        : "Hi! Thanks for reaching out — we're ready for you on the rooftop. Let us know if you need anything for the night.";
+    case "host-jozi-vibe-tribe":
+      return eventId === "evt-soweto-food-market"
+        ? "Sawubona! Yes, the market stall is confirmed for Saturday. You can register for free and we'll see you in Soweto."
+        : "Hi! We'd love to have you along. Check the event page for the full schedule and register when you're ready.";
+    case "host-art-hub-jhb":
+      return "Hello! The showcase is open and tickets are limited. Ask us anything — we're happy to help.";
+    case "host-amapiano-pulse":
+      return "Yoo! The festival lineup is live. Secure your pass early — it's moving fast!";
+    default:
+      return null;
+  }
 }
 
 function delayMs(ms: number): Promise<void> {
@@ -62,6 +113,8 @@ export class MockSocialRepository implements SocialRepository {
           comments: parsed.comments ?? [],
           blockedUserIds: parsed.blockedUserIds ?? [],
           failedCommentAttempts: parsed.failedCommentAttempts ?? {},
+          simulatedReplyConversationIds:
+            parsed.simulatedReplyConversationIds ?? [],
         };
       }
     } catch {
@@ -132,7 +185,7 @@ export class MockSocialRepository implements SocialRepository {
         throw new Error("Inquiry is closed");
       }
 
-      const now = new Date().toISOString();
+      const now = demoNowIso(useDemoClockStore.getState().offsetMs);
 
       const newMessage: Message = {
         id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
@@ -158,6 +211,183 @@ export class MockSocialRepository implements SocialRepository {
       await this.saveState(state);
       return structuredClone(newMessage);
     });
+  }
+
+  async simulateHostReply(conversationId: string): Promise<Message | null> {
+    return this.runExclusive(async () => {
+      const state = await this.loadState();
+
+      const conv = state.conversations.find(
+        (c): c is HostInquiryConversation =>
+          c.id === conversationId && c.kind === "inquiry",
+      );
+      if (!conv) {
+        return null;
+      }
+
+      if (conv.isBlocked || conv.isClosed) {
+        return null;
+      }
+
+      const simulated = state.simulatedReplyConversationIds ?? [];
+      if (simulated.includes(conversationId)) {
+        return null;
+      }
+
+      const replyContent = getPrototypeHostReply(conv);
+      if (!replyContent) {
+        return null;
+      }
+
+      const reply: Message = {
+        id: `msg-${conversationId}-reply`,
+        conversationId,
+        senderId: conv.hostId,
+        senderName: conv.hostName,
+        senderAvatarUrl: conv.hostAvatarUrl,
+        senderType: "host",
+        content: replyContent,
+        sentAt: demoNowIso(useDemoClockStore.getState().offsetMs),
+        status: "delivered",
+        isIncoming: true,
+      };
+
+      if (!state.messages[conversationId]) {
+        state.messages[conversationId] = [];
+      }
+      state.messages[conversationId].push(reply);
+
+      conv.lastMessage = reply;
+      conv.updatedAt = reply.sentAt;
+      conv.unreadCount = (conv.unreadCount ?? 0) + 1;
+
+      state.simulatedReplyConversationIds = [...simulated, conversationId];
+
+      await this.saveState(state);
+      return structuredClone(reply);
+    });
+  }
+
+  async getOrCreateInquiryContext(
+    input: GetOrCreateInquiryContextInput,
+  ): Promise<HostInquiryConversation> {
+    return this.runExclusive(async () => {
+      const state = await this.loadState();
+
+      const eventId = input.eventId ?? "";
+      const conversationId = `conv-inquiry-${input.hostId}-${eventId || "general"}`;
+      const existing = state.conversations.find((c) => c.id === conversationId);
+      if (existing) {
+        if (existing.kind !== "inquiry") {
+          throw new Error("Conversation id collides with a direct thread");
+        }
+        return structuredClone(existing as HostInquiryConversation);
+      }
+
+      const event = discoveryEvents.find((e) => e.id === eventId);
+      const host =
+        event?.host ??
+        discoveryEvents.map((e) => e.host).find((h) => h.id === input.hostId);
+
+      const now = demoNowIso(useDemoClockStore.getState().offsetMs);
+      const eventTitle = event?.title ?? `${host?.name ?? "Host"} inquiry`;
+      const greeting: Message = {
+        id: `msg-${conversationId}-greeting`,
+        conversationId,
+        senderId: host?.id ?? input.hostId,
+        senderName: host?.name ?? "Host",
+        senderAvatarUrl: host?.avatarImageKey ?? "hostGrooveCo",
+        senderType: "host",
+        content: `Hi! How can we help you with ${eventTitle}?`,
+        sentAt: now,
+        status: "delivered",
+        isIncoming: true,
+      };
+
+      const conversation: HostInquiryConversation = {
+        id: conversationId,
+        kind: "inquiry",
+        hostId: host?.id ?? input.hostId,
+        hostName: host?.name ?? "Host",
+        hostHandle: host?.handle ?? "@host",
+        hostAvatarUrl: host?.avatarImageKey ?? "hostGrooveCo",
+        isVerified: host?.isVerified ?? false,
+        typicalReplyTime: "Replies within 1 hour",
+        eventContext: {
+          eventId,
+          eventTitle,
+          eventDateText: event
+            ? `${event.occurrence.startTime} - ${event.occurrence.endTime}`
+            : "",
+          eventVenueText: event
+            ? `${event.venue.name} · ${event.venue.suburb}`
+            : "",
+          eventImageKey: event?.heroImageKey ?? "eventMidnightGrooves",
+        },
+        lastMessage: greeting,
+        unreadCount: 0,
+        updatedAt: now,
+      };
+
+      if (!state.messages[conversationId]) {
+        state.messages[conversationId] = [];
+      }
+      state.messages[conversationId].push(greeting);
+      state.conversations.push(conversation);
+
+      await this.saveState(state);
+      return structuredClone(conversation);
+    });
+  }
+
+  /**
+   * Eligibility pre-check for the simulated host reply: the conversation must
+   * exist, be an open inquiry, support a deterministic canned reply, and must
+   * not have already consumed its once-per-reset reply. Returns the
+   * conversation when eligible, otherwise null.
+   */
+  private async canSchedulePrototypeHostReply(
+    conversationId: string,
+  ): Promise<HostInquiryConversation | null> {
+    const state = await this.loadState();
+
+    const conversation = state.conversations.find(
+      (item): item is HostInquiryConversation =>
+        item.id === conversationId && item.kind === "inquiry",
+    );
+
+    if (
+      !conversation ||
+      conversation.isBlocked ||
+      conversation.isClosed ||
+      (state.simulatedReplyConversationIds ?? []).includes(conversationId) ||
+      !getPrototypeHostReply(conversation)
+    ) {
+      return null;
+    }
+
+    return conversation;
+  }
+
+  async maybeSchedulePrototypeHostReply(
+    conversationId: string,
+  ): Promise<Message | null> {
+    const conversation =
+      await this.canSchedulePrototypeHostReply(conversationId);
+    if (!conversation) {
+      // Not eligible: no typing animation, no reply. In particular, after the
+      // once-per-reset canned reply is consumed, later messages do not trigger
+      // the typing indicator until Reset All.
+      return null;
+    }
+
+    const setTyping = useSocialStore.getState().setTyping;
+    setTyping(conversationId, true);
+    await delayMs(HOST_TYPING_INDICATOR_MS);
+    setTyping(conversationId, false);
+    await delayMs(HOST_REPLY_GAP_MS);
+
+    return this.simulateHostReply(conversationId);
   }
 
   async retryMessage(
@@ -262,7 +492,8 @@ export class MockSocialRepository implements SocialRepository {
       if (
         input.clientMutationId &&
         !state.failedCommentAttempts[input.clientMutationId] &&
-        input.content.includes("FAIL")
+        (input.content.includes("FAIL") ||
+          usePrototypeControlsStore.getState().commentFailure)
       ) {
         state.failedCommentAttempts[input.clientMutationId] = true;
         await this.saveState(state);
@@ -278,7 +509,7 @@ export class MockSocialRepository implements SocialRepository {
         authorName: "Keketso",
         authorAvatarUrl: "userAvatarDefault",
         content: input.content,
-        postedAt: new Date().toISOString(),
+        postedAt: demoNowIso(useDemoClockStore.getState().offsetMs),
         reactionsCount: 0,
         userReacted: false,
         status: "synced",

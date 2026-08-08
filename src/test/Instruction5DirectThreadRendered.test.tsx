@@ -132,7 +132,10 @@ describe("DirectThreadScreen Rendered Integration Tests", () => {
       () => {
         expect(screen.queryByTestId("delivery-status-retry")).toBeNull();
       },
-      { timeout: 4000 },
+      // The retry flow spans repository latency (~800ms) plus query
+      // refetch; under full-suite load the previous 4s window flaked
+      // intermittently. Align with the test's 10s timeout.
+      { timeout: 10000 },
     );
 
     const finalMsgs =

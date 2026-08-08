@@ -11,12 +11,12 @@ import { AppImage } from "../../../src/components/ui/AppImage";
 import { getImageSource } from "../../../src/assets/image-registry";
 import { useAppStore } from "../../../src/state/useAppStore";
 import { useTicketWalletQuery } from "../../../src/hooks/ticketing/useTicketWalletQuery";
+import { useDemoNowIso } from "../../../src/hooks/useDemoNowIso";
 import { WalletTicket } from "../../../src/domain/ticketing";
 import { classifyWalletTicket } from "../../../src/domain/ticketing/wallet";
 import { routeBuilders } from "../../../src/navigation/routes";
 import { formatDate, formatTime } from "../../../src/utils/format";
 import { theme } from "../../../src/design-system/theme";
-import { DEMO_NOW_ISO } from "../../../src/fixtures/discovery/demo-clock";
 
 type WalletTab = "upcoming" | "past";
 
@@ -24,12 +24,13 @@ export default function TicketsIndexScreen() {
   const router = useRouter();
   const scenario = useAppStore((s) => s.scenario);
   const walletQuery = useTicketWalletQuery(scenario);
+  const nowIso = useDemoNowIso();
 
   const [activeTab, setActiveTab] = React.useState<WalletTab>("upcoming");
 
   const tickets = walletQuery.data ?? [];
   const filteredTickets = tickets.filter(
-    (t) => classifyWalletTicket(t, DEMO_NOW_ISO) === activeTab,
+    (t) => classifyWalletTicket(t, nowIso) === activeTab,
   );
 
   const renderTicket = ({ item }: { item: WalletTicket }) => (

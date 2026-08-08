@@ -26,6 +26,7 @@ import { ErrorState } from "../../../../src/components/ui/ErrorState";
 import { Skeleton } from "../../../../src/components/feedback/Skeleton";
 import {
   useConversationDetailQuery,
+  useInquiryReplySimulation,
   useMarkReadMutation,
   useMessagesQuery,
   useRetryMessageMutation,
@@ -33,6 +34,7 @@ import {
 } from "../../../../src/hooks/social/useSocialQueries";
 import { useSocialStore } from "../../../../src/state/useSocialStore";
 import { useToast } from "../../../../src/hooks/useToast";
+import { TypingIndicator } from "../../../../src/components/social/TypingIndicator";
 import { routeBuilders } from "../../../../src/navigation/routes";
 import { useCheckoutStore } from "../../../../src/state/useCheckoutStore";
 import { VISIBLE_CONSUMER_TAB_BAR_STYLE } from "../../_layout";
@@ -58,6 +60,7 @@ export default function InquiryThreadScreen() {
   const sendMessageMutation = useSendMessageMutation();
   const retryMessageMutation = useRetryMessageMutation();
   const markReadMutation = useMarkReadMutation();
+  const simulateReply = useInquiryReplySimulation(conversationId);
   const beginCheckout = useCheckoutStore((state) => state.beginCheckout);
 
   const conversation = conversationQuery.data as HostInquiryConversation | null;
@@ -89,6 +92,11 @@ export default function InquiryThreadScreen() {
       markRead(conversationId);
     }
   }, [conversationId, unreadCount, markRead]);
+
+  // Host typing indicator is driven by the simulated reply orchestration that
+  // starts after the user sends a message — never from screen mount alone.
+  const isTypingMap = useSocialStore((state) => state.isTypingMap);
+  const isTyping = Boolean(conversationId && isTypingMap[conversationId]);
 
   if (conversationQuery.isLoading || messagesQuery.isLoading) {
     return (
@@ -149,6 +157,9 @@ export default function InquiryThreadScreen() {
         {
           onSuccess: () => {
             clearDraft(conversationId);
+            // Host typing + once-per-reset reply starts only after the user
+            // message is delivered, never from screen mount.
+            void simulateReply();
           },
           onError: () => {
             showToast(
@@ -270,13 +281,21 @@ export default function InquiryThreadScreen() {
             />
           )}
           ListFooterComponent={
-            canUseBookingOffer && bookingOffer ? (
-              <BookingLinkCard
-                offer={bookingOffer}
-                onSelectOffer={handleBookingOfferSelect}
-                testID="inquiry-booking-link-card"
-              />
-            ) : null
+            <>
+              {isTyping ? (
+                <TypingIndicator
+                  name={conversation.hostName}
+                  testID="inquiry-typing-indicator"
+                />
+              ) : null}
+              {canUseBookingOffer && bookingOffer ? (
+                <BookingLinkCard
+                  offer={bookingOffer}
+                  onSelectOffer={handleBookingOfferSelect}
+                  testID="inquiry-booking-link-card"
+                />
+              ) : null}
+            </>
           }
           contentContainerStyle={styles.messagesList}
         />
