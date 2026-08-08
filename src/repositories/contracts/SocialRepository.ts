@@ -2,6 +2,7 @@ import {
   Comment,
   Conversation,
   ConversationKind,
+  HostInquiryConversation,
   Message,
   MessageRecipient,
   PostCommentInput,
@@ -18,6 +19,11 @@ export interface SocialRepositoryState {
   simulatedReplyConversationIds?: string[];
 }
 
+export interface GetOrCreateInquiryContextInput {
+  hostId: string;
+  eventId?: string;
+}
+
 export interface SocialRepository {
   listConversations(kind?: ConversationKind): Promise<Conversation[]>;
   getConversation(id: string): Promise<Conversation | null>;
@@ -28,6 +34,21 @@ export interface SocialRepository {
   blockUser(userId: string): Promise<void>;
   unblockUser(userId: string): Promise<void>;
   closeInquiry(conversationId: string): Promise<void>;
+  /**
+   * Deterministically resolves (and lazily creates) the canonical local
+   * inquiry conversation for a host, optionally scoped to an event. Repeated
+   * calls with the same host/event return the same conversation.
+   */
+  getOrCreateInquiryContext(
+    input: GetOrCreateInquiryContextInput,
+  ): Promise<HostInquiryConversation>;
+  /**
+   * Orchestrates the simulated host reply for an inquiry: shows the typing
+   * indicator, waits, then appends the once-per-reset canned reply.
+   */
+  maybeSchedulePrototypeHostReply(
+    conversationId: string,
+  ): Promise<Message | null>;
   listComments(eventId: string): Promise<Comment[]>;
   postComment(input: PostCommentInput): Promise<Comment>;
   retryComment(commentId: string): Promise<Comment>;

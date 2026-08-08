@@ -16,10 +16,9 @@ import {
 } from "../../../src/hooks/hosts/usePublicHostQuery";
 import { useDiscoveryStore } from "../../../src/state/useDiscoveryStore";
 import { useSaveFollowActions } from "../../../src/hooks/useSaveFollowActions";
-import { useConversationsQuery } from "../../../src/hooks/social/useSocialQueries";
-import { HostInquiryConversation } from "../../../src/domain/social";
 import { routeBuilders, ROUTES } from "../../../src/navigation/routes";
 import { theme } from "../../../src/design-system/theme";
+import { mockSocialRepository } from "../../../src/repositories/mock/MockSocialRepository";
 
 function normaliseRouteId(value: string | string[] | undefined): string | null {
   if (typeof value === "string" && value.trim().length > 0) {
@@ -41,7 +40,6 @@ export default function PublicHostProfileScreen() {
 
   const followedHostIds = useDiscoveryStore((state) => state.followedHostIds);
   const { toggleFollow } = useSaveFollowActions();
-  const inquiryQuery = useConversationsQuery("inquiry");
 
   if (!hostId) {
     return (
@@ -100,21 +98,14 @@ export default function PublicHostProfileScreen() {
   const followed = followedHostIds.includes(profile.host.id);
   const upcomingEvents = upcomingEventsQuery.data ?? [];
 
-  const hostInquiries = (inquiryQuery.data ?? []).filter(
-    (conversation): conversation is HostInquiryConversation =>
-      conversation.kind === "inquiry",
-  );
-  const inquiryForHost = hostInquiries.find(
-    (conversation) =>
-      conversation.hostId === profile.host.id && !conversation.isClosed,
-  );
-
-  const handleMessage = () => {
-    if (inquiryForHost) {
-      router.push(routeBuilders.inquiryThread(inquiryForHost.id));
-      return;
-    }
-    router.push(routeBuilders.newMessageModal());
+  const handleMessage = async () => {
+    // Preserve the canonical host identity; scope the inquiry to the host's
+    // first upcoming event when one exists.
+    const conversation = await mockSocialRepository.getOrCreateInquiryContext({
+      hostId: profile.host.id,
+      eventId: upcomingEvents[0]?.id,
+    });
+    router.push(routeBuilders.inquiryThread(conversation.id));
   };
 
   return (

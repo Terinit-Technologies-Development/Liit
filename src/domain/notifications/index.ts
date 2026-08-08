@@ -15,6 +15,10 @@ export type NotificationTarget =
       kind: "tickets";
     }
   | {
+      kind: "ticket";
+      ticketId: string;
+    }
+  | {
       kind: "event";
       eventId: string;
     }

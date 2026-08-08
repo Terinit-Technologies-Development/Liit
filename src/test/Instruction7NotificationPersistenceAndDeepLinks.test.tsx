@@ -68,7 +68,11 @@ describe("Notification persistence", () => {
 
     expect(item.type).toBe("ticket_confirmed");
     expect(item.readState).toBe("unread");
-    expect(item.target).toEqual({ kind: "tickets" });
+    // Booking notifications deep-link to the specific ticket when one exists.
+    expect(item.target).toEqual({
+      kind: "ticket",
+      ticketId: "ticket-liit-0010",
+    });
     expect(item.id).toBe("notif-7");
 
     const second = new MockNotificationRepository();

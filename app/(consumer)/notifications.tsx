@@ -38,6 +38,9 @@ export default function NotificationsScreen() {
       case "tickets":
         router.push(ROUTES.consumer.tickets as any);
         break;
+      case "ticket":
+        router.push(routeBuilders.fullTicket(target.ticketId));
+        break;
       case "event":
         router.push(routeBuilders.eventDetail(target.eventId));
         break;

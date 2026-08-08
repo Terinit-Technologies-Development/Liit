@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback } from "react";
 import {
   Comment,
   Conversation,
@@ -254,6 +255,36 @@ export function useSimulateHostReplyMutation() {
       });
     },
   });
+}
+
+/**
+ * Orchestrates the simulated host reply after a user message: the inquiry
+ * thread shows the typing indicator, then the once-per-reset canned reply
+ * arrives and invalidates the message/conversation queries.
+ */
+export function useInquiryReplySimulation(conversationId: string | null) {
+  const queryClient = useQueryClient();
+  return useCallback(async () => {
+    if (!conversationId) {
+      return;
+    }
+    const reply =
+      await mockSocialRepository.maybeSchedulePrototypeHostReply(
+        conversationId,
+      );
+    if (!reply) {
+      return;
+    }
+    await queryClient.invalidateQueries({
+      queryKey: queryKeys.social.messages(conversationId),
+    });
+    await queryClient.invalidateQueries({
+      queryKey: queryKeys.social.conversationsRoot(),
+    });
+    await queryClient.invalidateQueries({
+      queryKey: queryKeys.social.conversationDetail(conversationId),
+    });
+  }, [conversationId, queryClient]);
 }
 
 export function useMessageRecipientsQuery(query?: string) {

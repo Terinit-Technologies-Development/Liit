@@ -4,7 +4,7 @@
  * Verifies that after a session-created booking the Event Detail conversion
  * becomes "View your pass / View your ticket" (preventing repeated
  * registration), seeded wallet history is unchanged, and the inquiry entry
- * resolves through the new-message modal when the host has no open inquiry.
+ * resolves to the canonical host inquiry thread for the event.
  */
 
 import React from "react";
@@ -176,7 +176,7 @@ describe("Event Detail registration state", () => {
     });
   });
 
-  it("opens the new-message modal from Ask about this event when the host has no open inquiry", async () => {
+  it("opens the canonical host inquiry thread from Ask about this event", async () => {
     mockParams = { eventId: "evt-soweto-food-market" };
 
     const screen = render(
@@ -194,7 +194,11 @@ describe("Event Detail registration state", () => {
     await waitFor(() => {
       expect(mockPush).toHaveBeenCalledWith(
         expect.objectContaining({
-          pathname: expect.stringContaining("new-message"),
+          pathname: expect.stringContaining("inquiries/[conversationId]"),
+          params: expect.objectContaining({
+            conversationId:
+              "conv-inquiry-host-jozi-vibe-tribe-evt-soweto-food-market",
+          }),
         }),
       );
     });

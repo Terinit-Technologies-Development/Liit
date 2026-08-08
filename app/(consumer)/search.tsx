@@ -309,6 +309,7 @@ export default function SearchScreen() {
                     isSaved={savedEventIds.includes(item.id)}
                     onPress={() => handleEventPress(item.id)}
                     onSave={() => toggleSaved(item.id)}
+                    saveTestID={`search-event-save-${item.id}`}
                   />
                 </View>
               )}

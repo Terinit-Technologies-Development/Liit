@@ -1,11 +1,17 @@
 import React from "react";
-import { Pressable, StyleSheet, ViewStyle, StyleProp } from "react-native";
+import {
+  GestureResponderEvent,
+  Pressable,
+  StyleSheet,
+  ViewStyle,
+  StyleProp,
+} from "react-native";
 import { Icon, SemanticIconName } from "../../design-system/icons/Icon";
 import { theme } from "../../design-system/theme";
 
 export interface IconButtonProps {
   icon: SemanticIconName;
-  onPress: () => void;
+  onPress: (event?: GestureResponderEvent) => void;
   accessibilityLabel: string; // Required for accessibility!
   accessibilityState?: { selected?: boolean; disabled?: boolean };
   size?: "sm" | "md" | "lg";
@@ -49,7 +55,13 @@ export const IconButton: React.FC<IconButtonProps> = ({
   return (
     <Pressable
       testID={testID}
-      onPress={isInteractive ? onPress : undefined}
+      onPress={(event) => {
+        if (!isInteractive) return;
+        // Nested action buttons (e.g. save on an event card) must never
+        // trigger the parent card's navigation press.
+        event?.stopPropagation?.();
+        onPress(event);
+      }}
       disabled={!isInteractive}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}

@@ -15,6 +15,7 @@ export interface RecordRegistrationConfirmedInput {
   eventId: string;
   eventTitle: string;
   orderId: string;
+  ticketId?: string;
   eventImageKey?: NotificationItem["eventImageKey"];
 }
 
@@ -31,5 +32,5 @@ export interface NotificationRepository {
   recordRegistrationConfirmed(
     input: RecordRegistrationConfirmedInput,
   ): Promise<NotificationItem>;
-  reset(): void;
+  reset(): Promise<void>;
 }

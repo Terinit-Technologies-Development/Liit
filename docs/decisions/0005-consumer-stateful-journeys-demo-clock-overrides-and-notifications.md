@@ -1,9 +1,11 @@
 # ADR 0005: Consumer Stateful Journeys — Demo Clock, Prototype Overrides, Notification Persistence, and Save/Follow Optimism
 
 ## Status
+
 Accepted
 
 ## Context
+
 LIIT Instruction 7 requires turning the consumer screens from PRs 1–5 into a connected, locally stateful product: first-launch onboarding that resumes, shared discovery state across Feed/Explore/Search/Map, save/follow with optimistic failure, paid booking and free registration that create orders, tickets, and notifications automatically, notification rows that deep-link to the right context, and development-only prototype controls for failure, status, and time simulation — all without a backend.
 
 The repository already used TanStack Query for repository reads and Zustand with AsyncStorage persistence for app/session/discovery/checkout state. Instruction 7 must extend that pattern deterministically without coupling screens to fixture objects.
@@ -35,6 +37,7 @@ The repository already used TanStack Query for repository reads and Zustand with
    Saved/Following counts and tab content derive from `useDiscoveryStore.savedEventIds` / `followedHostIds` via `listEventsByIds` / host profile queries, replacing the previous fixture-filtered lists.
 
 ## Consequences
+
 - All consumer journeys run fully offline with deterministic, reproducible state.
 - Screens never mutate fixture objects; repositories remain the single mutation boundary, so later Supabase adapters can replace the mocks.
 - Development controls are clearly separated from product UI behind the documented Prototype Controls surface.

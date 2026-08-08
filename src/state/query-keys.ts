@@ -70,6 +70,8 @@ export const queryKeys = {
       [...queryKeys.ticketing.all, "order", orderId] as const,
     paymentMethods: () =>
       [...queryKeys.ticketing.all, "payment-methods"] as const,
+    availability: (eventId: string) =>
+      [...queryKeys.ticketing.all, "availability", eventId] as const,
   },
   commerce: {
     all: ["commerce"] as const,

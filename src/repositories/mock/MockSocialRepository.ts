@@ -11,6 +11,7 @@ import {
   SendMessageInput,
 } from "../../domain/social";
 import {
+  GetOrCreateInquiryContextInput,
   SocialRepository,
   SocialRepositoryState,
 } from "../contracts/SocialRepository";
@@ -22,8 +23,13 @@ import {
 } from "../../fixtures/social/conversations";
 import { demoNowIso, useDemoClockStore } from "../../state/useDemoClockStore";
 import { usePrototypeControlsStore } from "../../state/usePrototypeControlsStore";
+import { useSocialStore } from "../../state/useSocialStore";
+import { discoveryEvents } from "../../fixtures/discovery";
 
 const STORAGE_KEY = "liit-social-state-v1";
+
+export const HOST_TYPING_INDICATOR_MS = 1200;
+export const HOST_REPLY_GAP_MS = 1800;
 
 function createSeedSocialState(): SocialRepositoryState {
   return {
@@ -145,7 +151,7 @@ export class MockSocialRepository implements SocialRepository {
         throw new Error("Inquiry is closed");
       }
 
-      const now = new Date().toISOString();
+      const now = demoNowIso(useDemoClockStore.getState().offsetMs);
 
       const newMessage: Message = {
         id: `msg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
@@ -226,6 +232,95 @@ export class MockSocialRepository implements SocialRepository {
       await this.saveState(state);
       return structuredClone(reply);
     });
+  }
+
+  async getOrCreateInquiryContext(
+    input: GetOrCreateInquiryContextInput,
+  ): Promise<HostInquiryConversation> {
+    return this.runExclusive(async () => {
+      const state = await this.loadState();
+
+      const eventId = input.eventId ?? "";
+      const conversationId = `conv-inquiry-${input.hostId}-${eventId || "general"}`;
+      const existing = state.conversations.find((c) => c.id === conversationId);
+      if (existing) {
+        if (existing.kind !== "inquiry") {
+          throw new Error("Conversation id collides with a direct thread");
+        }
+        return structuredClone(existing as HostInquiryConversation);
+      }
+
+      const event = discoveryEvents.find((e) => e.id === eventId);
+      const host =
+        event?.host ??
+        discoveryEvents.map((e) => e.host).find((h) => h.id === input.hostId);
+
+      const now = demoNowIso(useDemoClockStore.getState().offsetMs);
+      const eventTitle = event?.title ?? `${host?.name ?? "Host"} inquiry`;
+      const greeting: Message = {
+        id: `msg-${conversationId}-greeting`,
+        conversationId,
+        senderId: host?.id ?? input.hostId,
+        senderName: host?.name ?? "Host",
+        senderAvatarUrl: host?.avatarImageKey ?? "hostGrooveCo",
+        senderType: "host",
+        content: `Hi! How can we help you with ${eventTitle}?`,
+        sentAt: now,
+        status: "delivered",
+        isIncoming: true,
+      };
+
+      const conversation: HostInquiryConversation = {
+        id: conversationId,
+        kind: "inquiry",
+        hostId: host?.id ?? input.hostId,
+        hostName: host?.name ?? "Host",
+        hostHandle: host?.handle ?? "@host",
+        hostAvatarUrl: host?.avatarImageKey ?? "hostGrooveCo",
+        isVerified: host?.isVerified ?? false,
+        typicalReplyTime: "Replies within 1 hour",
+        eventContext: {
+          eventId,
+          eventTitle,
+          eventDateText: event
+            ? `${event.occurrence.startTime} - ${event.occurrence.endTime}`
+            : "",
+          eventVenueText: event
+            ? `${event.venue.name} · ${event.venue.suburb}`
+            : "",
+          eventImageKey: event?.heroImageKey ?? "eventMidnightGrooves",
+        },
+        lastMessage: greeting,
+        unreadCount: 0,
+        updatedAt: now,
+      };
+
+      if (!state.messages[conversationId]) {
+        state.messages[conversationId] = [];
+      }
+      state.messages[conversationId].push(greeting);
+      state.conversations.push(conversation);
+
+      await this.saveState(state);
+      return structuredClone(conversation);
+    });
+  }
+
+  async maybeSchedulePrototypeHostReply(
+    conversationId: string,
+  ): Promise<Message | null> {
+    const conv = await this.getConversation(conversationId);
+    if (!conv || conv.kind !== "inquiry" || conv.isClosed || conv.isBlocked) {
+      return null;
+    }
+
+    const setTyping = useSocialStore.getState().setTyping;
+    setTyping(conversationId, true);
+    await delayMs(HOST_TYPING_INDICATOR_MS);
+    setTyping(conversationId, false);
+    await delayMs(HOST_REPLY_GAP_MS);
+
+    return this.simulateHostReply(conversationId);
   }
 
   async retryMessage(
@@ -347,7 +442,7 @@ export class MockSocialRepository implements SocialRepository {
         authorName: "Keketso",
         authorAvatarUrl: "userAvatarDefault",
         content: input.content,
-        postedAt: new Date().toISOString(),
+        postedAt: demoNowIso(useDemoClockStore.getState().offsetMs),
         reactionsCount: 0,
         userReacted: false,
         status: "synced",

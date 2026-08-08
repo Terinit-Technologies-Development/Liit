@@ -1,9 +1,11 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { QueryClient } from "@tanstack/react-query";
 import { Event, EventStatus } from "../domain/events";
+import { queryKeys } from "./query-keys";
 
-type EventStatusOverride = Exclude<EventStatus, "draft" | "published">;
+export type EventStatusOverride = Exclude<EventStatus, "draft" | "published">;
 
 interface PrototypeOverridesState {
   eventStatusOverrides: Record<string, EventStatusOverride>;
@@ -50,6 +52,12 @@ export const usePrototypeOverridesStore = create<PrototypeOverridesState>()(
   ),
 );
 
+export function getPrototypeEventStatusOverride(
+  eventId: string,
+): EventStatusOverride | undefined {
+  return usePrototypeOverridesStore.getState().eventStatusOverrides[eventId];
+}
+
 export function applyEventStatusOverride(event: Event): Event {
   const overrides = usePrototypeOverridesStore.getState().eventStatusOverrides;
   const status = overrides[event.id];
@@ -72,4 +80,20 @@ export function applyEventStatusOverrides(events: Event[]): Event[] {
     }
     return { ...event, status };
   });
+}
+
+/**
+ * Invalidates every event/discovery/map/event-detail query family that can
+ * render an overridden event status so screens show the override immediately
+ * instead of serving the five-minute-stale React Query cache.
+ */
+export async function invalidateEventOverrideQueries(
+  queryClient: QueryClient,
+): Promise<void> {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.events.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.discovery.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.map.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.eventDetail.all }),
+  ]);
 }

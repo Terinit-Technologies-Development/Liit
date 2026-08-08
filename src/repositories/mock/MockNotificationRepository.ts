@@ -156,7 +156,9 @@ export class MockNotificationRepository implements NotificationRepository {
       type: "ticket_confirmed",
       title: "Tickets confirmed",
       body: `Your tickets for ${input.eventTitle} are in your wallet. Show the pass at the door.`,
-      target: { kind: "tickets" },
+      target: input.ticketId
+        ? { kind: "ticket", ticketId: input.ticketId }
+        : { kind: "tickets" },
       eventImageKey: input.eventImageKey,
     });
   }
@@ -168,7 +170,9 @@ export class MockNotificationRepository implements NotificationRepository {
       type: "booking_confirmed",
       title: "Registration confirmed",
       body: `You are registered for ${input.eventTitle}. Your pass is in your wallet.`,
-      target: { kind: "tickets" },
+      target: input.ticketId
+        ? { kind: "ticket", ticketId: input.ticketId }
+        : { kind: "tickets" },
       eventImageKey: input.eventImageKey,
     });
   }

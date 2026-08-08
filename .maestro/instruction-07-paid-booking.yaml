@@ -56,16 +56,35 @@ tags:
 - waitForAnimationToEnd:
     timeout: 5000
 
-# — Processing passes through visibly, then success —
+# — Processing must be visibly shown before the success result —
+- assertVisible:
+    id: "processing-state"
+
+- assertVisible:
+    text: "Processing prototype payment"
+
+- waitForAnimationToEnd:
+    timeout: 5000
+
 - assertVisible:
     id: "result-headline"
 
 - assertVisible:
     text: "Tickets confirmed!"
 
-# Paid success created a wallet ticket and a notification
+# Paid success created a wallet ticket and a booking notification
 - tapOn:
-    id: "result-go-to-wallet"
+    id: "result-view-ticket"
+
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "full-ticket-screen"
+
+- assertVisible:
+    text: "Midnight Kinetic Grooves"
+
+- back
 
 - waitForAnimationToEnd
 

@@ -18,10 +18,7 @@ import { RelatedEventRail } from "../../../src/components/events/RelatedEventRai
 import { StickyActionBar } from "../../../src/components/events/StickyActionBar";
 import { StatusPill } from "../../../src/components/ui/StatusPill";
 import { ReactionBar } from "../../../src/components/social/ReactionBar";
-import {
-  useCommentsQuery,
-  useConversationsQuery,
-} from "../../../src/hooks/social/useSocialQueries";
+import { useCommentsQuery } from "../../../src/hooks/social/useSocialQueries";
 import {
   useEventDetailQuery,
   useRelatedEventsQuery,
@@ -32,7 +29,6 @@ import {
   getEventConversionModel,
 } from "../../../src/domain/event-detail/conversion-model";
 import { TicketTier } from "../../../src/domain/event-detail";
-import { HostInquiryConversation } from "../../../src/domain/social";
 import { routeBuilders, ROUTES } from "../../../src/navigation/routes";
 import { showToast } from "../../../src/components/ui/Toast";
 import { getEventDisplayStatus } from "../../../src/domain/discovery/event-presentation";
@@ -43,6 +39,7 @@ import { useTicketWalletQuery } from "../../../src/hooks/ticketing/useTicketWall
 import { useSaveFollowActions } from "../../../src/hooks/useSaveFollowActions";
 import { useDemoNowIso } from "../../../src/hooks/useDemoNowIso";
 import { useAppStore } from "../../../src/state/useAppStore";
+import { mockSocialRepository } from "../../../src/repositories/mock/MockSocialRepository";
 
 function normaliseRouteId(value: string | string[] | undefined): string | null {
   if (typeof value === "string" && value.trim().length > 0) {
@@ -69,7 +66,6 @@ export default function EventDetailScreen() {
 
   const scenario = useAppStore((state) => state.scenario);
   const walletQuery = useTicketWalletQuery(scenario);
-  const inquiryQuery = useConversationsQuery("inquiry");
   const nowIso = useDemoNowIso();
 
   const [selectedTierId, setSelectedTierId] = useState<string | null>(null);
@@ -166,21 +162,15 @@ export default function EventDetailScreen() {
       }
     : baseConversion;
 
-  const hostInquiries = (inquiryQuery.data ?? []).filter(
-    (conversation): conversation is HostInquiryConversation =>
-      conversation.kind === "inquiry",
-  );
-  const inquiryForHost = hostInquiries.find(
-    (conversation) =>
-      conversation.hostId === detail.event.host.id && !conversation.isClosed,
-  );
-
-  const handleAskAboutEvent = () => {
-    if (inquiryForHost) {
-      router.push(routeBuilders.inquiryThread(inquiryForHost.id));
-      return;
-    }
-    router.push(routeBuilders.newMessageModal());
+  const handleAskAboutEvent = async () => {
+    // Resolve the canonical host inquiry context so Event Detail, Host
+    // Profile, New Message, Inquiry Thread and Notifications all agree on
+    // the same host + event identity.
+    const conversation = await mockSocialRepository.getOrCreateInquiryContext({
+      hostId: detail.event.host.id,
+      eventId: detail.event.id,
+    });
+    router.push(routeBuilders.inquiryThread(conversation.id));
   };
 
   const handlePrimaryAction = (model: EventConversionModel) => {

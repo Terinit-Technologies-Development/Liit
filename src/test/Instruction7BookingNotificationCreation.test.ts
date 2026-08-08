@@ -56,7 +56,11 @@ describe("Booking notification creation", () => {
     const created = all.find((n) => n.type === "ticket_confirmed");
     expect(created).toBeTruthy();
     expect(created?.readState).toBe("unread");
-    expect(created?.target).toEqual({ kind: "tickets" });
+    // The booking notification deep-links to the specific ticket.
+    expect(created?.target).toEqual({
+      kind: "ticket",
+      ticketId: "ticket-liit-0010",
+    });
     expect(created?.body).toContain(event.title);
   });
 

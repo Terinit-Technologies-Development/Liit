@@ -66,4 +66,40 @@ tags:
 - assertVisible:
     text: "Soweto Street Food & Craft Market"
 
+# Registration notification auto-created
+- back
+
+- waitForAnimationToEnd
+
+- tapOn:
+    id: "feed-open-notifications"
+
+- waitForAnimationToEnd
+
+- assertVisible:
+    text: "Registration confirmed"
+
+- back
+
+- waitForAnimationToEnd
+
+# Reopen the event → the conversion is now "View your pass"
+- tapOn:
+    id: "tab-explore"
+
+- waitForAnimationToEnd
+
+- scrollUntilVisible:
+    element:
+      text: "Soweto Street Food & Craft Market"
+    direction: DOWN
+
+- tapOn:
+    text: "Soweto Street Food & Craft Market"
+
+- waitForAnimationToEnd
+
+- assertVisible:
+    text: "View your pass"
+
 - stopRecording

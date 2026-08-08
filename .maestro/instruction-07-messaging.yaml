@@ -50,6 +50,18 @@ tags:
 - assertVisible:
     text: "Is the VIP table still available?"
 
+- assertVisible:
+    text: "Delivered"
+
+# Host typing indicator appears, then the simulated host reply arrives
+- assertVisible:
+    id: "inquiry-typing-indicator"
+
+- extendedWaitUntil:
+    visible:
+      text: "VIP tables are still available"
+    timeout: 15000
+
 # Booking offer available in the inquiry context
 - assertVisible:
     id: "inquiry-booking-link-card"

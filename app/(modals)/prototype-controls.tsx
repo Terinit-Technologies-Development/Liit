@@ -19,7 +19,10 @@ import { useCheckoutStore } from "../../src/state/useCheckoutStore";
 import { useSocialStore } from "../../src/state/useSocialStore";
 import { useCreatorStore } from "../../src/state/useCreatorStore";
 import { usePrototypeControlsStore } from "../../src/state/usePrototypeControlsStore";
-import { usePrototypeOverridesStore } from "../../src/state/usePrototypeOverridesStore";
+import {
+  invalidateEventOverrideQueries,
+  usePrototypeOverridesStore,
+} from "../../src/state/usePrototypeOverridesStore";
 import {
   demoNowIso,
   useDemoClockStore,
@@ -83,6 +86,21 @@ export default function PrototypeControlsScreen() {
   const { eventStatusOverrides, setEventStatusOverride, clearAllOverrides } =
     usePrototypeOverridesStore();
 
+  const handleSetEventStatusOverride = async (
+    eventId: string,
+    status: Parameters<typeof setEventStatusOverride>[1],
+  ) => {
+    setEventStatusOverride(eventId, status);
+    // Invalidate every cached event/discovery/map/event-detail query so the
+    // new override renders immediately instead of the stale five-minute cache.
+    await invalidateEventOverrideQueries(queryClient);
+  };
+
+  const handleClearAllOverrides = async () => {
+    clearAllOverrides();
+    await invalidateEventOverrideQueries(queryClient);
+  };
+
   const { offsetMs, advanceClock, resetClock } = useDemoClockStore();
 
   const walletQuery = useQuery({
@@ -123,9 +141,10 @@ export default function PrototypeControlsScreen() {
     usePrototypeControlsStore.getState().resetPrototypeControls();
     usePrototypeOverridesStore.getState().resetPrototypeOverrides();
     useDemoClockStore.getState().resetClock();
-    mockNotificationRepository.reset();
+    await mockNotificationRepository.reset();
     await mockTicketingRepository.reset();
     await mockSocialRepository.reset();
+    await invalidateEventOverrideQueries(queryClient);
     queryClient.clear();
     setOverrideEventId(null);
     setTicketId(null);
@@ -270,7 +289,10 @@ export default function PrototypeControlsScreen() {
                         eventStatusOverrides[overrideEventId] === status
                       }
                       onPress={() =>
-                        setEventStatusOverride(overrideEventId, status)
+                        void handleSetEventStatusOverride(
+                          overrideEventId,
+                          status,
+                        )
                       }
                       testID={`controls-event-status-${status}`}
                     />
@@ -279,14 +301,17 @@ export default function PrototypeControlsScreen() {
                     label="Clear"
                     selected={!eventStatusOverrides[overrideEventId]}
                     onPress={() =>
-                      setEventStatusOverride(overrideEventId, null)
+                      void handleSetEventStatusOverride(overrideEventId, null)
                     }
                   />
                 </Row>
               </Stack>
             ) : null}
             {Object.keys(eventStatusOverrides).length > 0 ? (
-              <Chip label="Clear All Overrides" onPress={clearAllOverrides} />
+              <Chip
+                label="Clear All Overrides"
+                onPress={() => void handleClearAllOverrides()}
+              />
             ) : null}
           </Stack>
         </Card>

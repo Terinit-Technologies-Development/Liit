@@ -25,6 +25,8 @@ export interface EventCardProps {
   isSaved?: boolean;
   onPress(): void;
   onSave?(): void;
+  /** Optional event-specific testID for the save control, e.g. `search-event-save-<eventId>`. */
+  saveTestID?: string;
   testID?: string;
 }
 
@@ -56,6 +58,7 @@ export function EventCard({
   isSaved,
   onPress,
   onSave,
+  saveTestID,
   testID,
 }: EventCardProps) {
   const model = toEventCardViewModel(event, {
@@ -96,6 +99,21 @@ export function EventCard({
             {model.dateLabel} • {model.venueLine}
           </AppText>
         </View>
+        {onSave ? (
+          <IconButton
+            icon={model.isSaved ? "bookmarkFilled" : "bookmark"}
+            onPress={onSave}
+            accessibilityLabel={
+              model.isSaved
+                ? `Remove ${model.title} from saved events`
+                : `Save ${model.title}`
+            }
+            accessibilityState={{ selected: model.isSaved }}
+            variant="surface"
+            size="md"
+            testID={saveTestID ?? `event-save-${event.id}`}
+          />
+        ) : null}
       </Pressable>
     );
   }

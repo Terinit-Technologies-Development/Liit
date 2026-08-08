@@ -26,11 +26,11 @@ import { ErrorState } from "../../../../src/components/ui/ErrorState";
 import { Skeleton } from "../../../../src/components/feedback/Skeleton";
 import {
   useConversationDetailQuery,
+  useInquiryReplySimulation,
   useMarkReadMutation,
   useMessagesQuery,
   useRetryMessageMutation,
   useSendMessageMutation,
-  useSimulateHostReplyMutation,
 } from "../../../../src/hooks/social/useSocialQueries";
 import { useSocialStore } from "../../../../src/state/useSocialStore";
 import { useToast } from "../../../../src/hooks/useToast";
@@ -60,6 +60,7 @@ export default function InquiryThreadScreen() {
   const sendMessageMutation = useSendMessageMutation();
   const retryMessageMutation = useRetryMessageMutation();
   const markReadMutation = useMarkReadMutation();
+  const simulateReply = useInquiryReplySimulation(conversationId);
   const beginCheckout = useCheckoutStore((state) => state.beginCheckout);
 
   const conversation = conversationQuery.data as HostInquiryConversation | null;
@@ -92,27 +93,10 @@ export default function InquiryThreadScreen() {
     }
   }, [conversationId, unreadCount, markRead]);
 
-  // Deterministic simulated host reply + typing indicator
+  // Host typing indicator is driven by the simulated reply orchestration that
+  // starts after the user sends a message — never from screen mount alone.
   const isTypingMap = useSocialStore((state) => state.isTypingMap);
-  const setTyping = useSocialStore((state) => state.setTyping);
   const isTyping = Boolean(conversationId && isTypingMap[conversationId]);
-  const { mutate: simulateHostReply } = useSimulateHostReplyMutation();
-
-  useEffect(() => {
-    if (conversationId !== "conv-inquiry-club-vibez") return;
-
-    const typingOn = setTimeout(() => setTyping(conversationId, true), 1200);
-    const replyTimer = setTimeout(() => {
-      setTyping(conversationId, false);
-      simulateHostReply.mutate(conversationId);
-    }, 3200);
-
-    return () => {
-      clearTimeout(typingOn);
-      clearTimeout(replyTimer);
-      setTyping(conversationId, false);
-    };
-  }, [conversationId, setTyping, simulateHostReply]);
 
   if (conversationQuery.isLoading || messagesQuery.isLoading) {
     return (
@@ -173,6 +157,9 @@ export default function InquiryThreadScreen() {
         {
           onSuccess: () => {
             clearDraft(conversationId);
+            // Host typing + once-per-reset reply starts only after the user
+            // message is delivered, never from screen mount.
+            void simulateReply();
           },
           onError: () => {
             showToast(
