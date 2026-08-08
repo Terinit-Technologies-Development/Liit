@@ -13,6 +13,7 @@ import { InMemoryTicketingStorage } from "../../src/repositories/mock/InMemoryTi
 import { MockNotificationRepository } from "../../src/repositories/mock/MockNotificationRepository";
 import {
   MockSocialRepository,
+  getPrototypeHostReply,
   HOST_REPLY_GAP_MS,
   HOST_TYPING_INDICATOR_MS,
 } from "../../src/repositories/mock/MockSocialRepository";
@@ -262,13 +263,133 @@ describe("Simulated host reply starts after a user message", () => {
   });
 
   it("does nothing for direct conversations", async () => {
-    const schedulePromise = repo.maybeSchedulePrototypeHostReply(
-      "conv-direct-alex",
-    );
+    const schedulePromise =
+      repo.maybeSchedulePrototypeHostReply("conv-direct-alex");
     await jest.advanceTimersByTimeAsync(150); // getConversation latency
     const reply = await schedulePromise;
     expect(reply).toBeNull();
     expect(useSocialStore.getState().isTypingMap["conv-direct-alex"]).toBe(
+      undefined,
+    );
+  });
+
+  it("replies inside the canonical event-scoped inquiry created by getOrCreateInquiryContext", async () => {
+    const canonical = await repo.getOrCreateInquiryContext({
+      hostId: midnightGroovesEvent.host.id,
+      eventId: midnightGroovesEvent.id,
+    });
+    const convId = canonical.id;
+    expect(convId).toBe("conv-inquiry-host-groove-co-evt-midnight-grooves");
+
+    const sendPromise = repo.sendMessage({
+      conversationId: convId,
+      content: "Is table service available for 4?",
+    });
+    await jest.advanceTimersByTimeAsync(300);
+    const sent = await sendPromise;
+    expect(sent.status).toBe("delivered");
+
+    const schedulePromise = repo.maybeSchedulePrototypeHostReply(convId);
+    await jest.advanceTimersByTimeAsync(150); // getConversation latency
+    expect(useSocialStore.getState().isTypingMap[convId]).toBe(true);
+    await jest.advanceTimersByTimeAsync(HOST_TYPING_INDICATOR_MS);
+    expect(useSocialStore.getState().isTypingMap[convId]).toBe(false);
+    await jest.advanceTimersByTimeAsync(HOST_REPLY_GAP_MS);
+
+    const reply = await schedulePromise;
+    expect(reply).toBeTruthy();
+    expect(reply?.senderId).toBe(midnightGroovesEvent.host.id);
+    expect(reply?.isIncoming).toBe(true);
+
+    // The reply is persisted inside the canonical conversation.
+    const messagesPromise = repo.listMessages(convId);
+    await jest.advanceTimersByTimeAsync(200);
+    const messages = await messagesPromise;
+    expect(messages.filter((m) => m.id === `msg-${convId}-reply`)).toHaveLength(
+      1,
+    );
+
+    // A second message must not produce a second canned reply.
+    const secondSend = repo.sendMessage({
+      conversationId: convId,
+      content: "And how late does it run?",
+    });
+    await jest.advanceTimersByTimeAsync(300);
+    await secondSend;
+    const schedule2 = repo.maybeSchedulePrototypeHostReply(convId);
+    await jest.advanceTimersByTimeAsync(
+      150 + HOST_TYPING_INDICATOR_MS + HOST_REPLY_GAP_MS,
+    );
+    expect(await schedule2).toBeNull();
+
+    // Reset permits the canonical reply again.
+    await repo.reset();
+    const recreated = await repo.getOrCreateInquiryContext({
+      hostId: midnightGroovesEvent.host.id,
+      eventId: midnightGroovesEvent.id,
+    });
+    expect(recreated.id).toBe(convId);
+    const thirdSend = repo.sendMessage({
+      conversationId: convId,
+      content: "Question after reset",
+    });
+    await jest.advanceTimersByTimeAsync(300);
+    await thirdSend;
+    const schedule3 = repo.maybeSchedulePrototypeHostReply(convId);
+    await jest.advanceTimersByTimeAsync(
+      150 + HOST_TYPING_INDICATOR_MS + HOST_REPLY_GAP_MS,
+    );
+    expect(await schedule3).toBeTruthy();
+  });
+
+  it("replies inside the canonical host-scoped general inquiry (Host Profile Message)", async () => {
+    const canonical = await repo.getOrCreateInquiryContext({
+      hostId: sowetoEvent.host.id,
+    });
+    const convId = canonical.id;
+    expect(convId).toBe("conv-inquiry-host-jozi-vibe-tribe-general");
+
+    const sendPromise = repo.sendMessage({
+      conversationId: convId,
+      content: "Hello! A question about your events.",
+    });
+    await jest.advanceTimersByTimeAsync(300);
+    expect((await sendPromise).status).toBe("delivered");
+
+    const schedulePromise = repo.maybeSchedulePrototypeHostReply(convId);
+    await jest.advanceTimersByTimeAsync(150);
+    expect(useSocialStore.getState().isTypingMap[convId]).toBe(true);
+    await jest.advanceTimersByTimeAsync(HOST_TYPING_INDICATOR_MS);
+    expect(useSocialStore.getState().isTypingMap[convId]).toBe(false);
+    await jest.advanceTimersByTimeAsync(HOST_REPLY_GAP_MS);
+
+    const reply = await schedulePromise;
+    expect(reply).toBeTruthy();
+    expect(reply?.senderId).toBe(sowetoEvent.host.id);
+  });
+
+  it("never shows typing when the conversation has no deterministic reply", async () => {
+    // Seed state contains no unknown host conversation; create one via a
+    // host that is not part of the canonical reply table.
+    const conversation = await repo.getOrCreateInquiryContext({
+      hostId: "host-unknown-fixture",
+    });
+    expect(getPrototypeHostReply(conversation)).toBeNull();
+
+    const sendPromise = repo.sendMessage({
+      conversationId: conversation.id,
+      content: "Hello?",
+    });
+    await jest.advanceTimersByTimeAsync(300);
+    await sendPromise;
+
+    const schedulePromise = repo.maybeSchedulePrototypeHostReply(
+      conversation.id,
+    );
+    await jest.advanceTimersByTimeAsync(150);
+    const reply = await schedulePromise;
+    expect(reply).toBeNull();
+    expect(useSocialStore.getState().isTypingMap[conversation.id]).toBe(
       undefined,
     );
   });
@@ -319,8 +440,7 @@ describe("Durable free-registration idempotency", () => {
     const wallet = await repo.listWalletTickets();
     const owned = wallet.filter(
       (t) =>
-        t.eventId === sowetoEvent.id &&
-        !t.id.startsWith("ticket-liit-seed-"),
+        t.eventId === sowetoEvent.id && !t.id.startsWith("ticket-liit-seed-"),
     );
     expect(owned).toHaveLength(1);
 
@@ -331,8 +451,7 @@ describe("Durable free-registration idempotency", () => {
 
     const all = await notifications.list("all", { latencyMs: 0 });
     const created = all.filter(
-      (n) =>
-        n.type === "booking_confirmed" && n.target.kind === "ticket",
+      (n) => n.type === "booking_confirmed" && n.target.kind === "ticket",
     );
     expect(created).toHaveLength(1);
     expect(created[0]?.target).toEqual({
@@ -377,18 +496,21 @@ describe("Stateful ticket inventory", () => {
     return { repo, notifications };
   }
 
-  const vipTier = midnightGroovesTiers.find(
-    (t) => t.id === "tier-vip-tables",
-  )!;
+  const vipTier = midnightGroovesTiers.find((t) => t.id === "tier-vip-tables")!;
 
   async function payOne(
     repo: MockTicketingRepository,
     attemptId: string,
-    scenario: "normal" | "payment_decline" | "payment_network_error" | "offline",
+    scenario:
+      "normal" | "payment_decline" | "payment_network_error" | "offline",
   ) {
-    const quote = buildCheckoutQuote(midnightGroovesEvent.id, midnightGroovesTiers, {
-      [vipTier.id]: 1,
-    });
+    const quote = buildCheckoutQuote(
+      midnightGroovesEvent.id,
+      midnightGroovesTiers,
+      {
+        [vipTier.id]: 1,
+      },
+    );
     return repo.simulatePayment({
       attemptId,
       eventId: midnightGroovesEvent.id,
@@ -471,9 +593,7 @@ describe("Demo clock drives new commerce timestamps", () => {
 
     useDemoClockStore.getState().resetClock();
     useDemoClockStore.getState().advanceClock(6 * 60 * 60 * 1000);
-    const advancedNow = demoNowIso(
-      useDemoClockStore.getState().offsetMs,
-    );
+    const advancedNow = demoNowIso(useDemoClockStore.getState().offsetMs);
 
     const event = midnightGroovesEvent;
     const quote = buildCheckoutQuote(event.id, midnightGroovesTiers, {
@@ -557,9 +677,13 @@ describe("Demo-clock ticket expiry and wallet classification agree", () => {
     useDemoClockStore.getState().resetClock();
 
     // Create a session ticket whose event ends during the +24h advance.
-    const quote = buildCheckoutQuote(midnightGroovesEvent.id, midnightGroovesTiers, {
-      [midnightGroovesTiers[0].id]: 1,
-    });
+    const quote = buildCheckoutQuote(
+      midnightGroovesEvent.id,
+      midnightGroovesTiers,
+      {
+        [midnightGroovesTiers[0].id]: 1,
+      },
+    );
     const attempt = await repo.simulatePayment({
       attemptId: "attempt-expiry-001",
       eventId: midnightGroovesEvent.id,

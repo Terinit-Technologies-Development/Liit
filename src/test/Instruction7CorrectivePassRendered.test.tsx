@@ -205,11 +205,13 @@ describe("Compact Search card save", () => {
     fireEvent.press(saveButton);
 
     // Optimistic saved state is shared with Profile (same discovery store).
+    expect(useDiscoveryStore.getState().savedEventIds).toContain(
+      "evt-rosebank-art-jazz",
+    );
     expect(
-      useDiscoveryStore.getState().savedEventIds,
-    ).toContain("evt-rosebank-art-jazz");
-    expect(screen.getByTestId("search-event-save-evt-rosebank-art-jazz").props
-      .accessibilityState?.selected).toBe(true);
+      screen.getByTestId("search-event-save-evt-rosebank-art-jazz").props
+        .accessibilityState?.selected,
+    ).toBe(true);
 
     // Pressing save must not trigger card navigation.
     expect(mockPush).not.toHaveBeenCalled();
@@ -246,7 +248,9 @@ describe("Compact Search card save", () => {
     const screen = render(<CompactSaveHarness />);
 
     act(() => {
-      fireEvent.press(screen.getByTestId("search-event-save-evt-rosebank-art-jazz"));
+      fireEvent.press(
+        screen.getByTestId("search-event-save-evt-rosebank-art-jazz"),
+      );
     });
 
     expect(
@@ -336,9 +340,7 @@ describe("Ticket-specific notification deep link", () => {
     fireEvent.press(screen.getByText("Tickets confirmed"));
 
     await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith(
-        expect.stringContaining("tickets"),
-      );
+      expect(mockPush).toHaveBeenCalledWith(expect.stringContaining("tickets"));
     });
   });
 });

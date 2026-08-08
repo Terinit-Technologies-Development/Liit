@@ -5,6 +5,9 @@ tags:
 # Instruction 7 — Social Coordination Messaging (J5)
 # UNEXECUTED: Maestro runner and device emulator not available in this environment.
 # This file is structurally valid and targets the correct appId and test IDs.
+# Primary path: Event Detail → Ask about this event → canonical host inquiry →
+# send → Delivered → typing indicator → canned host reply.
+# The seeded Club Vibez inquiry remains as an additional history/demo path.
 
 - launchApp:
     clearState: true
@@ -17,7 +20,72 @@ tags:
 - waitForAnimationToEnd:
     timeout: 3000
 
-# Inbox → inquiry conversation (host reply simulation + booking offer)
+# — Primary canonical journey: Explore → Event Detail → Ask about this event —
+- tapOn:
+    id: "tab-explore"
+
+- waitForAnimationToEnd
+
+- scrollUntilVisible:
+    element:
+      text: "Midnight Kinetic Grooves"
+    direction: DOWN
+
+- tapOn:
+    text: "Midnight Kinetic Grooves"
+
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "event-detail-ask-question"
+
+- tapOn:
+    id: "event-detail-ask-question"
+
+- waitForAnimationToEnd
+
+# The canonical host inquiry thread for Groove Co. / Midnight Kinetic Grooves
+- assertVisible:
+    id: "inquiry-thread-screen"
+
+- assertVisible:
+    text: "Groove Co."
+
+# Send a message; delivered state renders
+- tapOn:
+    id: "inquiry-message-composer"
+
+- inputText: "Hi! Is table service available for 4?"
+
+- tapOn:
+    id: "composer-send-button"
+
+- waitForAnimationToEnd
+
+- assertVisible:
+    text: "Is table service available for 4?"
+
+- assertVisible:
+    text: "Delivered"
+
+# Host typing indicator appears, then the canned host reply arrives
+- assertVisible:
+    id: "inquiry-typing-indicator"
+
+- extendedWaitUntil:
+    visible:
+      text: "Hi! Thanks for reaching out — we're ready for you on the rooftop. Let us know if you need anything for the night."
+    timeout: 15000
+
+- back
+
+- waitForAnimationToEnd
+
+- back
+
+- waitForAnimationToEnd
+
+# — Additional history/demo path: seeded Club Vibez inquiry —
 - tapOn:
     id: "feed-open-inbox"
 
@@ -53,16 +121,16 @@ tags:
 - assertVisible:
     text: "Delivered"
 
-# Host typing indicator appears, then the simulated host reply arrives
+# Host typing indicator appears, then the seeded host reply arrives
 - assertVisible:
     id: "inquiry-typing-indicator"
 
 - extendedWaitUntil:
     visible:
-      text: "VIP tables are still available"
+      text: "Hi! Thanks for the message — VIP tables are still available for Midnight Kinetic Grooves. Complete your booking and we'll keep the table aside for you."
     timeout: 15000
 
-# Booking offer available in the inquiry context
+# Booking offer available in the seeded inquiry context
 - assertVisible:
     id: "inquiry-booking-link-card"
 

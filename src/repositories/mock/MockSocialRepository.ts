@@ -52,6 +52,40 @@ const SIMULATED_HOST_REPLIES: Record<string, string> = {
     "Sawubona! Yes, the market stall is confirmed for Saturday. You can register for free and we'll see you in Soweto.",
 };
 
+/**
+ * Resolves the deterministic prototype host reply from the inquiry's
+ * canonical context (hostId + optional eventId) rather than from exact
+ * seeded conversation ids, so conversations created through
+ * getOrCreateInquiryContext (Event Detail / Host Profile) reply too.
+ * Seeded fixture hosts keep their historical canned texts.
+ */
+export function getPrototypeHostReply(
+  conversation: HostInquiryConversation,
+): string | null {
+  const eventId = conversation.eventContext.eventId;
+
+  switch (conversation.hostId) {
+    case "host-club-vibez":
+      return SIMULATED_HOST_REPLIES["conv-inquiry-club-vibez"] ?? null;
+    case "host-soweto-collective":
+      return SIMULATED_HOST_REPLIES["conv-inquiry-soweto-market"] ?? null;
+    case "host-groove-co":
+      return eventId === "evt-deep-house-rooftop"
+        ? "The rooftop doors are open and the vinyl sets are spinning. Grab your ticket and pull up before the vibe peaks!"
+        : "Hi! Thanks for reaching out — we're ready for you on the rooftop. Let us know if you need anything for the night.";
+    case "host-jozi-vibe-tribe":
+      return eventId === "evt-soweto-food-market"
+        ? "Sawubona! Yes, the market stall is confirmed for Saturday. You can register for free and we'll see you in Soweto."
+        : "Hi! We'd love to have you along. Check the event page for the full schedule and register when you're ready.";
+    case "host-art-hub-jhb":
+      return "Hello! The showcase is open and tickets are limited. Ask us anything — we're happy to help.";
+    case "host-amapiano-pulse":
+      return "Yoo! The festival lineup is live. Secure your pass early — it's moving fast!";
+    default:
+      return null;
+  }
+}
+
 function delayMs(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -200,7 +234,7 @@ export class MockSocialRepository implements SocialRepository {
         return null;
       }
 
-      const replyContent = SIMULATED_HOST_REPLIES[conversationId];
+      const replyContent = getPrototypeHostReply(conv);
       if (!replyContent) {
         return null;
       }
@@ -311,6 +345,12 @@ export class MockSocialRepository implements SocialRepository {
   ): Promise<Message | null> {
     const conv = await this.getConversation(conversationId);
     if (!conv || conv.kind !== "inquiry" || conv.isClosed || conv.isBlocked) {
+      return null;
+    }
+
+    // Only begin typing when this conversation can produce a deterministic
+    // canned reply — never show a typing animation followed by silence.
+    if (!getPrototypeHostReply(conv)) {
       return null;
     }
 

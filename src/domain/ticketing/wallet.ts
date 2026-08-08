@@ -20,9 +20,7 @@ export function classifyWalletTicket(
   return eventEnded ? "past" : "upcoming";
 }
 
-export type EffectiveTicketState =
-  | TicketStatus
-  | "expired";
+export type EffectiveTicketState = TicketStatus | "expired";
 
 /**
  * Prototype presentation state for a wallet ticket: the persisted ticket
