@@ -340,17 +340,44 @@ export class MockSocialRepository implements SocialRepository {
     });
   }
 
-  async maybeSchedulePrototypeHostReply(
+  /**
+   * Eligibility pre-check for the simulated host reply: the conversation must
+   * exist, be an open inquiry, support a deterministic canned reply, and must
+   * not have already consumed its once-per-reset reply. Returns the
+   * conversation when eligible, otherwise null.
+   */
+  private async canSchedulePrototypeHostReply(
     conversationId: string,
-  ): Promise<Message | null> {
-    const conv = await this.getConversation(conversationId);
-    if (!conv || conv.kind !== "inquiry" || conv.isClosed || conv.isBlocked) {
+  ): Promise<HostInquiryConversation | null> {
+    const state = await this.loadState();
+
+    const conversation = state.conversations.find(
+      (item): item is HostInquiryConversation =>
+        item.id === conversationId && item.kind === "inquiry",
+    );
+
+    if (
+      !conversation ||
+      conversation.isBlocked ||
+      conversation.isClosed ||
+      (state.simulatedReplyConversationIds ?? []).includes(conversationId) ||
+      !getPrototypeHostReply(conversation)
+    ) {
       return null;
     }
 
-    // Only begin typing when this conversation can produce a deterministic
-    // canned reply — never show a typing animation followed by silence.
-    if (!getPrototypeHostReply(conv)) {
+    return conversation;
+  }
+
+  async maybeSchedulePrototypeHostReply(
+    conversationId: string,
+  ): Promise<Message | null> {
+    const conversation =
+      await this.canSchedulePrototypeHostReply(conversationId);
+    if (!conversation) {
+      // Not eligible: no typing animation, no reply. In particular, after the
+      // once-per-reset canned reply is consumed, later messages do not trigger
+      // the typing indicator until Reset All.
       return null;
     }
 

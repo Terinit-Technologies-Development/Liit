@@ -85,12 +85,18 @@ tags:
 
 - waitForAnimationToEnd
 
-# — Additional history/demo path: seeded Club Vibez inquiry —
+# Return to Feed first — the inbox button lives in the Feed header only
+- tapOn:
+    id: "tab-feed"
+
+- waitForAnimationToEnd
+
 - tapOn:
     id: "feed-open-inbox"
 
 - waitForAnimationToEnd
 
+# — Additional history/demo path: seeded Club Vibez inquiry —
 - tapOn:
     id: "inbox-tab-inquiry"
 

@@ -309,20 +309,32 @@ describe("Simulated host reply starts after a user message", () => {
       1,
     );
 
-    // A second message must not produce a second canned reply.
+    // A second message must not produce a second canned reply — and the
+    // typing indicator must never turn on again before Reset All.
     const secondSend = repo.sendMessage({
       conversationId: convId,
       content: "And how late does it run?",
     });
     await jest.advanceTimersByTimeAsync(300);
-    await secondSend;
+    expect((await secondSend).status).toBe("delivered");
     const schedule2 = repo.maybeSchedulePrototypeHostReply(convId);
+    await jest.advanceTimersByTimeAsync(150);
+    // The typing indicator must never turn back on for the second message:
+    // it stays off (false) at the point where the first message showed true.
+    expect(useSocialStore.getState().isTypingMap[convId]).toBe(false);
     await jest.advanceTimersByTimeAsync(
-      150 + HOST_TYPING_INDICATOR_MS + HOST_REPLY_GAP_MS,
+      HOST_TYPING_INDICATOR_MS + HOST_REPLY_GAP_MS,
     );
     expect(await schedule2).toBeNull();
 
-    // Reset permits the canonical reply again.
+    const messagesAfterSecondPromise = repo.listMessages(convId);
+    await jest.advanceTimersByTimeAsync(200);
+    const messagesAfterSecond = await messagesAfterSecondPromise;
+    expect(
+      messagesAfterSecond.filter((m) => m.id === `msg-${convId}-reply`),
+    ).toHaveLength(1);
+
+    // Reset All permits the canonical reply again, with typing restored.
     await repo.reset();
     const recreated = await repo.getOrCreateInquiryContext({
       hostId: midnightGroovesEvent.host.id,
@@ -336,9 +348,11 @@ describe("Simulated host reply starts after a user message", () => {
     await jest.advanceTimersByTimeAsync(300);
     await thirdSend;
     const schedule3 = repo.maybeSchedulePrototypeHostReply(convId);
-    await jest.advanceTimersByTimeAsync(
-      150 + HOST_TYPING_INDICATOR_MS + HOST_REPLY_GAP_MS,
-    );
+    await jest.advanceTimersByTimeAsync(150);
+    expect(useSocialStore.getState().isTypingMap[convId]).toBe(true);
+    await jest.advanceTimersByTimeAsync(HOST_TYPING_INDICATOR_MS);
+    expect(useSocialStore.getState().isTypingMap[convId]).toBe(false);
+    await jest.advanceTimersByTimeAsync(HOST_REPLY_GAP_MS);
     expect(await schedule3).toBeTruthy();
   });
 
